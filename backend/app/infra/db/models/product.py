@@ -9,6 +9,7 @@ Purpose:  SQLAlchemy ORM model for the `products` table. Includes all three
 Depends:  app.infra.db.base, sqlalchemy, pgvector
 HITL:     None — model only.
 """
+
 from typing import Any
 
 from pgvector.sqlalchemy import Vector
@@ -35,6 +36,10 @@ class Product(TenantMixin, Base):
 
     __table_args__ = (
         UniqueConstraint("tenant_id", "product_hash", name="uq_product_hash_per_tenant"),
-        Index("ix_product_embedding_hnsw", "embedding", postgresql_using="hnsw",
-              postgresql_with={"m": 16, "ef_construction": 64}),
+        Index(
+            "ix_product_embedding_hnsw",
+            "embedding",
+            postgresql_using="hnsw",
+            postgresql_with={"m": 16, "ef_construction": 64},
+        ),
     )

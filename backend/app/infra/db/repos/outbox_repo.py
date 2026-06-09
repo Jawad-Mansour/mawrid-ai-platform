@@ -8,6 +8,7 @@ Purpose:  Data access for the outbox table. Relay reads unprocessed rows,
 Depends:  app.infra.db.repos.base_repo, app.infra.db.models.outbox
 HITL:     None — repository only.
 """
+
 from app.infra.db.repos.base_repo import TenantRepository
 
 

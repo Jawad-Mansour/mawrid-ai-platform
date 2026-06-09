@@ -8,6 +8,7 @@ Purpose:  SQLAlchemy ORM model for suppliers table. Includes embedding column
 Depends:  app.infra.db.base, sqlalchemy, pgvector
 HITL:     None — model only.
 """
+
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import Numeric, Text
 from sqlalchemy.orm import Mapped, mapped_column

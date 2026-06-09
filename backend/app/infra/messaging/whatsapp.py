@@ -11,6 +11,7 @@ Purpose:  Twilio/Meta Business API client for WhatsApp dispatch.
 Depends:  twilio (Wave 1)
 HITL:     None (Wave 1)
 """
+
 from __future__ import annotations
 
 
@@ -19,6 +20,5 @@ class WhatsAppClient:
 
     def send(self, to: str, body: str) -> None:
         raise NotImplementedError(
-            "WhatsApp is deferred to Wave 1. "
-            "Capstone B2B uses email only; B2C uses email + SMS."
+            "WhatsApp is deferred to Wave 1. Capstone B2B uses email only; B2C uses email + SMS."
         )

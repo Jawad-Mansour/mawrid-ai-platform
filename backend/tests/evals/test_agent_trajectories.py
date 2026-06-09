@@ -9,6 +9,7 @@ Purpose:  Agent trajectory snapshot tests (Gate 6, PR to master).
 Depends:  langgraph, app.agents, snapshot fixtures in tests/evals/fixtures/
 HITL:     None
 """
+
 from __future__ import annotations
 
 import json

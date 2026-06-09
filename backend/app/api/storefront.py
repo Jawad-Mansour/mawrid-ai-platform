@@ -9,6 +9,7 @@ Purpose:  HTTP routes for published product browsing, cart, checkout (Stripe /
 Depends:  app.core.storefront.services, app.infra.payments, app.api.deps
 HITL:     fulfillment_notification
 """
+
 from fastapi import APIRouter
 
 router = APIRouter(prefix="/store", tags=["storefront"])

@@ -9,6 +9,7 @@ Purpose:  Pydantic v2 domain models for HITLAction covering all 14 action_types
 Depends:  pydantic
 HITL:     This IS the HITL model.
 """
+
 from enum import StrEnum
 from typing import Any
 

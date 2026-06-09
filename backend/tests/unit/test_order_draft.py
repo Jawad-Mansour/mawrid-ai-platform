@@ -8,6 +8,7 @@ Purpose:  Unit tests for the order draft flow. Verifies: draft created in
 Depends:  app.core.procurement.services, conftest fakes
 HITL:     po_draft_created
 """
+
 from __future__ import annotations
 
 import pytest

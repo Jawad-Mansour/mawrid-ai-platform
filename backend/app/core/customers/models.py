@@ -9,6 +9,7 @@ Purpose:  Pydantic v2 domain models for Customer (B2B and B2C), MatchCandidate,
 Depends:  pydantic
 HITL:     customer_match_review
 """
+
 from enum import StrEnum
 
 from pydantic import BaseModel, EmailStr

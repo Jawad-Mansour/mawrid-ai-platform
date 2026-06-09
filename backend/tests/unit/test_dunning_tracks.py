@@ -8,6 +8,7 @@ Purpose:  Unit tests for all 4 dunning tracks. Verifies: trigger dates,
 Depends:  app.core.dunning.tracks, conftest fakes
 HITL:     dunning_payables_draft, dunning_receivables_draft, dunning_b2c_draft
 """
+
 from __future__ import annotations
 
 from datetime import date, timedelta

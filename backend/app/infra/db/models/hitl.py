@@ -9,6 +9,7 @@ Purpose:  SQLAlchemy ORM model for the `hitl_actions` table. JSONB payload
 Depends:  app.infra.db.base, sqlalchemy
 HITL:     This IS the HITL table.
 """
+
 from typing import Any
 
 from sqlalchemy import JSON, DateTime, Index, Text, func
@@ -28,6 +29,4 @@ class HITLAction(TenantMixin, Base):
     expires_at: Mapped[str | None] = mapped_column(DateTime(timezone=True), nullable=True)
     actor_user_id: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    __table_args__ = (
-        Index("ix_hitl_queue", "tenant_id", "status", "action_type"),
-    )
+    __table_args__ = (Index("ix_hitl_queue", "tenant_id", "status", "action_type"),)

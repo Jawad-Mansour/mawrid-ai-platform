@@ -8,6 +8,7 @@ Purpose:  HTTP routes for tenant self-signup, user login, JWT issuance,
 Depends:  app.core.auth.services, app.api.deps
 HITL:     None — auth is not an external write action.
 """
+
 from fastapi import APIRouter
 
 router = APIRouter(prefix="/auth", tags=["auth"])

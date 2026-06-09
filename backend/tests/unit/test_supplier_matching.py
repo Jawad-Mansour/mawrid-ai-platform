@@ -8,6 +8,7 @@ Purpose:  Unit tests for supplier matching and scoring. Verifies: Ridge
 Depends:  app.ml.scoring.supplier_scorer, conftest fakes
 HITL:     None
 """
+
 from __future__ import annotations
 
 

@@ -9,6 +9,7 @@ Purpose:  Pydantic v2 domain models for Product (with all three independent
 Depends:  pydantic
 HITL:     None — models only.
 """
+
 import hashlib
 from enum import StrEnum
 from typing import Any

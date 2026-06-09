@@ -7,6 +7,7 @@ Purpose:  Pydantic v2 domain models for Tenant, User, JWT claims, and
 Depends:  pydantic
 HITL:     None.
 """
+
 from enum import StrEnum
 
 from pydantic import BaseModel, EmailStr

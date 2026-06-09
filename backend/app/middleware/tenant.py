@@ -9,6 +9,7 @@ Purpose:  Extracts tenant_id from JWT and sets PostgreSQL RLS parameter
 Depends:  pyjwt, app.infra.db.session
 HITL:     None.
 """
+
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response

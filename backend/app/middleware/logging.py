@@ -8,6 +8,7 @@ Purpose:  Structured JSON request logging: tenant_id, user_id, route, method,
 Depends:  starlette, structlog
 HITL:     None.
 """
+
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response

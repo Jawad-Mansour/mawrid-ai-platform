@@ -9,6 +9,7 @@ Purpose:  HTTP routes for the importer-facing admin chatbot (all enriched
 Depends:  app.ml.intent.classifier, app.rag.pipeline, app.agents.supervisor, app.api.deps
 HITL:     Any write action initiated by the agent routes through hitl_actions.
 """
+
 from fastapi import APIRouter
 
 router = APIRouter(prefix="/chat", tags=["chat"])

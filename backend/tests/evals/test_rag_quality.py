@@ -9,6 +9,7 @@ Purpose:  RAGAS-based nightly evaluation of the 6-technique RAG pipeline.
 Depends:  ragas, app.rag, app.infra.vector.pgvector, real LLM, real DB
 HITL:     None
 """
+
 from __future__ import annotations
 
 from pathlib import Path

@@ -9,6 +9,7 @@ Purpose:  Shared fixtures for integration tests. Spins up a real test database
 Depends:  pytest, sqlalchemy, asyncpg, redis, app.infra.db
 HITL:     None
 """
+
 from __future__ import annotations
 
 from collections.abc import AsyncGenerator

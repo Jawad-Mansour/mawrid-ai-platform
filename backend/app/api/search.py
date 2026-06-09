@@ -8,6 +8,7 @@ Purpose:  HTTP routes for internal catalog search (enriched scope) and
 Depends:  app.rag.pipeline, app.api.deps
 HITL:     None — search is read-only.
 """
+
 from fastapi import APIRouter
 
 router = APIRouter(prefix="/search", tags=["search"])

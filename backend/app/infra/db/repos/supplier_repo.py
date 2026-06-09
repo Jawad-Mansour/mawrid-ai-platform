@@ -8,6 +8,7 @@ Purpose:  Data access for suppliers and delivery events. Includes embedding
 Depends:  app.infra.db.repos.base_repo
 HITL:     None — repository only.
 """
+
 from app.infra.db.repos.base_repo import TenantRepository
 
 

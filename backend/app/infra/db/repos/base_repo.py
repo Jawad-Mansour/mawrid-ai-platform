@@ -9,6 +9,7 @@ Purpose:  TenantRepository base class. ALL repository methods prepend
 Depends:  sqlalchemy, app.infra.db.session
 HITL:     None — infrastructure only.
 """
+
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession

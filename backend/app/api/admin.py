@@ -8,6 +8,7 @@ Purpose:  HTTP routes for the admin dashboard: business summary stats, AI model
 Depends:  app.infra.db.repos, app.infra.llm, app.api.deps
 HITL:     None — dashboard is read-only.
 """
+
 from fastapi import APIRouter
 
 router = APIRouter(prefix="/admin", tags=["admin"])

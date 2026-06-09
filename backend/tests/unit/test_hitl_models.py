@@ -8,6 +8,7 @@ Purpose:  Unit tests for HITLAction model validation: all 14 action_types
 Depends:  app.core.hitl.models
 HITL:     None — testing the model itself.
 """
+
 import pytest
 from app.core.hitl.models import HITLAction, HITLActionType, HITLStatus
 from pydantic import ValidationError

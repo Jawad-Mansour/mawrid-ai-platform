@@ -7,6 +7,7 @@ Purpose:  HTTP routes for supplier CRUD, delivery event recording, score
 Depends:  app.core.suppliers.services, app.api.deps
 HITL:     supplier_outreach, supplier_match_review, purchase_order_send (reorder)
 """
+
 from fastapi import APIRouter
 
 router = APIRouter(prefix="/suppliers", tags=["suppliers"])

@@ -8,6 +8,7 @@ Purpose:  Unit tests for the product publishing gate. Verifies the full
 Depends:  app.core.catalog.services, conftest fakes
 HITL:     product_published
 """
+
 from __future__ import annotations
 
 

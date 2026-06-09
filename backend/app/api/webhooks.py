@@ -8,6 +8,7 @@ Purpose:  Inbound webhook handlers for Stripe, OMT, Whish payment confirmations
 Depends:  app.infra.payments.protocol, app.core.dunning.services, app.api.deps
 HITL:     None — webhooks trigger auto-stop, not outbound actions.
 """
+
 from fastapi import APIRouter
 
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])

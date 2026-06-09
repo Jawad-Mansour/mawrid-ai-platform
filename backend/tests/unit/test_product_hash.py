@@ -7,6 +7,7 @@ Purpose:  Unit tests for product hash function. Verifies SHA-256 colon-delimited
 Depends:  app.core.catalog.hash
 HITL:     None.
 """
+
 import hashlib
 
 from app.core.catalog.hash import compute_product_hash

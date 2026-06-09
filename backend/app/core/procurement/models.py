@@ -8,6 +8,7 @@ Purpose:  Pydantic v2 domain models for OrderDraft (importer-created), PurchaseO
 Depends:  pydantic
 HITL:     purchase_order_send, dispute_letter
 """
+
 from enum import StrEnum
 from typing import Any
 

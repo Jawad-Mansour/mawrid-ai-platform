@@ -9,6 +9,7 @@ Depends:  All routers, all middleware, infra.scheduler, infra.db.session,
           infra.llm.openai, infra.llm.embedder, app.rag.reranking
 HITL:     None — bootstrap only.
 """
+
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -48,11 +49,29 @@ def create_app() -> FastAPI:
     app.add_middleware(LoggingMiddleware)
     app.add_middleware(RateLimitMiddleware)
     app.add_middleware(TenantMiddleware)
-    app.add_middleware(CORSMiddleware, allow_origins=[], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
-    for router in [auth.router, catalog.router, procurement.router, dunning.router,
-                   invoices.router, suppliers.router, customers.router, hitl.router,
-                   search.router, chat.router, storefront.router, webhooks.router, admin.router]:
+    for router in [
+        auth.router,
+        catalog.router,
+        procurement.router,
+        dunning.router,
+        invoices.router,
+        suppliers.router,
+        customers.router,
+        hitl.router,
+        search.router,
+        chat.router,
+        storefront.router,
+        webhooks.router,
+        admin.router,
+    ]:
         app.include_router(router, prefix="/api/v1")
 
     @app.get("/health")

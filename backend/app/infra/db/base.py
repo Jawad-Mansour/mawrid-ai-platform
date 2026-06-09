@@ -9,6 +9,7 @@ Purpose:  SQLAlchemy declarative base and TenantMixin. TenantMixin adds
 Depends:  sqlalchemy
 HITL:     None — infrastructure only.
 """
+
 from sqlalchemy.orm import DeclarativeBase, MappedColumn, mapped_column
 
 

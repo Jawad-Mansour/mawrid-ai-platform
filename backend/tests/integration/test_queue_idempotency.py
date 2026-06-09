@@ -8,6 +8,7 @@ Purpose:  Integration tests for ARQ job idempotency. Verifies: submitting the
 Depends:  app.infra.workers.enrichment_worker, arq, redis
 HITL:     None
 """
+
 from __future__ import annotations
 
 import pytest

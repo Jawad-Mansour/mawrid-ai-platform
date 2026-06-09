@@ -9,6 +9,7 @@ Purpose:  Unit tests for the payment reconciliation → dunning auto-stop flow.
 Depends:  app.core.dunning.tracks, app.infra.db.repos.invoice_repo
 HITL:     None
 """
+
 from __future__ import annotations
 
 

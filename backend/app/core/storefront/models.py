@@ -9,6 +9,7 @@ Purpose:  Pydantic v2 domain models for Cart, Order (consumer), PaymentIntent,
 Depends:  pydantic
 HITL:     fulfillment_notification
 """
+
 from pydantic import BaseModel
 
 

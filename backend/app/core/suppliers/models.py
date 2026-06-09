@@ -11,6 +11,7 @@ Purpose:  Pydantic v2 domain models for Supplier, DeliveryEvent, SupplierScore,
 Depends:  pydantic
 HITL:     supplier_outreach, supplier_match_review
 """
+
 from pydantic import BaseModel, Field
 
 

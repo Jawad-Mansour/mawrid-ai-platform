@@ -8,6 +8,7 @@ Purpose:  Canonical product hash function. SHA-256 of the colon-delimited
 Depends:  hashlib (stdlib)
 HITL:     None.
 """
+
 import hashlib
 
 

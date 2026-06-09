@@ -10,6 +10,7 @@ Purpose:  SQLAlchemy ORM models for the `invoices` and `dunning_sequences` table
 Depends:  app.infra.db.base, sqlalchemy
 HITL:     None — model only.
 """
+
 from sqlalchemy import DateTime, Numeric, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -26,7 +27,9 @@ class Invoice(TenantMixin, Base):
     invoice_date: Mapped[str] = mapped_column(DateTime(timezone=True), nullable=False)
     due_date: Mapped[str] = mapped_column(DateTime(timezone=True), nullable=False)
     payment_terms_days: Mapped[int] = mapped_column(default=30)
-    status: Mapped[str] = mapped_column(Text, default="unpaid", nullable=False)  # unpaid | paid | reconciled
+    status: Mapped[str] = mapped_column(
+        Text, default="unpaid", nullable=False
+    )  # unpaid | paid | reconciled
     paid_at: Mapped[str | None] = mapped_column(DateTime(timezone=True), nullable=True)
     pdf_key: Mapped[str | None] = mapped_column(Text, nullable=True)  # MinIO object key
     created_at: Mapped[str] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -38,6 +41,8 @@ class DunningSequence(TenantMixin, Base):
     sequence_id: Mapped[str] = mapped_column(primary_key=True)
     invoice_id: Mapped[str] = mapped_column(Text, nullable=False)
     track: Mapped[int] = mapped_column(nullable=False)  # 1 | 2 | 3 | 4
-    status: Mapped[str] = mapped_column(Text, default="active", nullable=False)  # active | stopped | completed
+    status: Mapped[str] = mapped_column(
+        Text, default="active", nullable=False
+    )  # active | stopped | completed
     created_at: Mapped[str] = mapped_column(DateTime(timezone=True), server_default=func.now())
     stopped_at: Mapped[str | None] = mapped_column(DateTime(timezone=True), nullable=True)

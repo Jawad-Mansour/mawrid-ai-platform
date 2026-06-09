@@ -9,6 +9,7 @@ Purpose:  SQLAlchemy ORM model for customers table. Unique constraints on
 Depends:  app.infra.db.base, sqlalchemy
 HITL:     None — model only.
 """
+
 from sqlalchemy import Numeric, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 

@@ -8,6 +8,7 @@ Purpose:  SQLAlchemy ORM models for OrderDraft (procurement) and StorefrontOrder
 Depends:  app.infra.db.base, sqlalchemy
 HITL:     None — model only.
 """
+
 from typing import Any
 
 from sqlalchemy import JSON, DateTime, Numeric, Text, func

@@ -8,6 +8,7 @@ Purpose:  Shared fixtures for all unit tests. Provides fake implementations
 Depends:  pytest, app.core protocols
 HITL:     None
 """
+
 from __future__ import annotations
 
 from typing import Any

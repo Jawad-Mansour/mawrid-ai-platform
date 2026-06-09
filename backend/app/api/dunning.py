@@ -9,6 +9,7 @@ Depends:  app.core.dunning.services, app.api.deps
 HITL:     All dunning action_types (payables_advance, disputes_on_demand,
           receivables_day7/14/21, b2c_day3/7/14)
 """
+
 from fastapi import APIRouter
 
 router = APIRouter(prefix="/dunning", tags=["dunning"])

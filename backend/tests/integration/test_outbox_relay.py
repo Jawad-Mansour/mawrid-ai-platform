@@ -9,6 +9,7 @@ Purpose:  Integration tests for the outbox relay. Verifies: product + outbox
 Depends:  app.infra.workers.outbox_relay, app.infra.db.repos.outbox_repo, real DB
 HITL:     None
 """
+
 from __future__ import annotations
 
 import pytest

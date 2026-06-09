@@ -9,6 +9,7 @@ Purpose:  Data access for invoices and dunning sequences. Supports atomic
 Depends:  app.infra.db.repos.base_repo, app.infra.db.models.dunning
 HITL:     None — repository only (HITL cancel logic in hitl_repo).
 """
+
 from app.infra.db.repos.base_repo import TenantRepository
 
 

@@ -7,6 +7,7 @@ Purpose:  Data access for customers. Implements exact-match lookups (email,
 Depends:  app.infra.db.repos.base_repo
 HITL:     None — repository only.
 """
+
 from app.infra.db.repos.base_repo import TenantRepository
 
 

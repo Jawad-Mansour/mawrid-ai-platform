@@ -8,6 +8,7 @@ Purpose:  HTTP routes for supplier document upload, enrichment status polling,
 Depends:  app.core.catalog.services, app.infra.queue.client, app.api.deps
 HITL:     None — enrichment is internal. Publishing is in procurement.py.
 """
+
 from fastapi import APIRouter
 
 router = APIRouter(prefix="/catalog", tags=["catalog"])

@@ -8,6 +8,7 @@ Purpose:  HTTP routes for order draft CRUD, "Place Order" trigger (creates
 Depends:  app.core.procurement.services, app.core.hitl.services, app.api.deps
 HITL:     purchase_order_send, dispute_letter
 """
+
 from fastapi import APIRouter
 
 router = APIRouter(prefix="/procurement", tags=["procurement"])

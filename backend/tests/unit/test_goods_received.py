@@ -8,6 +8,7 @@ Purpose:  Unit tests for the goods-received flow. Verifies: lifecycle
 Depends:  app.core.procurement.services, conftest fakes
 HITL:     goods_received
 """
+
 from __future__ import annotations
 
 import pytest

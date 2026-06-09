@@ -9,6 +9,7 @@ Purpose:  Unit tests for the 6-layer enrichment pipeline.
 Depends:  app.core.catalog.pipeline, app.core.catalog.hash, conftest fakes
 HITL:     None
 """
+
 from __future__ import annotations
 
 import pytest

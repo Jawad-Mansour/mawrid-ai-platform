@@ -8,6 +8,7 @@ Purpose:  Unit tests for customer deduplication and matching logic.
 Depends:  app.core.customers.services, conftest fakes
 HITL:     None
 """
+
 from __future__ import annotations
 
 
@@ -16,9 +17,7 @@ class TestCustomerMatching:
         """Two customers with the same email must be deduplicated."""
         from app.core.customers.services import find_or_create_customer
 
-        c1 = find_or_create_customer(
-            tenant_id="t1", name="Acme Corp", email="acme@example.com"
-        )
+        c1 = find_or_create_customer(tenant_id="t1", name="Acme Corp", email="acme@example.com")
         c2 = find_or_create_customer(
             tenant_id="t1", name="Acme Corporation", email="acme@example.com"
         )
@@ -28,10 +27,6 @@ class TestCustomerMatching:
         """Same email under different tenants must create separate records."""
         from app.core.customers.services import find_or_create_customer
 
-        c1 = find_or_create_customer(
-            tenant_id="t1", name="Global Inc", email="info@global.com"
-        )
-        c2 = find_or_create_customer(
-            tenant_id="t2", name="Global Inc", email="info@global.com"
-        )
+        c1 = find_or_create_customer(tenant_id="t1", name="Global Inc", email="info@global.com")
+        c2 = find_or_create_customer(tenant_id="t2", name="Global Inc", email="info@global.com")
         assert c1.id != c2.id

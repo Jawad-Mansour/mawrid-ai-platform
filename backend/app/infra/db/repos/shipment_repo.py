@@ -8,6 +8,7 @@ Purpose:  Data access for shipments and goods-received events. Idempotency:
 Depends:  app.infra.db.repos.base_repo, app.infra.db.models.order
 HITL:     None — repository only.
 """
+
 from app.infra.db.repos.base_repo import TenantRepository
 
 

@@ -8,6 +8,7 @@ Purpose:  Data access for invoices and dunning sequences. Key operation:
 Depends:  app.infra.db.repos.base_repo, app.infra.db.models.invoice
 HITL:     None — repository triggers HITL creation via service layer.
 """
+
 from app.infra.db.repos.base_repo import TenantRepository
 
 
