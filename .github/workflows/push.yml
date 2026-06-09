@@ -1,0 +1,76 @@
+# Feature: CI/CD — Push Gates (Gates 1–3, target < 3 min)
+# Purpose: Fast feedback on every push. Gates:
+#   Gate 1: Lint (ruff) + Type check (mypy --strict)
+#   Gate 2: Unit tests (LLM always mocked, coverage grows as phases complete)
+#   Gate 3: Security scan (bandit + invariant checks: CORS, RS256, argon2id, HMAC)
+
+name: Push Gates (1–3)
+
+on:
+  push:
+    branches: ["**"]
+
+jobs:
+  gate1-lint-typecheck:
+    name: "Gate 1: Lint & Type Check"
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - name: Install dependencies
+        run: uv sync --frozen --dev
+      - name: Ruff lint
+        run: uv run ruff check backend/
+      - name: Ruff format check
+        run: uv run ruff format --check backend/
+      - name: mypy strict
+        run: uv run mypy --strict backend/app/
+
+  gate2-unit-tests:
+    name: "Gate 2: Unit Tests"
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    needs: gate1-lint-typecheck
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - name: Install dependencies
+        run: uv sync --frozen --dev
+      - name: Run unit tests
+        # Coverage threshold not enforced here — grows from 0 as phases add code.
+        # Enforce threshold once Phase 2 is merged (target: 80% by Phase 3).
+        run: uv run pytest backend/tests/unit/ -q
+
+  gate3-security:
+    name: "Gate 3: Security Invariants"
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    needs: gate1-lint-typecheck
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - name: Install dependencies
+        run: uv sync --frozen --dev
+      - name: Bandit security scan
+        run: uv run bandit -r backend/app/ -ll
+      - name: Check for wildcard CORS
+        run: |
+          if grep -rn 'allow_origins=\["?\*"?\]' backend/app/; then
+            echo "ERROR: Wildcard CORS detected" && exit 1
+          fi
+      - name: Check for RS256 (not HS256)
+        run: |
+          if grep -rn 'algorithm.*HS256' backend/app/; then
+            echo "ERROR: HS256 detected — must use RS256" && exit 1
+          fi
+      - name: Check for argon2id
+        run: |
+          if grep -rn 'bcrypt\|sha256.*password\|md5.*password' backend/app/; then
+            echo "ERROR: Weak password hashing detected — must use argon2id" && exit 1
+          fi
+      - name: Check webhook HMAC-SHA256 (implementation files only, not Protocol)
+        run: |
+          if grep -rn 'def verify_webhook' backend/app/infra/payments/ | grep -v 'protocol.py' | grep -v 'hmac\|HMAC'; then
+            echo "ERROR: Webhook implementation missing HMAC-SHA256 verification" && exit 1
+          fi

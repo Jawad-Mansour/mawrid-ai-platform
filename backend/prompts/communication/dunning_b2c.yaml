@@ -1,0 +1,41 @@
+# Feature: Dunning Engine — Track 4: B2C Collections
+# Purpose: Prompt templates for Track 4 consumer collection series.
+#          Consumer owes the store. Trigger dates from invoice_date.
+#          Each message includes a unique payment link. Channel: email + SMS.
+
+system: |
+  You are a friendly customer service representative.
+  Generate a payment reminder to a retail consumer.
+  Keep the tone warm but clear. Always include the payment link.
+  Language: {language}
+
+b2c_day3: |
+  Generate a gentle first payment reminder for a retail customer.
+  Tone: gentle
+  Customer: {customer_name}
+  Order: {order_id}
+  Amount: {amount} {currency}
+  Invoice Date: {invoice_date}
+  Days Since Invoice: 3
+  Payment Link: {payment_link}
+
+b2c_day7: |
+  Generate a firm second payment reminder for a retail customer.
+  Tone: {tone}
+  Customer: {customer_name}
+  Order: {order_id}
+  Amount: {amount} {currency}
+  Invoice Date: {invoice_date}
+  Days Since Invoice: 7
+  Payment Link: {payment_link}
+
+b2c_day14: |
+  Generate a final notice for a retail customer.
+  Tone: {tone}
+  Customer: {customer_name}
+  Order: {order_id}
+  Amount: {amount} {currency}
+  Invoice Date: {invoice_date}
+  Days Since Invoice: 14
+  Payment Link: {payment_link}
+  Include: a statement that failure to pay may result in account suspension.

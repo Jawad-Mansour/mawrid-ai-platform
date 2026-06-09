@@ -94,11 +94,11 @@ On order confirmation, an invoice PDF is generated and dispatched automatically.
 
 The intelligence layer runs across both sides. A three-tier intent classifier (TF-IDF + Logistic Regression → fine-tuned DL ONNX model → GPT-4o zero-shot) routes ~80% of chat messages to fast fixed workflows and ~20% to the Supervisor agent for complex multi-step reasoning. The Supervisor orchestrates five specialist agents: Extraction, Enrichment, Supplier Discovery, Communication, and Stock Monitor — each with defined tool access and bounded execution limits.
 
-Six-technique Advanced RAG (Dense retrieval, Parent-Document, HyDE query expansion, Multi-Vector, Cross-Encoder re-ranking, GraphRAG via product-category-supplier knowledge graph) grounds every AI answer in the actual catalog. NeMo Guardrails apply input and output safety rails on every LLM interaction. Presidio redacts PII before any message reaches the LLM. All write actions pause for HITL approval before execution.
+Six-technique Advanced RAG (Dense retrieval + Parent-Document chunking, HyDE + Multi-Query expansion, Cross-Encoder re-ranking, GraphRAG via product-category-supplier knowledge graph, MMR diversity filtering, tenant-scoped metadata filter) grounds every AI answer in the actual catalog. NeMo Guardrails apply input and output safety rails on every LLM interaction. Presidio redacts PII before any message reaches the LLM. All write actions pause for HITL approval before execution.
 
 ### The Operations Layer
 
-n8n handles all event-driven automation across 18 total workflows (12 active in the capstone): tenant provisioning, catalog ingestion, enrichment completion, order confirmation, payment detection, all four dunning tracks, reorder triggers, and more. GitHub Actions runs the full CI gate on every push: lint, type check, unit tests, RAGAS evaluation against thresholds, classifier accuracy gate, agent tool-selection verification, and a cross-tenant red-team test that must block 100% of cross-tenant access attempts — any failure blocks the merge. MLflow tracks every ML model version; LangSmith traces every LLM call and tool use. The Full Operations Command Center gives the importer one admin panel with visibility into every dimension of the business.
+n8n handles all event-driven automation across 21 total workflows (15 active in the capstone, 6 future): tenant provisioning, catalog ingestion, enrichment completion, PO send, shipment alerts, goods received, order confirmation, payment detection, all four dunning tracks, reorder triggers, and more. GitHub Actions runs tiered CI: push gates (lint, type check, unit tests < 3 min); PR gates (integration, cross-tenant red-team, agent snapshots < 15 min); nightly evals (RAGAS, classifier F1, drift detection) — any gate failure blocks the merge. MLflow tracks every ML model version; LangSmith traces every LLM call and tool use. The Full Operations Command Center gives the importer one admin panel with visibility into every dimension of the business.
 
 ---
 ## SECTION 1 — Decisions
@@ -151,9 +151,9 @@ The dunning engine manages all money flows between the importer, their suppliers
 
 | Track | Timeline | Channels | Tone |
 |-------|----------|----------|------|
-| B2B Payables | 3-day advance reminder | Email + WhatsApp | Professional |
-| B2B Disputes | On-demand (filed manually by importer) | Email + WhatsApp | Formal, in supplier's language |
-| B2B Receivables | Day 7 / Day 14 / Day 21 | Email + WhatsApp | Segment-aware (tone classifier) |
+| B2B Payables | 3-day advance reminder | Email (WhatsApp: Wave 1) | Professional |
+| B2B Disputes | On-demand (filed manually by importer) | Email (WhatsApp: Wave 1) | Formal, in supplier's language |
+| B2B Receivables | Day 7 / Day 14 / Day 21 | Email (WhatsApp: Wave 1) | Segment-aware (tone classifier) |
 | B2C Collections | Day 3 / Day 7 / Day 14 | Email + SMS | Gentle to firm (tone classifier) |
 
 Tone (gentle / neutral / firm) selected by 3-class ML classifier based on customer segment, payment history, and overdue amount.
@@ -241,11 +241,11 @@ Tiered GitHub Actions CI. All thresholds in `eval_thresholds.yaml`. Any regressi
 
 **Every push (any branch, < 3 min):** ruff lint · mypy strict · pytest unit tests (LLM mocked)
 
-**Every PR to main (< 15 min):** all push gates + pytest integration tests (real DB + Redis) · cross-tenant red-team (15 attack vectors, must block 100% — any breach is a hard fail, including internal catalog products appearing in consumer storefront search) · agent trajectory snapshot tests (20 known intents)
+**Every PR to master (< 15 min):** all push gates + pytest integration tests (real DB + Redis) · cross-tenant red-team (15 attack vectors, must block 100% — any breach is a hard fail, including internal catalog products appearing in consumer storefront search) · agent trajectory snapshot tests (20 known intents)
 
-**Nightly on main:** RAGAS eval (context precision, recall, faithfulness, relevancy) · intent classifier F1 macro ≥ 0.85 · drift detection (PSI, chi-square, embedding centroid)
+**Nightly on master:** RAGAS eval (context precision, recall, faithfulness, relevancy) · intent classifier F1 macro ≥ 0.85 · drift detection (PSI, chi-square, embedding centroid)
 
-Merge to main requires all push + PR gates green on current commit AND latest nightly eval passed within 24 hours.
+Merge to master requires all push + PR gates green on current commit AND latest nightly eval passed within 24 hours.
 
 ---
 
@@ -253,9 +253,9 @@ Merge to main requires all push + PR gates green on current commit AND latest ni
 
 **What n8n is**: n8n is a self-hosted workflow automation tool (think Zapier, but you own it). In Mawrid, n8n is the event-driven glue between all services — when something happens anywhere in the platform, n8n catches the event and runs the corresponding automated business process. Every business-critical sequence (new order → invoice → payment tracking → dunning) runs through n8n.
 
-**Why 12 core in capstone and 6 future**: The 12 core workflows cover all active capstone features including the full dunning engine. The 6 future workflows activate when their corresponding Wave 1/2 features are turned on.
+**Why 15 core in capstone and 6 future**: The 15 core workflows (WF-01 through WF-15) cover all active capstone features including the full dunning engine. The 6 future workflows activate when their corresponding Wave 1/2 features are turned on.
 
-**Capstone Core (14):**
+**Capstone Core (15):**
 1. New Tenant Signup → provision DB schema + MinIO bucket + Redis namespace + send welcome email
 2. Supplier Document Uploaded → trigger extraction + enrichment pipeline
 3. Enrichment Job Complete → update internal catalog + notify importer (ready to browse and order)
@@ -397,8 +397,8 @@ Selected features: the most valuable and completable in 12 days. Every feature i
 - Payment link: unique per invoice, included in B2C dunning reminders
 - AI chatbot widget: site-wide, grounded answers from the product catalog with citations
 - Per-product "Ask about this product" button: opens chatbot pre-loaded with that product's context
-- Advanced RAG (6 techniques): Dense, Parent-Document, HyDE, Multi-Vector, Cross-Encoder Re-ranking, GraphRAG (product-category-supplier knowledge graph)
-- RAGAS evaluation: CI-gated on every push (context precision, recall, faithfulness, response relevancy)
+- Advanced RAG (6 techniques): Dense + Parent-Document, HyDE + Multi-Query, Cross-Encoder Re-ranking, GraphRAG (product-category-supplier knowledge graph), MMR diversity, tenant metadata filtering
+- RAGAS evaluation: nightly CI gate (context precision, recall, faithfulness, response relevancy — not on every push)
 - Multilingual: English default, Arabic and French optional
 - Embeddable widget: /widget.js loader, signed short-lived JWT, server-side origin check
 
@@ -438,13 +438,13 @@ Selected features: the most valuable and completable in 12 days. Every feature i
 
 - **B2B Payables**: 3 days before supplier invoice due → Communication agent drafts reminder → importer approves → sent to importer as a payment reminder
 - **B2C Collections**: consumer order unpaid → Day 3 gentle reminder + payment link → Day 7 firm → Day 14 final notice → Communication agent drafts each → HITL → sent to consumer by email/SMS
-- **B2B Receivables**: wholesale client owes importer → Day 7 → Day 14 → Day 21 → segment-aware tone → HITL → sent to client's email/WhatsApp (client tracked as contact record, no portal login required)
-- **B2B Disputes**: importer files complaint against supplier → Communication agent drafts formal letter in supplier's language → HITL → sent to supplier's email/WhatsApp
+- **B2B Receivables**: wholesale client owes importer → Day 7 → Day 14 → Day 21 → segment-aware tone → HITL → sent to client by email (WhatsApp in Wave 1; client tracked as contact record, no portal login required)
+- **B2B Disputes**: importer files complaint against supplier → Communication agent drafts formal letter in supplier's language → HITL → sent to supplier by email (WhatsApp in Wave 1)
 
 **Supporting infrastructure:**
 - Dunning tone classifier: 3-class ML model (gentle / neutral / firm) considers customer segment, payment history, overdue amount
 - Payment confirmation auto-stop: any payment received immediately stops the dunning sequence for that invoice
-- n8n workflows 1–12 cover all 4 dunning tracks in the capstone
+- n8n workflows WF-09 through WF-15 cover all 4 dunning tracks in the capstone
 
 ---
 
@@ -517,7 +517,7 @@ Everything below is deliberately excluded from the 12-day capstone. Features are
 - **AI Pricing Intelligence** (flag products above MENA market average, recommend range)
 - **Marketing Studio** (auto-generate images + videos, scheduled social posting)
 - **Arabic Supplier NER** (specialized extraction for Arabic-language supplier sheets)
-- **n8n workflows 13–15** activated
+- **n8n future workflows (WF-16 through WF-21)** activated as each Wave 1 feature ships
 
 ### Wave 2 (Second Sprint)
 - **Wholesale Store Owner accounts** (Phase 2 user type — B2B ordering portal)
@@ -553,7 +553,7 @@ Everything below is deliberately excluded from the 12-day capstone. Features are
 | Per-Tenant Rate Limiting | Infrastructure | Capstone |
 | Operational Mode Config (Hybrid/Wholesale/Retail) | Infrastructure | Capstone |
 | Cross-Tenant Red-Team CI Gate | Infrastructure | Capstone |
-| Right-to-Erasure (full data purge) | Infrastructure | Capstone |
+| Right-to-Erasure (full data purge) | Infrastructure | Wave 1 |
 | Supplier Sheet Ingestion (PDF/Excel/image/SFTP) | Catalog | Capstone |
 | CV Layout Detection + BERT NER | Catalog | Capstone |
 | Catalog Enrichment (ReAct agent + outbox + Redis DLQ) | Catalog | Capstone |
@@ -618,7 +618,7 @@ Everything below is deliberately excluded from the 12-day capstone. Features are
 | Wholesale Store Owner Accounts | User Types | Phase 2 / Wave 2 |
 | Consumer Accounts with Login | User Types | Phase 3 / Wave 3 |
 | Full Operations Command Center | Operations | Capstone |
-| n8n Core Workflows (12) | Automation | Capstone |
+| n8n Core Workflows (15) | Automation | Capstone |
 | n8n Future Workflows (6) | Automation | Wave 1-2 |
 | MLflow Model Registry | MLOps | Capstone |
 | LangSmith LLM Tracing | MLOps | Capstone |
@@ -796,12 +796,14 @@ Everything below is deliberately excluded from the 12-day capstone. Features are
 
 **RAG pipeline — 6 techniques in implementation order** (matches Advanced RAG Guide recommended sequencing):
 
-1. **Parent-Child chunking**: Child chunks (256 chars) for embedding/search, parent chunks (1024 chars) returned to LLM
-2. **Metadata filtering**: Filter by `tenant_id`, `product_category`, `supplier_id`, `date_range` at query time. HNSW index on all vector columns.
-3. **Cross-encoder reranking**: Top-20 from vector search → `cross-encoder/ms-marco-MiniLM-L-6-v2` → top-6 returned to LLM
-4. **Contextual retrieval**: LLM-generated prefix prepended to each chunk at indexing time (e.g. "This is a product spec from supplier X, category Y")
-5. **HyDE + Multi-Query**: LLM generates hypothetical answer → embed → search. LLM also generates 3 query variants → RRF merge
-6. **MMR (Maximal Marginal Relevance)**: λ=0.5, applied after reranking to maximize result diversity
+1. **Dense Retrieval + Parent-Child chunking**: Child chunks (256 tokens) for embedding/similarity search; parent chunks (1024 tokens) returned to LLM. HNSW index on pgvector. Scope filter: `WHERE tenant_id = :current AND enrichment_status = 'enriched'` (admin) or `storefront_status = 'published'` (consumer).
+2. **Query Expansion — HyDE + Multi-Query**: LLM generates a hypothetical product description (HyDE) → embedded → searched. Also generates 3 query variants → 4 parallel searches merged via RRF (closes vocabulary gap between user phrasing and catalog language).
+3. **Cross-Encoder Re-Ranking**: Top-20 from dense search → `cross-encoder/ms-marco-MiniLM-L-6-v2` → reranked → top-6 returned (local, < 150ms, no API cost).
+4. **GraphRAG**: Knowledge graph (networkx + `graph_edges` table): product → category, product → supplier. Graph traversal surfaces structurally related products not reachable by vector distance alone. Results merged with vector results via RRF.
+5. **MMR (Maximal Marginal Relevance)**: λ=0.5 — prevents near-identical chunks in the LLM context window; ensures top-6 are diverse.
+6. **Tenant-scoped metadata filtering**: Applied at every retrieval step — no cross-tenant results are physically possible at the DB/vector layer.
+
+*Note: Contextual Retrieval (LLM-generated chunk prefix at indexing time) was evaluated but excluded — it requires an LLM call per chunk at index time, which is expensive for a 150+ product catalog that re-indexes on every enrichment. GraphRAG provides the structural context without indexing-time LLM cost.*
 
 **Agent architecture:**
 - LangGraph `StateGraph` with Redis checkpointer (`RedisSaver`) for persistent state
@@ -859,14 +861,21 @@ Everything below is deliberately excluded from the 12-day capstone. Features are
 | Component | Choice | Detail |
 |-----------|--------|--------|
 | User management | **fastapi-users** | Registration, login, password reset, email verification |
-| JWT | **PyJWT** | Token generation and validation |
-| Password hashing | **bcrypt** (via passlib) | Secure one-way hashing |
-| Secrets | **HashiCorp Vault** | API keys, DB passwords, JWT secret |
+| JWT library | **PyJWT** | Token generation and validation |
+| JWT algorithm | **RS256** (asymmetric) | Private key signs (stored in Vault). Public key verifies. JWKS endpoint at `GET /auth/.well-known/jwks.json` |
+| Access token expiry | **15 minutes** | Kept in memory only — never in localStorage |
+| Refresh token expiry | **7 days, rotating** | Stored as `httpOnly` cookie. Rotated on every use |
+| Password hashing | **argon2id** via `passlib[argon2]` | Memory-hard, current best practice. Never bcrypt, never plain SHA-256 for passwords |
+| Content / identity hashing | **SHA-256** | `product_hash = SHA-256(tenant_id + ":" + product_name + ":" + sku)`. File upload idempotency hash. Colon-delimited to prevent collisions |
+| Secrets | **HashiCorp Vault** | All API keys, DB passwords, RS256 private key, Stripe webhook secret. Vault paths: `secret/mawrid/{env}/{service}` |
 | Rate limiting | **slowapi** | Per-tenant Redis bucket, configurable limits |
-| Webhook security | **HMAC signature verification** | Stripe, OMT, Whish all send signatures — verify before processing |
-| CORS | **FastAPI CORSMiddleware** | Tenant-specific origin allowlists |
-| Widget auth | **Signed short-lived JWT** (15-min expiry) | For embeddable storefront widget |
+| Webhook security | **HMAC-SHA256 signature verification** | Stripe: `Stripe-Signature` header. OMT/Whish: per SDK. Reject any webhook failing verification before processing |
+| CORS | **FastAPI CORSMiddleware** | Tenant-registered storefront domain only — wildcard `*` never acceptable |
+| HTTPS | **TLS at reverse proxy (Nginx)** | HTTP → HTTPS redirect mandatory in production. Backend never serves plain HTTP in production |
+| Redis key namespace | `mawrid:{tenant_id}:{resource}:{id}` | Prevents cross-tenant key collision at the key level |
+| Widget auth | **RS256-signed JWT** (15-min expiry) | For embeddable storefront widget. Importer issues for their domain |
 | Server-side origin check | Custom middleware | Widget requests validated server-side, not just CORS |
+| Sensitive log fields | **Never logged** | `password`, `token`, `secret`, `card_number` — structlog redacts if accidentally included in context |
 
 ---
 
@@ -913,13 +922,23 @@ strict = true
 3. One full E2E agent run — all external calls mocked, assert correct tools called and response well-formed
 4. Cross-tenant isolation — attempt to read tenant B's data as tenant A, assert blocked
 
-**CI (GitHub Actions) on every push:**
+**CI (GitHub Actions) — tiered (see DEC-013 for full spec):**
+
+*Every push (< 3 min):*
 - `ruff check .` (linting)
-- `mypy .` (type checking)
-- `pytest -q` (all tests)
-- RAGAS eval gate (RAG faithfulness vs `eval_thresholds.yaml`)
-- Classifier accuracy gate
-- Cross-tenant red-team
+- `mypy --strict .` (type checking)
+- `pytest tests/unit/ -q` (unit tests, LLM mocked)
+
+*Every PR to master (< 15 min):*
+- All push gates +
+- `pytest tests/integration/` (real DB + Redis, no LLM)
+- Cross-tenant red-team (15 vectors — ANY pass = hard fail)
+- Agent trajectory snapshot tests (20 known intents)
+
+*Nightly on master (expensive — real LLM):*
+- RAGAS eval gate (RAG faithfulness vs `eval_thresholds.yaml`) ← **nightly only, NOT on push**
+- Intent classifier F1 gate (≥ 0.85)
+- Drift detection run
 
 ---
 
@@ -992,7 +1011,7 @@ Visual representations of every major system, flow, and interaction in the Mawri
     │                         │                                   │
     │  ┌──────────────────────▼───────────────────────────────┐  │
     │  │              OPERATIONS LAYER                        │  │
-    │  │  n8n (18 workflows) · Full Command Center Dashboard  │  │
+    │  │  n8n (15 capstone / 21 total) · Command Center       │  │
     │  │  GitHub Actions CI/CD · MLflow · LangSmith Tracing   │  │
     │  │  Dunning Engine (4 Tracks, 6 Directions)             │  │
     │  └──────────────────────────────────────────────────────┘  │
@@ -1308,7 +1327,7 @@ The outbox pattern is critical here: it ensures that both the product write and 
     │  Output: NeMo Guardrails (output rail)         │
     │  Answer includes product citations + stock     │
     │                                                │
-    │  RAGAS evaluation: CI-gated on every push      │
+    │  RAGAS evaluation: nightly CI gate              │
     │  (context precision, recall, faithfulness,     │
     │   answer relevance — all vs thresholds)        │
     └────────────────────────────────────────────────┘
@@ -1464,9 +1483,9 @@ The three-tier classifier is the key cost-efficiency decision: most operational 
 
     Track           Direction          Timeline        Channel
     ──────────────  ─────────────────  ──────────────  ──────────────
-    B2B Payables    Importer→Supplier  -3 days (adv.)  Email+WhatsApp
-    B2B Disputes    Importer→Supplier  On demand        Email+WhatsApp
-    B2B Receivables Importer→Wholesale Day 7/14/21     Email+WhatsApp
+    B2B Payables    Importer→Supplier  -3 days (adv.)  Email (WhatsApp: Wave 1)
+    B2B Disputes    Importer→Supplier  On demand        Email (WhatsApp: Wave 1)
+    B2B Receivables Importer→Wholesale Day 7/14/21     Email (WhatsApp: Wave 1)
     B2C Collections Store→Consumer    Day 3/7/14       Email+SMS
 
     ALL TRACKS:
@@ -1502,7 +1521,7 @@ The dunning engine covering all 6 directions in the capstone is a key architectu
            ▼
     ORDER CONFIRMED                ──► Invoice PDF generated (auto)
                                    ──► Invoice emailed to consumer
-                                   ──► n8n WF-04 triggered
+                                   ──► n8n WF-07 triggered
                                    ──► Payment tracking started
                                    ──► Stock quantity decremented
                                         │
@@ -1518,7 +1537,7 @@ The dunning engine covering all 6 directions in the capstone is a key architectu
                    · Invoice → Paid              B2C Track:
                    · Order → Reconciled          · Day 3: gentle +
                    · Dunning auto-stopped          payment link
-                   · n8n WF-05 triggered         · Day 7: firm
+                   · n8n WF-08 triggered         · Day 7: firm
                    · Receivables updated         · Day 14: final
                          │                       Each → HITL → send
                          ▼
@@ -1559,37 +1578,47 @@ The order lifecycle integrates the storefront, payment gateways, invoice generat
     Enrichment job done    ──►  WF-03: Enrich Done  ──►  Update catalog record
                                                     ──►  Notify importer
 
-    Order placed +         ──►  WF-04: Order        ──►  Generate invoice PDF
+    PO approved (HITL)     ──►  WF-04: PO Send      ──►  Email PO to supplier
+                                                    ──►  Create shipment record
+
+    Shipment arriving      ──►  WF-05: Arrival      ──►  Admin panel notification
+    (daily scheduled)           Alert               ──►  Upcoming arrivals badge
+
+    Goods received         ──►  WF-06: Stock        ──►  Update stock quantities
+    submitted                   Update              ──►  Check reorder thresholds
+                                                    ──►  Flag ordered vs received
+
+    Consumer order +       ──►  WF-07: Order        ──►  Generate invoice PDF
     payment confirmed           Confirmed           ──►  Email invoice to consumer
                                                     ──►  Start payment tracking
 
-    Payment webhook        ──►  WF-05: Payment      ──►  Mark invoice paid
+    Payment webhook        ──►  WF-08: Payment      ──►  Mark invoice paid
     received                    Received            ──►  Stop dunning sequence
                                                     ──►  Update reconciliation
 
-    Invoice due - 3 days   ──►  WF-06: B2B          ──►  Draft payment reminder
+    Invoice due - 3 days   ──►  WF-09: B2B          ──►  Draft payment reminder
                                 Payables Dunning    ──►  HITL queue → send
 
     Consumer overdue:
-    +3 days                ──►  WF-07a: B2C Day 3   ──►  Gentle draft + link
-    +7 days                ──►  WF-07b: B2C Day 7   ──►  Firm draft
-    +14 days               ──►  WF-07c: B2C Day 14  ──►  Final notice
+    +3 days                ──►  WF-10a: B2C Day 3   ──►  Gentle draft + link
+    +7 days                ──►  WF-10b: B2C Day 7   ──►  Firm draft
+    +14 days               ──►  WF-10c: B2C Day 14  ──►  Final notice
 
-    Stock threshold hit    ──►  WF-08: Reorder       ──►  Draft PO (Comm Agent)
+    Stock threshold hit    ──►  WF-11: Reorder       ──►  Draft PO (Comm Agent)
                                 Trigger             ──►  HITL queue → send to supplier
 
-    Wholesale +7 days      ──►  WF-09: B2B Recv D7  ──►  Draft reminder → HITL
-    Wholesale +14 days     ──►  WF-10: B2B Recv D14 ──►  Draft escalated → HITL
-    Wholesale +21 days     ──►  WF-11: B2B Recv D21 ──►  Draft final → HITL
-    Dispute filed          ──►  WF-12: B2B Dispute  ──►  Draft complaint → HITL
+    Wholesale +7 days      ──►  WF-12: B2B Recv D7  ──►  Draft reminder → HITL
+    Wholesale +14 days     ──►  WF-13: B2B Recv D14 ──►  Draft escalated → HITL
+    Wholesale +21 days     ──►  WF-14: B2B Recv D21 ──►  Draft final → HITL
+    Dispute filed          ──►  WF-15: B2B Dispute  ──►  Draft complaint → HITL
 
     ─── Future (Wave 1-3) ────────────────────────────────────────
-    WF-13: WhatsApp Channel Integration
-    WF-14: Marketing Content Scheduling
-    WF-15: Fraud Alert Triage
-    WF-16: Returns Processing
-    WF-17: Supplier Discovery Campaign
-    WF-18: GDPR/Data Erasure Request
+    WF-16: WhatsApp Channel Integration
+    WF-17: Marketing Content Scheduling
+    WF-18: Fraud Alert Triage
+    WF-19: Returns Processing
+    WF-20: Supplier Discovery Campaign
+    WF-21: GDPR/Data Erasure Request
 
     ──────────────────────────────────────────────────────────────
     ALL WORKFLOWS:
@@ -1607,38 +1636,29 @@ n8n was chosen over alternatives (Celery+Beat, Temporal, Prefect) because it pro
 ### 6.11 CI/CD & MLOps Pipeline
 
 ```
-    DEVELOPER PUSHES CODE / OPENS PR
+    DEVELOPER PUSHES CODE
                │
                ▼
     ┌──────────────────────────────────────────────┐
-    │           GITHUB ACTIONS CI                  │
+    │   EVERY PUSH — any branch (< 3 min)          │
     │                                              │
-    │  STATIC ANALYSIS                             │
     │  ① ruff check .          (linting)           │
-    │  ② mypy .                (type checking)     │
+    │  ② mypy --strict .       (type checking)     │
+    │  ③ pytest tests/unit/ -q (LLM mocked)        │
+    └─────────────────┬──────────┬─────────────────┘
+                      │          │
+                   PASS        FAIL
+                      │          │
+                      ▼          ▼
+    ┌──────────────────────────────────────────────┐
+    │   EVERY PR TO MASTER (< 15 min)              │
     │                                              │
-    │  TESTS                                       │
-    │  ③ pytest -q                                 │
-    │     ├── Pydantic schema tests (schema cvg)  │
-    │     ├── Tool logic tests (monkeypatched)    │
-    │     └── E2E agent happy path               │
-    │                                              │
-    │  EVALS (probabilistic — LLM judged)          │
-    │  ④ RAGAS Evaluation vs eval_thresholds.yaml │
-    │     ├── Context precision ≥ threshold        │
-    │     ├── Context recall    ≥ threshold        │
-    │     ├── Faithfulness      ≥ threshold        │
-    │     └── Answer relevance  ≥ threshold        │
-    │                                              │
-    │  ⑤ Classifier Accuracy Gate                 │
-    │     Intent routing accuracy ≥ threshold      │
-    │                                              │
-    │  ⑥ Agent Tool-Selection Test                │
-    │     Known scenarios → correct tool chosen?  │
-    │                                              │
-    │  ⑦ Cross-Tenant Red-Team                   │
-    │     Access Tenant B data as Tenant A         │
+    │  All push gates +                            │
+    │  ④ pytest tests/integration/ (real DB+Redis) │
+    │  ⑤ Cross-Tenant Red-Team (15 vectors)        │
     │     → MUST fail 100% of attempts             │
+    │  ⑥ Agent trajectory snapshot tests           │
+    │     (20 known intents — golden sequences)    │
     └─────────────────┬──────────┬─────────────────┘
                       │          │
                    PASS        FAIL
@@ -1647,6 +1667,25 @@ n8n was chosen over alternatives (Celery+Beat, Temporal, Prefect) because it pro
                MERGE ALLOWED  PR BLOCKED
                               Regression logged
                               in LangSmith
+
+    ─────────────────────────────────────────────────
+    NIGHTLY ON MASTER (expensive — real LLM calls)
+    ─────────────────────────────────────────────────
+
+    ┌──────────────────────────────────────────────┐
+    │  ⑦ RAGAS Evaluation vs eval_thresholds.yaml  │
+    │     ├── Context precision ≥ threshold         │
+    │     ├── Context recall    ≥ threshold         │
+    │     ├── Faithfulness      ≥ threshold         │
+    │     └── Answer relevance  ≥ threshold         │
+    │  ⑧ Classifier F1 gate (F1 macro ≥ 0.85)      │
+    │  ⑨ Drift detection run                        │
+    │     (PSI + chi-square + embedding drift)      │
+    └──────────────────────────────────────────────┘
+
+    Merge to master requires: all PR gates green on
+    current commit AND latest nightly passed within
+    24 hours (or triggered manually).
 
     ─────────────────────────────────────────────────
     MLOPS (running in background continuously)

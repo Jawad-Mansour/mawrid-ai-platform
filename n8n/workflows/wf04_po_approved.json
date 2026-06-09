@@ -1,0 +1,19 @@
+﻿{
+    "name":  "WF-04: PO Approved",
+    "description":  "HITL purchase_order_send approved → send PO email to supplier → update order status to sent",
+    "active":  false,
+    "nodes":  [
+
+              ],
+    "connections":  {
+
+                    },
+    "settings":  {
+                     "executionOrder":  "v1"
+                 },
+    "tags":  [
+                 "mawrid",
+                 "procurement",
+                 "wf-04"
+             ]
+}

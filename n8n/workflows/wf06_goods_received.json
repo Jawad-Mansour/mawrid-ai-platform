@@ -1,0 +1,19 @@
+﻿{
+    "name":  "WF-06: Goods Received",
+    "description":  "Receiving event recorded → update stock qty → update inventory_status → trigger publish flow",
+    "active":  false,
+    "nodes":  [
+
+              ],
+    "connections":  {
+
+                    },
+    "settings":  {
+                     "executionOrder":  "v1"
+                 },
+    "tags":  [
+                 "mawrid",
+                 "procurement",
+                 "wf-06"
+             ]
+}

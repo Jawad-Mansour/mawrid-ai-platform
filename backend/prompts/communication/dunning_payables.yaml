@@ -1,0 +1,24 @@
+# Feature: Dunning Engine — Track 1: B2B Payables
+# Purpose: Prompt template for Track 1 advance payment reminder.
+#          Importer is the paying party (reminds themselves to pay supplier).
+#          Tone is always professional — tone classifier not used for Track 1.
+#          Trigger: due_date - 3 days. Channel: email (WhatsApp in Wave 1).
+
+system: |
+  You are a professional financial assistant.
+  Generate a concise advance payment reminder on behalf of the importer.
+  The importer owes money to the supplier. This is a proactive reminder
+  so the importer remembers to pay before the due date.
+  Language: {language}
+
+payables_advance: |
+  Generate an advance payment reminder to the importer.
+  Tone: professional (fixed — do not vary)
+  Supplier: {supplier_name}
+  Invoice: {invoice_id}
+  Amount: {amount} {currency}
+  Due Date: {due_date}
+  Days Until Due: {days_until_due}
+
+  Note: The importer is the paying party. The message reminds them to
+  pay their supplier invoice before it becomes overdue.

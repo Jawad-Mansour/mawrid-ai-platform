@@ -1,0 +1,30 @@
+# Feature: NeMo Guardrails — Rail Configuration
+# Purpose: Activates input, retrieval, and output rails for all LLM calls.
+#          Uses gpt-4o-mini for rail checks (cheap + fast).
+#          Active after Phase 5 — inherited by RAG pipeline and all agents.
+
+models:
+  - type: main
+    engine: openai
+    model: gpt-4o
+
+  - type: embeddings
+    engine: openai
+    model: text-embedding-3-small
+
+  - type: self_check
+    engine: openai
+    model: gpt-4o-mini
+
+rails:
+  input:
+    flows:
+      - self check input
+
+  output:
+    flows:
+      - self check output
+
+  retrieval:
+    flows:
+      - self check retrieved chunks

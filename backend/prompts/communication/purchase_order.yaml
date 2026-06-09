@@ -1,0 +1,28 @@
+# Feature: Order Management & Procurement — PO Templates
+# Purpose: LLM prompt templates for generating purchase order documents.
+#          Output is a structured PO document (HITL payload) for importer review.
+
+system: |
+  You are a procurement documentation specialist.
+  Generate professional purchase order documents.
+  All amounts must be exact — no rounding or estimation.
+  Language: {language}
+
+draft_po: |
+  Generate a purchase order document for:
+
+  Supplier: {supplier_name}
+  Supplier Address: {supplier_address}
+  Our Company: {tenant_name}
+  PO Number: {po_number}
+  Date: {date}
+
+  Line Items:
+  {line_items_json}
+
+  Payment Terms: {payment_terms}
+  Delivery Address: {delivery_address}
+  Notes: {notes}
+
+  Format as a professional PO document. This will be reviewed by the importer
+  before being sent to the supplier.

@@ -1,0 +1,75 @@
+# Feature: CI/CD — Nightly Gates (Gates 7–9)
+# Purpose: Expensive evals run nightly on master. Gates:
+#   Gate 7: RAGAS evaluation (faithfulness ≥ 0.85, relevancy ≥ 0.80)
+#   Gate 8: Intent classifier F1 ≥ 0.85 on test set (plan.md + CLAUDE.md)
+#   Gate 9: Drift detection (PSI check on all 3 ML models)
+
+name: Nightly Gates (7–9)
+
+on:
+  schedule:
+    - cron: "0 2 * * *"  # 2 AM UTC daily
+  workflow_dispatch:
+
+jobs:
+  gate7-ragas:
+    name: "Gate 7: RAGAS Evaluation"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: mawrid
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: mawrid_test
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - name: Install dependencies
+        run: uv sync --dev
+      - name: Run RAGAS eval
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DATABASE_URL: postgresql+asyncpg://mawrid:password@localhost:5432/mawrid_test
+        run: |
+          uv run pytest backend/tests/evals/ -v --tb=short \
+            --eval-thresholds backend/ml_config/eval_thresholds.yaml
+
+  gate8-classifier-eval:
+    name: "Gate 8: Classifier F1 Evaluation"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - name: Install dependencies
+        run: uv sync --dev
+      - name: Intent classifier F1 check
+        run: |
+          uv run python -m app.ml.intent.trainer --eval-only \
+            --dataset backend/tests/evals/eval_dataset/intent_test_set.json \
+            --threshold 0.85
+      - name: Tone classifier F1 check
+        run: |
+          uv run python -m app.ml.tone.trainer --eval-only \
+            --threshold 0.85
+
+  gate9-drift:
+    name: "Gate 9: Drift Detection (PSI)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [gate7-ragas, gate8-classifier-eval]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - name: Install dependencies
+        run: uv sync --dev
+      - name: Run drift monitor
+        env:
+          DATABASE_URL: postgresql+asyncpg://mawrid:password@localhost:5432/mawrid_test
+        run: |
+          uv run python -m app.ml.drift.monitor \
+            --config backend/ml_config/drift_thresholds.yaml

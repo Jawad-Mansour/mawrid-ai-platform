@@ -1,0 +1,20 @@
+﻿{
+    "name":  "WF-09: Dunning Track 1 — B2B Payables",
+    "description":  "Daily check: supplier invoices due in 3 days → Communication Agent → HITL dunning_payables_advance → email to importer",
+    "active":  false,
+    "nodes":  [
+
+              ],
+    "connections":  {
+
+                    },
+    "settings":  {
+                     "executionOrder":  "v1"
+                 },
+    "tags":  [
+                 "mawrid",
+                 "dunning",
+                 "payables",
+                 "wf-09"
+             ]
+}

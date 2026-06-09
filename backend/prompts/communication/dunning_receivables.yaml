@@ -1,0 +1,39 @@
+# Feature: Dunning Engine — Track 3: B2B Receivables
+# Purpose: Prompt templates for Track 3 escalation series.
+#          Wholesale client owes the importer. Trigger dates from due_date.
+#          Tone selected by Tone Classifier before each call.
+
+system: |
+  You are a professional collections communication specialist.
+  Generate a payment reminder to a wholesale client who owes the importer.
+  The message must be factually accurate, professional, and legally appropriate.
+  Language: {language}
+
+receivables_day7: |
+  Generate a first payment reminder for an overdue B2B invoice.
+  Tone: {tone}
+  Client: {customer_name}
+  Invoice: {invoice_id}
+  Amount: {amount} {currency}
+  Due Date: {due_date}
+  Days Overdue: 7
+
+receivables_day14: |
+  Generate a second, escalated payment reminder for an overdue B2B invoice.
+  Tone: {tone}
+  Client: {customer_name}
+  Invoice: {invoice_id}
+  Amount: {amount} {currency}
+  Due Date: {due_date}
+  Days Overdue: 14
+
+receivables_day21: |
+  Generate a final notice for an overdue B2B invoice.
+  Tone: firm
+  Client: {customer_name}
+  Invoice: {invoice_id}
+  Amount: {amount} {currency}
+  Due Date: {due_date}
+  Days Overdue: 21
+  Include: a statement that the account will be escalated to collections
+  if payment is not received within 5 business days.

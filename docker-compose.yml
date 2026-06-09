@@ -1,0 +1,159 @@
+# Feature: Infrastructure (all features — cross-cutting)
+# Purpose: Local development environment. Starts all required services.
+#          Use `docker compose up -d` to start, `docker compose down` to stop.
+#          All data persisted in named volumes.
+
+services:
+  # ── PostgreSQL + pgvector ──────────────────────────────────────────────────
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: mawrid
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mawrid
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-postgres.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mawrid"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── Redis ──────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── MinIO (S3-compatible storage) ─────────────────────────────────────────
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ── n8n (workflow automation — 15 core workflows) ─────────────────────────
+  n8n:
+    image: n8nio/n8n:latest
+    environment:
+      N8N_BASIC_AUTH_ACTIVE: "true"
+      N8N_BASIC_AUTH_USER: admin
+      N8N_BASIC_AUTH_PASSWORD: password
+      N8N_ENCRYPTION_KEY: dev-encryption-key-change-in-prod
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_DATABASE: n8n
+      DB_POSTGRESDB_USER: mawrid
+      DB_POSTGRESDB_PASSWORD: password
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./n8n/workflows:/home/node/workflows
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── MLflow (experiment tracking) ──────────────────────────────────────────
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.17.0
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["pip install psycopg2-binary boto3 -q && mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri postgresql://mawrid:password@postgres:5432/mlflow --default-artifact-root s3://mlflow/"]
+    environment:
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  # ── HashiCorp Vault (dev mode — prod: use managed) ────────────────────────
+  vault:
+    image: hashicorp/vault:1.18
+    command: server -dev -dev-root-token-id=root
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: root
+    ports:
+      - "8200:8200"
+    cap_add:
+      - IPC_LOCK
+
+  # ── Backend (FastAPI) ────────────────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      DATABASE_URL: postgresql+asyncpg://mawrid:password@postgres:5432/mawrid
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: /opt/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # ── ARQ Worker (enrichment job queue) ─────────────────────────────────────
+  worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      DATABASE_URL: postgresql+asyncpg://mawrid:password@postgres:5432/mawrid
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: /opt/venv/bin/python -m arq app.infra.workers.enrichment_worker.WorkerSettings
+
+  # ── Frontend (Vite + React 18) ────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      VITE_API_URL: http://localhost:8000/api/v1
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  n8n_data:

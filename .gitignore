@@ -1,0 +1,71 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+htmlcov/
+.coverage
+coverage.xml
+
+# ── Environment — never commit real values ────────────────────────────────────
+# .env.example IS committed (contains no real values, only documented names)
+.env
+.env.local
+.env.*.local
+.env.prod
+.env.staging
+
+# ── uv ───────────────────────────────────────────────────────────────────────
+# uv.lock IS committed — ensures reproducible installs across all environments
+# .python-version IS committed — pins interpreter version
+
+# ── ML artifacts — tracked in MLflow registry, not git ───────────────────────
+*.pkl
+*.joblib
+*.onnx
+*.bin
+*.pt
+*.pth
+backend/ml_models/
+mlruns/
+mlflow-artifacts/
+
+# ── Node / Frontend ───────────────────────────────────────────────────────────
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# ── Project planning / internal docs — not for version control ───────────────
+resources/
+
+# ── Docker named volumes (data written at runtime) ───────────────────────────
+postgres_data/
+redis_data/
+minio_data/
+n8n_data/
+vault/data/
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── IDE ──────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*.suo
+
+# ── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+Thumbs.db
+desktop.ini

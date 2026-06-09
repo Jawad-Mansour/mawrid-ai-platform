@@ -1,0 +1,20 @@
+# Feature: Model Health & Drift Detection
+# Purpose: PSI thresholds for model drift alerts. Nightly CI Gate 9 reads
+#          these values and triggers n8n WF-15 (alert) on breach.
+# Models: intent_classifier, tone_classifier, supplier_scorer
+
+models:
+  intent_classifier:
+    psi_warning: 0.10   # PSI > 0.10 → warning log
+    psi_severe: 0.20    # PSI > 0.20 → alert via WF-15 + retrain trigger
+    f1_floor: 0.85      # F1 below this on eval set → alert
+
+  tone_classifier:
+    psi_warning: 0.10
+    psi_severe: 0.20
+    f1_floor: 0.80
+
+  supplier_scorer:
+    psi_warning: 0.10
+    psi_severe: 0.20
+    mae_floor: 5.0      # MAE above this (score points) → alert

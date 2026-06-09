@@ -1,0 +1,19 @@
+﻿{
+    "name":  "WF-03: Enrichment Complete",
+    "description":  "Enrichment job finished → update product status → notify importer → ready for ordering",
+    "active":  false,
+    "nodes":  [
+
+              ],
+    "connections":  {
+
+                    },
+    "settings":  {
+                     "executionOrder":  "v1"
+                 },
+    "tags":  [
+                 "mawrid",
+                 "enrichment",
+                 "wf-03"
+             ]
+}

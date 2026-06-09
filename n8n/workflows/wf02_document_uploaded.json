@@ -1,0 +1,19 @@
+﻿{
+    "name":  "WF-02: Document Uploaded",
+    "description":  "Product document uploaded to MinIO → trigger enrichment job → ARQ queue → status update",
+    "active":  false,
+    "nodes":  [
+
+              ],
+    "connections":  {
+
+                    },
+    "settings":  {
+                     "executionOrder":  "v1"
+                 },
+    "tags":  [
+                 "mawrid",
+                 "enrichment",
+                 "wf-02"
+             ]
+}

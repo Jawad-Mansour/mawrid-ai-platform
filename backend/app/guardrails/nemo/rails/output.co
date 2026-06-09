@@ -1,0 +1,24 @@
+# Feature: NeMo Guardrails — Output Rail (Colang)
+# Purpose: Self-check grounding and hallucination guard on all LLM responses.
+#          Storefront chatbot must not reveal cost/margin/supplier data.
+#          Admin chatbot scope: enriched products only (not published status).
+#          Consumer chatbot scope: published products only (not cost/margin).
+
+define flow self check output
+  $grounded = execute self_check_output
+  if not $grounded
+    bot say "I can only provide information based on the available product data. I don't have enough information to answer that accurately."
+    stop
+
+define bot leak supplier info
+  "the cost price is"
+  "we pay the supplier"
+  "our margin is"
+  "purchase price"
+
+define flow block supplier data in storefront
+  $is_storefront = execute check_chatbot_scope
+  if $is_storefront
+    bot leak supplier info
+    bot say "I can only share publicly available product information."
+    stop

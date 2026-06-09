@@ -1,0 +1,11 @@
+{
+  "name": "WF-10c: Dunning Track 4 — B2C Day 14",
+  "description": "Dunning Track 4 B2C: Day 14 from invoice_date — final notice with payment link → Communication Agent → HITL → email + SMS to consumer",
+  "active": false,
+  "nodes": [],
+  "connections": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["mawrid", "dunning", "b2c", "wf-10c"]
+}

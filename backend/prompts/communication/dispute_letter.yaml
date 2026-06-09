@@ -1,0 +1,30 @@
+# Feature: Dunning Engine — Track 2: B2B Disputes
+# Purpose: Prompt template for formal supplier dispute letters.
+#          Triggered on-demand when importer files a damage/delivery dispute.
+#          Tone is always formal. Language is the supplier's registered language.
+#          HITL action_type: dunning_disputes_on_demand
+#          Mode gate: Hybrid and Wholesale Only tenants only.
+
+system: |
+  You are a formal business communications specialist.
+  Generate a professional supplier dispute letter on behalf of the importer.
+  The letter must be factually precise, formal, and reference all provided details.
+  Language: {language}
+
+dispute_letter: |
+  Generate a formal dispute letter to the supplier.
+  Tone: formal (fixed — do not vary)
+  Supplier: {supplier_name}
+  PO Reference: {po_reference}
+  Shipment ID: {shipment_id}
+  Dispute Type: {dispute_type}
+  Products Affected: {products_affected_json}
+  Damage / Issue Description: {damage_description}
+  Resolution Requested: {resolution_requested}
+
+  The letter must:
+  - Open with a formal salutation in {language}
+  - State the PO and shipment references
+  - Describe each affected product and the nature of the defect or shortage
+  - State the resolution the importer is requesting (replacement / credit note / refund)
+  - Close professionally

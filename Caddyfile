@@ -1,0 +1,38 @@
+# Feature: Infrastructure — TLS Reverse Proxy
+# Purpose: Caddy reverse proxy config for production. Handles TLS termination,
+#          API routing, and frontend serving. Replace {$DOMAIN} with actual domain.
+
+{$DOMAIN} {
+    # API routes → backend
+    handle /api/* {
+        reverse_proxy backend:8000
+    }
+
+    # Webhook routes → backend (no auth stripping)
+    handle /webhooks/* {
+        reverse_proxy backend:8000
+    }
+
+    # Health check → backend
+    handle /health {
+        reverse_proxy backend:8000
+    }
+
+    # All other routes → frontend
+    handle {
+        reverse_proxy frontend:3000
+    }
+
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy strict-origin-when-cross-origin
+    }
+
+    # Access logs
+    log {
+        output file /var/log/caddy/access.log
+    }
+}

@@ -1,0 +1,96 @@
+# Feature: CI/CD — PR Gates (Gates 4–6, target < 15 min)
+# Purpose: Full test suite on PR to master. Gates:
+#   Gate 4: Integration tests (real PostgreSQL + Redis via services)
+#   Gate 5: Cross-tenant red-team (15 attack vectors — ANY pass = CI hard fail)
+#   Gate 6: Agent trajectory snapshots (golden node sequence per intent)
+
+name: PR Gates (4–6)
+
+on:
+  pull_request:
+    branches: [master]
+
+jobs:
+  gate4-integration:
+    name: "Gate 4: Integration Tests"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: mawrid
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: mawrid_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - name: Install dependencies
+        run: uv sync --dev
+      - name: Run migrations
+        env:
+          DATABASE_URL_SYNC: postgresql://mawrid:password@localhost:5432/mawrid_test
+        run: uv run alembic upgrade head
+      - name: Run integration tests
+        env:
+          DATABASE_URL: postgresql+asyncpg://mawrid:password@localhost:5432/mawrid_test
+          REDIS_URL: redis://localhost:6379/0
+        run: uv run pytest backend/tests/integration/ -v --tb=short
+
+  gate5-tenant-isolation:
+    name: "Gate 5: Tenant Isolation (15 Vectors)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: gate4-integration
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: mawrid
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: mawrid_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - name: Install dependencies
+        run: uv sync --dev
+      - name: Run tenant isolation tests
+        env:
+          DATABASE_URL: postgresql+asyncpg://mawrid:password@localhost:5432/mawrid_test
+        run: uv run pytest backend/tests/integration/test_cross_tenant.py -v
+
+  gate6-agent-snapshots:
+    name: "Gate 6: Agent Trajectory Snapshots"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: gate4-integration
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - name: Install dependencies
+        run: uv sync --dev
+      - name: Run agent trajectory snapshot tests
+        run: uv run pytest backend/tests/evals/test_agent_trajectories.py -v --tb=short

@@ -1,0 +1,28 @@
+# Feature: Storefront — Consumer Fulfillment Notifications
+# Purpose: Prompt template for consumer order fulfillment notifications.
+#          Triggered when a consumer order is fulfilled/shipped.
+#          Channel: email in capstone. WhatsApp in Wave 1.
+#          HITL action_type: fulfillment_notification
+
+system: |
+  You are a friendly e-commerce customer service assistant.
+  Generate a fulfillment notification for a consumer order.
+  Be warm, concise, and include all tracking details provided.
+  Language: {language}
+
+order_shipped: |
+  Generate an order shipped notification.
+  Customer: {customer_name}
+  Order: {order_id}
+  Items: {items_summary}
+  Estimated Delivery: {estimated_delivery_date}
+  Tracking Number: {tracking_number}
+  Carrier: {carrier_name}
+
+order_delivered: |
+  Generate an order delivered confirmation.
+  Customer: {customer_name}
+  Order: {order_id}
+  Delivered On: {delivered_date}
+  Items: {items_summary}
+  Include: a brief invitation to contact support if anything is wrong.

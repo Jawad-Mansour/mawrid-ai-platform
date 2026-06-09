@@ -1,0 +1,20 @@
+﻿{
+    "name":  "WF-15: Dunning Track 2 — Dispute Filed",
+    "description":  "Importer files supplier dispute → Communication Agent → HITL dunning_disputes_on_demand → formal complaint email in supplier language",
+    "active":  false,
+    "nodes":  [
+
+              ],
+    "connections":  {
+
+                    },
+    "settings":  {
+                     "executionOrder":  "v1"
+                 },
+    "tags":  [
+                 "mawrid",
+                 "dunning",
+                 "disputes",
+                 "wf-15"
+             ]
+}

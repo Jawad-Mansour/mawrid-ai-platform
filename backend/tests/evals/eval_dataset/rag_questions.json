@@ -1,0 +1,43 @@
+[
+  {
+    "id": "rq-001",
+    "question": "What is the unit price of Barada mineral water 500ml?",
+    "ground_truth": "The unit price of Barada mineral water 500ml is listed in the catalog.",
+    "context_required": ["product_catalog"],
+    "scope": "admin",
+    "category": "price_inquiry"
+  },
+  {
+    "id": "rq-002",
+    "question": "Which products are currently out of stock?",
+    "ground_truth": "Products with inventory_status='out_of_stock' are listed.",
+    "context_required": ["inventory"],
+    "scope": "admin",
+    "category": "stock_check"
+  },
+  {
+    "id": "rq-003",
+    "question": "What cleaning products do you carry?",
+    "ground_truth": "Published cleaning products are listed for the storefront customer.",
+    "context_required": ["published_products"],
+    "scope": "storefront",
+    "category": "product_search"
+  },
+  {
+    "id": "rq-004",
+    "question": "What are the specifications of the Ariel 2kg detergent?",
+    "ground_truth": "Specifications extracted during enrichment phase.",
+    "context_required": ["product_specs"],
+    "scope": "admin",
+    "category": "product_search"
+  },
+  {
+    "id": "rq-005",
+    "question": "كم سعر زيت الزيتون؟",
+    "ground_truth": "Price of olive oil product from catalog.",
+    "context_required": ["product_catalog"],
+    "scope": "storefront",
+    "category": "price_inquiry",
+    "language": "arabic"
+  }
+]

@@ -1,0 +1,20 @@
+﻿{
+    "name":  "WF-08: Payment Received",
+    "description":  "Payment webhook verified → mark invoice paid → auto-stop all active dunning sequences for invoice",
+    "active":  false,
+    "nodes":  [
+
+              ],
+    "connections":  {
+
+                    },
+    "settings":  {
+                     "executionOrder":  "v1"
+                 },
+    "tags":  [
+                 "mawrid",
+                 "payments",
+                 "dunning",
+                 "wf-08"
+             ]
+}

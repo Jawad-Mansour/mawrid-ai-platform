@@ -1,0 +1,21 @@
+# Feature: CI Quality Gates / RAGAS Evaluation
+# Purpose: Minimum score thresholds for CI Gate 7 (nightly eval suite).
+#          All thresholds must pass before master branch is considered healthy.
+#          RAGAS evaluated against tests/evals/eval_dataset/rag_questions.json.
+
+ragas:
+  faithfulness: 0.85       # LLM answers must be grounded in retrieved context
+  answer_relevancy: 0.80   # Answer must address the question
+  context_precision: 0.75  # Retrieved chunks must be relevant
+  context_recall: 0.80     # Relevant chunks must be retrieved
+
+intent_classifier:
+  weighted_f1: 0.90        # Tier 1 (TF-IDF+LR) on held-out test set
+  per_class_f1_floor: 0.80 # No single class below this
+
+tone_classifier:
+  weighted_f1: 0.85
+  per_class_f1_floor: 0.78
+
+supplier_scorer:
+  test_mae: 4.0            # Score points — lower is better

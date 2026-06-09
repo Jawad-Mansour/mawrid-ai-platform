@@ -1,0 +1,19 @@
+﻿{
+    "name":  "WF-07: Order Confirmed",
+    "description":  "Consumer order placed and confirmed → generate invoice → trigger B2C dunning sequence",
+    "active":  false,
+    "nodes":  [
+
+              ],
+    "connections":  {
+
+                    },
+    "settings":  {
+                     "executionOrder":  "v1"
+                 },
+    "tags":  [
+                 "mawrid",
+                 "storefront",
+                 "wf-07"
+             ]
+}

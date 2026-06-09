@@ -1,0 +1,20 @@
+﻿{
+    "name":  "WF-14: Dunning Track 3 — Receivables Day 21",
+    "description":  "B2B Receivables: Day 21 overdue from due_date → final notice → HITL dunning_receivables_day21 → email",
+    "active":  false,
+    "nodes":  [
+
+              ],
+    "connections":  {
+
+                    },
+    "settings":  {
+                     "executionOrder":  "v1"
+                 },
+    "tags":  [
+                 "mawrid",
+                 "dunning",
+                 "receivables",
+                 "wf-14"
+             ]
+}

@@ -1,0 +1,20 @@
+﻿{
+    "name":  "WF-13: Dunning Track 3 — Receivables Day 14",
+    "description":  "B2B Receivables: Day 14 overdue from due_date → Tone Classifier → Communication Agent → HITL dunning_receivables_day14",
+    "active":  false,
+    "nodes":  [
+
+              ],
+    "connections":  {
+
+                    },
+    "settings":  {
+                     "executionOrder":  "v1"
+                 },
+    "tags":  [
+                 "mawrid",
+                 "dunning",
+                 "receivables",
+                 "wf-13"
+             ]
+}

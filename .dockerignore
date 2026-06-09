@@ -1,0 +1,53 @@
+# ── Git ──────────────────────────────────────────────────────────────────────
+.git/
+.gitignore
+
+# ── Secrets — never bake into image ──────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+.env.prod
+.env.staging
+
+# ── Virtual environment — rebuilt inside image by uv sync ────────────────────
+.venv/
+
+# ── Python build artifacts ───────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# ── Not needed in backend image ──────────────────────────────────────────────
+frontend/
+node_modules/
+
+# ── Documentation — not needed at runtime ────────────────────────────────────
+specs/
+resources/
+*.md
+LICENSE
+Caddyfile
+
+# ── CI/CD config — not needed at runtime ─────────────────────────────────────
+.github/
+.claude/
+
+# ── Scripts — init-postgres.sql is mounted separately in compose ──────────────
+scripts/
+
+# ── Test files — run in CI, not needed in production image ───────────────────
+backend/tests/
+
+# ── ML artifacts — loaded from MLflow registry at startup, not baked in ──────
+backend/ml_models/
+mlruns/
+
+# ── n8n workflow exports — not needed by backend ─────────────────────────────
+n8n/
+
+# ── Docker Compose files — not needed inside image ───────────────────────────
+docker-compose*.yml

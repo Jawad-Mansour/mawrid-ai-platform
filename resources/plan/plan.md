@@ -32,10 +32,6 @@ One FastAPI application, one Docker Compose stack, strict internal module bounda
 mawrid-ai-platform/
 │
 ├── backend/
-│   ├── pyproject.toml                    # uv project file: all Python deps + tool config (ruff, mypy, pytest)
-│   ├── uv.lock                           # Lockfile — committed to git, reproducible installs across all envs
-│   ├── .python-version                   # Python version pin: "3.11"
-│   │
 │   ├── app/
 │   │   │
 │   │   ├── api/                          # HTTP layer: routing, request parsing, response shaping only
@@ -104,6 +100,7 @@ mawrid-ai-platform/
 │   │   │   │   │   ├── customer.py       #     Customers
 │   │   │   │   │   ├── hitl.py           #     HitlActions
 │   │   │   │   │   ├── storefront.py     #     ConsumerOrders, ConsumerOrderItems
+│   │   │   │   │   ├── graph.py          #     GraphEdges (product→supplier→category knowledge graph edges for GraphRAG)
 │   │   │   │   │   └── outbox.py         #     Outbox table (embedding events awaiting relay)
 │   │   │   │   └── repos/                #   Repository: one per aggregate, inherits TenantRepository
 │   │   │   │       ├── product_repo.py
@@ -221,7 +218,7 @@ mawrid-ai-platform/
 │   │   │   ├── test_outbox_relay.py       #   Crash + restart → no duplicates, no missing embeddings
 │   │   │   └── test_procurement_flow.py   #   Draft → submit → Place Order → HITL → PO → ship → receive → publish
 │   │   │
-│   │   └── evals/                        # Probabilistic — run nightly on main, never on every commit
+│   │   └── evals/                        # Probabilistic — run nightly on master, never on every commit
 │   │       ├── test_rag_quality.py        #   RAGAS: context_precision, context_recall, faithfulness, relevancy
 │   │       ├── test_agent_trajectories.py #   Snapshot: golden node sequence per intent (20 scenarios)
 │   │       ├── test_intent_classifier.py  #   F1 macro ≥ 0.85 on held-out test set
@@ -243,7 +240,7 @@ mawrid-ai-platform/
 │   │       ├── dunning_receivables.yaml   #   Track 3: B2B receivables escalation series (tone from classifier)
 │   │       ├── dunning_b2c.yaml           #   Track 4: B2C collections with payment link injection
 │   │       ├── dispute_letter.yaml        #   Track 2: formal complaint to supplier in their language
-│   │       └── fulfillment_notification.yaml  # Consumer fulfillment notification (email + WhatsApp)
+│   │       └── fulfillment_notification.yaml  # Consumer fulfillment notification (email in capstone; WhatsApp in Wave 1)
 │   │
 │   └── Dockerfile
 │
@@ -306,12 +303,15 @@ mawrid-ai-platform/
 ├── .github/
 │   └── workflows/
 │       ├── push.yml                      # Every push: lint + mypy + unit tests (< 3 min)
-│       ├── pr.yml                        # PR to main: + integration + red-team + snapshots (< 15 min)
-│       └── nightly.yml                   # Nightly on main: RAGAS + F1 + drift detection
+│       ├── pr.yml                        # PR to master: + integration + red-team + snapshots (< 15 min)
+│       └── nightly.yml                   # Nightly on master: RAGAS + F1 + drift detection
 │
 ├── .claude/
 │   └── commands/                         # Claude Code skills (Phase 0)
 │
+├── pyproject.toml                        # uv project file: all Python deps + tool config (ruff, mypy, pytest)
+├── uv.lock                               # Lockfile — committed to git, reproducible installs across all envs
+├── .python-version                       # Python version pin: "3.11"
 ├── .env.example                          # All env vars documented with descriptions — no real values, committed
 ├── docker-compose.yml                    # Local dev: all services with health checks
 ├── docker-compose.prod.yml               # Production overrides
@@ -356,12 +356,12 @@ These headers are written when the file is created. They are updated when the fi
 From the bootcamp coding guidelines, applied throughout the project:
 
 **Package Manager: uv (mandatory — no pip, no poetry, no conda)**
-- All dependencies in `backend/pyproject.toml`
-- `uv sync` to install (CI and local)
-- `uv run <command>` to run any tool: `uv run pytest`, `uv run ruff check .`, `uv run mypy --strict .`
-- `uv.lock` committed to git — ensures identical installs across local, CI, and production
-- `backend/.python-version` pins `3.11`
-- Dockerfile: `RUN pip install uv && uv sync --frozen` (no pip usage after this line)
+- All dependencies in `pyproject.toml` at the project root
+- `uv sync` to install (CI and local) — run from project root always
+- `uv run <command>` to run any tool from project root: `uv run pytest`, `uv run ruff check .`, `uv run mypy --strict .`
+- `uv.lock` committed to git at project root — ensures identical installs across local, CI, and production
+- `.python-version` at project root pins `3.11`
+- Dockerfile: `COPY pyproject.toml uv.lock .python-version ./` then `RUN pip install uv && uv sync --frozen`
 
 **Python:**
 - Python 3.11, type annotations everywhere, `mypy --strict` must pass
@@ -370,6 +370,11 @@ From the bootcamp coding guidelines, applied throughout the project:
 - SQLAlchemy 2.0 async session — no raw SQL that bypasses RLS
 - `random_state=42` on all ML training operations for reproducibility
 - Structured logging via `structlog` — every log includes `request_id`, `tenant_id`, `latency_ms`
+
+**Version pinning (critical libraries with known breaking changes between patch versions):**
+- `langgraph==0.2.x` — pin exact minor, not `>=0.2`; breaking API changes observed between 0.1 and 0.2
+- `langgraph-checkpoint-redis==0.2.x` — must match langgraph minor version exactly
+- Use `uv add langgraph==0.2.x langgraph-checkpoint-redis==0.2.x` — do not allow uv to float to latest
 
 **Repository pattern:**
 ```
@@ -407,7 +412,7 @@ TenantRepository (base)
 
 **Question answered: CI/CD on every push, or only at the end?**
 
-Fast deterministic gates run on **every push to every branch**. Slow probabilistic evals run **nightly on main**. Merge to main is blocked until both the push gates and the latest nightly eval pass.
+Fast deterministic gates run on **every push to every branch**. Slow probabilistic evals run **nightly on master**. Merge to master is blocked until both the push gates and the latest nightly eval pass.
 
 ```
 Every push (any branch) — must complete in < 3 minutes:
@@ -415,18 +420,18 @@ Every push (any branch) — must complete in < 3 minutes:
   Gate 2: uv run mypy --strict .
   Gate 3: uv run pytest tests/unit/ (LLM mocked, ~200 tests, < 60 seconds)
 
-Every PR to main — must complete in < 15 minutes:
+Every PR to master — must complete in < 15 minutes:
   All push gates +
   Gate 4: uv run pytest tests/integration/ (real DB + Redis, no LLM)
   Gate 5: cross-tenant red-team (15 attack vectors — ANY pass = hard fail)
   Gate 6: agent trajectory snapshot tests (20 known scenarios)
 
-Nightly on main — expensive, slow, probabilistic:
+Nightly on master — expensive, slow, probabilistic:
   Gate 7: uv run pytest tests/evals/test_rag_quality.py (RAGAS, real LLM)
   Gate 8: uv run pytest tests/evals/test_intent_classifier.py (F1 macro ≥ 0.85)
   Gate 9: drift detection run — fires alert if PSI > 0.2 or chi-square p < 0.01
 
-Merge to main requires:
+Merge to master requires:
   All PR gates green on current commit +
   Nightly eval passed within last 24 hours (or triggered manually)
 ```
@@ -475,6 +480,13 @@ Phase 13 — Full CI/CD Quality Gates
 Phase 14 — Production Deployment
 ```
 
+**Progressive build note (12-day timeline):**
+Phases 12, 13, and 14 are NOT built in isolation at the end — they grow throughout:
+- MLflow + LangSmith: running from Phase 1. Phase 12 only adds drift detection + governance rules.
+- CI gates: Gate 1–3 wired in Phase 1, grow each phase. Phase 13 only audits all 9 catch their target.
+- VPS server setup (Phase 14.1): started during Phase 9 in parallel. Phase 14 is final deploy + smoke test.
+This means the last day is deploy + verify, not "build three phases in one day."
+
 ---
 
 ## Phase 0 — Spec & Skills Setup
@@ -486,12 +498,14 @@ Phase 14 — Production Deployment
 - [ ] Create `specs/constitution.md` — project principles, hard constraints, non-negotiables (multi-tenant isolation, HITL on all external writes, no hardcoded secrets, async everywhere, no raw queries bypassing RLS, enrichment ≠ storefront)
 - [ ] Create `specs/features/enrichment.md` — full spec for catalog enrichment pipeline (internal catalog)
 - [ ] Create `specs/features/procurement.md` — full spec for order draft, PO, shipment tracking, goods received, storefront publishing
-- [ ] Create `specs/features/dunning.md` — full spec for dunning engine (4 tracks, all money flows, HITL at every stage)
+- [ ] Create `specs/features/dunning.md` — full spec for dunning engine (4 tracks, all money flows, HITL at every stage; channels: email only in capstone, WhatsApp in Wave 1)
 - [ ] Create `specs/features/supplier.md` — full spec for supplier intelligence + customer management
 - [ ] Create `specs/features/rag.md` — full spec for RAG pipeline and AI chatbot
-- [ ] Create `specs/features/storefront.md` — full spec for e-commerce storefront and checkout
+- [ ] Create `specs/features/storefront.md` — full spec for e-commerce storefront and checkout (include: consumer order language defaults to tenant storefront language)
+- [ ] Create `specs/features/hitl.md` — full spec for HITL gate: all action types, all statuses, expiry rules, HITL Rule; **keyboard shortcuts (A=Approve, R=Reject, E=Edit) are required acceptance criteria**
+- [ ] Create `specs/features/agentic.md` — agent topology, Supervisor pattern, checkpoint strategy, MCP tools
 - [ ] Each spec contains: what it does, who uses it, inputs, outputs, edge cases, failure modes, acceptance criteria
-- [ ] Review all specs against `understanding_brainstorm/approved.md` — confirm no contradictions
+- [ ] Review all specs against `resources/understanding_brainstorm/approved.md` — confirm no contradictions
 
 **Verify 0.1:** Every core feature has a written spec. Acceptance criteria are measurable, not vague.
 
@@ -508,6 +522,50 @@ Phase 14 — Production Deployment
 - [ ] Document each skill with: trigger, what it does, expected output
 
 **Verify 0.2:** Each skill invoked successfully. Each returns a clear pass/fail result.
+
+### 0.3 — Synthetic Training Data (Tone Classifier)
+
+*The tone classifier (Phase 6.2) requires 200+ labeled examples across 3 classes. A new project has zero real invoice history. Generate synthetically now — blocking if left to Phase 6.*
+
+- [ ] Write a script `scripts/generate_tone_data.py` that creates realistic invoice/customer/overdue scenarios
+- [ ] Each scenario has: days_overdue (0-90), customer_segment (VIP/Regular/At-Risk/Dormant), overdue_amount, payment_history_score (0.0-1.0), previous_dunning_count
+- [ ] Label each scenario: gentle / neutral / firm using deterministic rules (these become the ground truth)
+  - **Evaluation order: conditions are checked in priority sequence — first match wins. Rules are mutually exclusive by design.**
+  - Priority 1 → gentle: days_overdue ≤ 7 (barely overdue — always gentle regardless of segment)
+  - Priority 2 → gentle: customer_segment = VIP (relationship preservation — always gentle regardless of history)
+  - Priority 3 → firm: (customer_segment = At-Risk OR customer_segment = Dormant) AND days_overdue ≥ 14 AND previous_dunning_count ≥ 2
+  - Priority 4 → gentle: payment_history_score ≥ 0.8 (historically reliable payer — gentle if not already firm)
+  - Default → neutral: everything else
+- [ ] Generate minimum 80 examples per class (240 total) with realistic variation
+- [ ] Save to `backend/tests/evals/eval_dataset/tone_training_data.json`
+- [ ] Verify class distribution is balanced before SMOTE
+
+**Verify 0.3:** 240 labeled examples generated. All 3 classes represented. File committed to repo.
+
+---
+
+### 0.4 — Synthetic Training Data (Intent Classifier)
+
+*The intent classifier (Phase 8.1) requires 150+ labeled examples per class. Same cold-start problem as the tone classifier — solve it now, not in Phase 8 when the build clock is running.*
+
+- [ ] Define all intent classes covering the full platform (minimum 8 classes):
+  - `product_search` — "do you have Samsung TVs?", "show me fridges under $500"
+  - `order_status` — "what's the status of my order?", "where is PO-123?"
+  - `stock_check` — "how many units of X do I have?", "what's my current inventory?"
+  - `shipment_status` — "where is my LG shipment?", "when does the container arrive?"
+  - `invoice_query` — "which invoices are overdue?", "show me unpaid B2B invoices"
+  - `dunning_action` — "stop dunning on invoice 456", "manually trigger Track 3"
+  - `complex_task` — "find me a new appliance supplier and draft outreach", multi-step requests
+  - `out_of_scope` — "what's the weather?", "write me a poem", off-topic queries
+- [ ] Write `scripts/generate_intent_data.py` — produces labeled examples per class
+- [ ] Each example: `{"text": "...", "intent": "product_search", "source": "synthetic"}`
+- [ ] Labeling is deterministic: keyword patterns + sentence templates, not LLM-generated (no randomness in ground truth)
+- [ ] Generate minimum 150 examples per class (1200+ total) with realistic variation in phrasing (Arabic/French/English mixed)
+- [ ] Include hard negatives: near-identical phrases with different intents (e.g., "how many did I order?" vs "how many do I have?" → order_status vs stock_check)
+- [ ] Save to `backend/tests/evals/eval_dataset/intent_training_data.json`
+- [ ] Split: 80% train / 20% held-out test — held-out set used by CI Gate 8
+
+**Verify 0.4:** 1200+ labeled examples generated. All classes balanced. Train/test split saved. File committed to repo.
 
 ---
 
@@ -551,14 +609,14 @@ Phase 14 — Production Deployment
 - [ ] Gate 3: `uv run pytest tests/unit/` — even if only 1 smoke test exists yet; grows as phases complete
 - [ ] Total runtime < 3 minutes
 
-**PR gate (PRs to main, < 15 minutes):**
+**PR gate (PRs to master, < 15 minutes):**
 - [ ] GitHub Actions workflow file: `.github/workflows/pr.yml`
-- [ ] Triggers on pull_request targeting main only
+- [ ] Triggers on pull_request targeting master only
 - [ ] Runs all push gates first
 - [ ] Gate 4: pytest tests/integration/ (added once Phase 1 integration tests exist)
 - [ ] Gate 5: cross-tenant red-team test (added in Phase 13 — wired here as a placeholder that passes with 0 tests)
 - [ ] Gate 6: agent trajectory snapshots (added in Phase 8)
-- [ ] Merge to main blocked until all PR gates pass
+- [ ] Merge to master blocked until all PR gates pass
 
 **Nightly eval gate (main branch, once per night):**
 - [ ] GitHub Actions workflow file: `.github/workflows/nightly.yml`
@@ -566,47 +624,72 @@ Phase 14 — Production Deployment
 - [ ] Gate 7: RAGAS eval (added Phase 4 — real LLM calls, checks eval_thresholds.yaml)
 - [ ] Gate 8: intent classifier F1 eval (added Phase 8)
 - [ ] Gate 9: drift detection run (added Phase 12)
-- [ ] Failure posts to Slack/Telegram channel
+- [ ] Failure posts to Telegram channel (pick one: Telegram — consistent with Phase 14.5 Uptime Kuma alerts)
 
-**Verify 1.2:** Push a file with a lint error → push gate fails in < 60 seconds. Fix it → green. Confirm three separate workflow files exist.
+**Pre-commit hooks (local enforcement before push):**
+- [ ] `pre-commit` package added to dev dependencies in `pyproject.toml`
+- [ ] `.pre-commit-config.yaml` created at project root with two hooks:
+  - `ruff` (lint + format) — runs on every `git commit`
+  - `mypy --strict` — runs on every `git commit`
+- [ ] `uv run pre-commit install` run once after repo clone (documented in README / onboarding notes)
+- [ ] Hooks confirmed working: commit a file with a type error → commit rejected locally before push
+
+**Verify 1.2:** Push a file with a lint error → push gate fails in < 60 seconds. Fix it → green. Confirm three separate workflow files exist. Pre-commit hook rejects a bad commit locally.
 
 ### 1.3 Multi-Tenant Auth & Isolation
 
 - [ ] Tenant table exists (root table — no tenant_id on itself)
 - [ ] User table exists (linked to tenant)
+- [ ] Password hashing: **argon2id** via `passlib[argon2]` — never bcrypt, never plain SHA-256 for passwords
+- [ ] JWT signing: **RS256** asymmetric — private key loaded from Vault at startup, never hardcoded
 - [ ] JWT issued on login contains: user_id, tenant_id, role
+- [ ] Access token expiry: **15 minutes**. Refresh token expiry: **7 days** with rotation on every use
+- [ ] Refresh token stored as `httpOnly` cookie (not localStorage). Access token kept in memory only
+- [ ] Public JWKS endpoint: `GET /auth/.well-known/jwks.json` — exposes RS256 public key for future federation
 - [ ] Every authenticated route extracts tenant_id from JWT — never from request body
 - [ ] PostgreSQL Row-Level Security enabled on every table that has a tenant_id
 - [ ] Repository base class: every query automatically scoped to current tenant — no raw queries bypass this
 - [ ] MinIO: each tenant gets an isolated bucket at provisioning
-- [ ] Redis: each tenant's keys use a namespace prefix
+- [ ] Redis: each tenant's keys namespaced as `mawrid:{tenant_id}:{resource_type}:{id}` — prevents cross-tenant key collision
+- [ ] CORS: `CORSMiddleware` configured with tenant's registered domain only — wildcard `*` never acceptable
 - [ ] Cross-tenant test: Tenant A user requests Tenant B's resources → returns 404 or 403, never the actual data
 - [ ] Cross-tenant test added to CI — fails the build if any cross-tenant access succeeds
 
-**Verify 1.3:** Two real tenants exist. Tenant A cannot read, write, search, or download anything belonging to Tenant B through any path.
+**Operational mode gating:**
+- [ ] `operational_mode` field on tenant record: `hybrid | wholesale_only | retail_only`
+- [ ] FastAPI dependency `require_mode(*modes)` — raises 403 if tenant's mode is not in the allowed list
+- [ ] Storefront routes (`/store/...`) gated with `require_mode("hybrid", "retail_only")` — Wholesale Only tenants get 403
+- [ ] B2C dunning routes gated with `require_mode("hybrid", "retail_only")`
+- [ ] B2B Disputes track gated with `require_mode("hybrid", "wholesale_only")`
+- [ ] Mode enforced on the backend — frontend reads mode from `/auth/me` and hides irrelevant nav items, but backend is the authority
+
+**Verify 1.3:** Two real tenants exist. Tenant A cannot read, write, search, or download anything belonging to Tenant B through any path. Wholesale-Only tenant receives 403 on any storefront route.
 
 ### 1.4 Core Database Schema
 
 - [ ] All tables created via Alembic migrations:
-  - tenants, users
+  - tenants (includes `operational_mode` field: hybrid / wholesale_only / retail_only), users
   - products (enrichment_status, inventory_status, storefront_status — three independent state machines)
+    - `barcode` field (nullable string — EAN-13/UPC/Code-128/QR; not SKU; lookup by this field in Phase 2.6)
+    - `price_history` JSONB field — array of `{price, currency, observed_at}` entries; current price = last entry
+    - `reorder_threshold` integer field (nullable — set per product for Stock Monitor in Phase 7.7)
   - order_drafts, order_draft_items
   - purchase_orders, purchase_order_items
   - shipments (status: pending / shipped / in_transit / at_customs / arrived)
-  - goods_received, goods_received_items
-  - orders (consumer orders), invoices
-  - suppliers, customers
+  - goods_received, goods_received_items (includes `qty_damaged` field)
+  - orders (consumer orders, includes `language` field — set at checkout to tenant storefront language), invoices
+  - suppliers (includes `language` field: ar/fr/en), customers (includes `segment` and `language` fields)
   - dunning_sequences
   - hitl_actions (id, tenant_id, action_type, status, payload JSONB, created_at, actioned_at, expires_at)
   - outbox
-  - graph_edges
+  - graph_edges (tenant_id, source_product_id, target_product_id, edge_type: same_category/same_supplier/related)
 - [ ] pgvector extension active
-- [ ] product_embeddings table with vector(384) column and HNSW index
+- [ ] product_embeddings table with vector(384) column, HNSW index, and `chunk_type` tag (parent/child)
 - [ ] RLS policy on every table with tenant_id (including hitl_actions)
 - [ ] Migrations run forward cleanly on a fresh database
 - [ ] Migrations roll back cleanly (downgrade -1 works)
 
-**Verify 1.4:** Fresh database → `alembic upgrade head` → all tables and indexes exist → `alembic downgrade -1` → clean rollback.
+**Verify 1.4:** Fresh database → `alembic upgrade head` → all tables and indexes exist including barcode, price_history, graph_edges → `alembic downgrade -1` → clean rollback.
 
 ---
 
@@ -679,7 +762,10 @@ Phase 14 — Production Deployment
 - [ ] Price preserved exactly as written — no rounding, no conversion, no modification
 - [ ] SKU preserved exactly — no normalization that would alter it
 - [ ] Missing fields are null — never fabricated, never guessed
-- [ ] `product_hash` computed per extracted product: deterministic, based on (tenant_id + product_name + price)
+- [ ] `product_hash` computed per extracted product: deterministic, based on `SHA-256(tenant_id + ":" + product_name + ":" + sku)` when SKU is present, or `SHA-256(tenant_id + ":" + product_name)` when SKU is absent — colon delimiter prevents hash collisions between `("AB", "CDE")` and `("ABC", "DE")`
+  - Price is intentionally excluded from the hash — same product re-sent with updated price = same product, updated price (not a duplicate)
+  - Price is stored as a versioned field: `price_history` tracks all observed prices with timestamps
+  - If price changes on re-upload: existing product updated with new price, previous price archived — not a new catalog entry
 - [ ] Extraction result stored before enrichment starts (durable intermediate state)
 - [ ] If NER fails on a row → row is flagged, not silently skipped
 - [ ] Extraction audit log: original row text + extracted fields side by side
@@ -828,7 +914,7 @@ Phase 14 — Production Deployment
 - [ ] Draft enters hitl_actions table with action_type = "purchase_order_send"
 - [ ] Importer reviews in HITL Approval Center: full PO preview, supplier contact details, channel
 - [ ] Importer can: Approve → PO sent, Reject → draft discarded, Edit → modify content and re-queue
-- [ ] After approval: PO sent to supplier via email/WhatsApp; order status → sent
+- [ ] After approval: PO sent to supplier via email (WhatsApp in Wave 1); order status → sent
 - [ ] Supplier confirmation logged manually by importer (importer marks order as "confirmed by supplier")
 - [ ] PO record created: purchase_order_id, supplier_id, items, total, sent_at, status
 
@@ -974,7 +1060,7 @@ User Query
     │
     ├── HyDE: LLM generates hypothetical product description → embed → search vector
     │
-    └── Multi-Query: generate 2 query variants → 3 searches (original + 2 variants)
+    └── Multi-Query: generate 3 query variants → 4 searches (original + 3 variants)
             │
             ▼
     [RRF Merge] ← merges HyDE results + 3 multi-query results → ranked candidate list
@@ -1092,7 +1178,7 @@ Scope filter applied at Dense Retrieval step:
 
 *Built and verified here without guardrails. Phase 5 adds Presidio + NeMo and re-verifies.*
 
-- [ ] Full pipeline: query expansion → dense search → re-ranking → GraphRAG → MMR → LLM generation
+- [ ] Full pipeline: query expansion → RRF merge → dense search → parent-doc mapping → GraphRAG → cross-encoder re-ranking → MMR → LLM generation
 - [ ] LLM answers grounded in retrieved chunks — every answer cites which products it references
 - [ ] **Importer-facing chatbot (admin panel)**: answers any question about the business through the operations command center
   - Product questions (e.g., "which Samsung TVs are in stock?") → RAG pipeline over ALL enriched products
@@ -1230,7 +1316,9 @@ hitl_actions table
     ▼
 Admin HITL Approval Center
     │
-    ├── Approve → n8n webhook → message dispatched (email/WhatsApp/SMS)
+    ├── Approve → n8n webhook → message dispatched
+    │            (B2B tracks: email only — WhatsApp in Wave 1)
+    │            (B2C track: email + SMS)
     │            → dunning_sequence status = sent
     │
     ├── Reject  → sequence paused for this stage
@@ -1317,7 +1405,9 @@ Why not just rules: a VIP customer 14 days overdue might still get "gentle" if t
 
 - [ ] Communication Agent receives: task type, invoice data, contact record, language, tone
 - [ ] Drafts: reminder / escalation / formal complaint / final notice
-- [ ] Message in the correct language (AR / FR / EN — from contact record's language field)
+- [ ] Message in the correct language (AR / FR / EN):
+  - B2B tracks (1, 2, 3): from contact record's language field (supplier or wholesale client)
+  - B2C track (4): from consumer order's language field (defaulted to tenant storefront language at checkout)
 - [ ] Message tone matches tone classifier output
 - [ ] Payment link embedded in B2C messages (Day 3): unique per invoice URL
 - [ ] Formal dispute letter: uses supplier's registered language, formal tone regardless of classifier
@@ -1338,7 +1428,7 @@ Why not just rules: a VIP customer 14 days overdue might still get "gentle" if t
 ### 6.4 — HITL Approval Flow (Dunning-Specific)
 
 - [ ] Pending HITL actions visible in admin panel: list of drafts with message preview
-- [ ] Each action shows: message content, recipient, channel (email/SMS/WhatsApp), invoice ref, days overdue
+- [ ] Each action shows: message content, recipient, channel (email for B2B; email + SMS for B2C), invoice ref, days overdue
 - [ ] Importer can: Approve (sent), Reject (discarded, sequence paused), Edit (modify, re-queue as pending)
 - [ ] Approved action: triggers send via n8n webhook
 - [ ] Rejected action: sequence paused for this stage
@@ -1403,7 +1493,7 @@ Why not just rules: a VIP customer 14 days overdue might still get "gentle" if t
 - [ ] Day 14: escalated reminder (tone classified per client segment)
 - [ ] Day 21: final notice
 - [ ] Contact record sufficient — no portal account required
-- [ ] HITL draft at each stage → importer approves → message sent
+- [ ] HITL draft at each stage → importer approves → message sent via email (WhatsApp in Wave 1)
 - [ ] Payment confirmation stops sequence and cancels pending HITL drafts
 
 **Test:**
@@ -1411,7 +1501,7 @@ Why not just rules: a VIP customer 14 days overdue might still get "gentle" if t
 - [ ] At-risk wholesale client 21 days overdue → firm tone on draft
 - [ ] Client pays on Day 10 → Day 14 HITL draft cancelled immediately
 
-**Verify 6.7:** Three-stage escalation correct. Tone per segment correct. HITL at every stage.
+**Verify 6.7:** Three-stage escalation correct. Tone per segment correct. HITL at every stage. Email only in capstone.
 
 ---
 
@@ -1419,7 +1509,7 @@ Why not just rules: a VIP customer 14 days overdue might still get "gentle" if t
 
 - [ ] Importer manually triggers dispute from admin panel: selects supplier invoice, describes complaint
 - [ ] Communication Agent drafts formal complaint letter in supplier's registered language
-- [ ] Draft enters hitl_actions with action_type = "dispute_letter"
+- [ ] Draft enters hitl_actions with action_type = "dunning_disputes_on_demand"
 - [ ] Importer reviews → approve → complaint sent to supplier
 - [ ] Importer can edit before approving
 - [ ] Dispute record created: date filed, invoice ref, supplier, letter content, status = open
@@ -1428,10 +1518,10 @@ Why not just rules: a VIP customer 14 days overdue might still get "gentle" if t
 - [ ] Dispute against French-speaking supplier → complaint in French → HITL draft appears
 - [ ] Dispute against Arabic-speaking supplier → complaint in Arabic
 - [ ] Edit draft before approving → final approved content recorded
-- [ ] Approve → sent to supplier contact
+- [ ] Approve → sent to supplier via email (WhatsApp in Wave 1)
 - [ ] Dispute visible in supplier management panel
 
-**Verify 6.8:** Dispute letter in correct language. HITL present. Dispute record tracked.
+**Verify 6.8:** Dispute letter in correct language. HITL present. Dispute record tracked. Email only in capstone.
 
 ---
 
@@ -1544,8 +1634,22 @@ Signal 4: No match above 0.3 → create new customer record, no HITL
 
 ### 7.4 — Supplier Scoring Model
 
+**Synthetic training data (prerequisite — cold-start problem, same approach as Phase 0.3):**
+- [ ] Write `scripts/generate_supplier_score_data.py` — generates 60 synthetic supplier profiles
+- [ ] Each profile has: on_time_delivery_rate (0.0–1.0), damage_rate (0.0–0.3), avg_price_vs_market (0.7–1.5 multiplier), response_time_hours (1–168), catalog_completeness (0.0–1.0), discrepancy_rate (0.0–0.2)
+- [ ] Label each profile with a ground-truth score (0–100) using deterministic rules:
+  - Base score = 100
+  - `– (1 - on_time_delivery_rate) × 40` (delivery reliability is the most weighted factor)
+  - `– damage_rate × 30`
+  - `– max(0, avg_price_vs_market - 1.0) × 15` (penalise above-market pricing only)
+  - `– (response_time_hours / 168) × 10`
+  - `– (1 - catalog_completeness) × 5`
+  - Clamped to [0, 100]
+- [ ] Save to `backend/tests/evals/eval_dataset/supplier_score_data.json`
+- [ ] Real delivery events (from Phase 3.4 discrepancies and Phase 7.3 events) replace synthetic data post-launch
+
 - [ ] Features: on_time_delivery_rate, damage_rate, avg_price_vs_market, response_time_hours, catalog_completeness, discrepancy_rate
-- [ ] Classical ML model (Ridge regression or similar) trained on manually-rated supplier set
+- [ ] Classical ML model (Ridge regression or similar) trained on synthetic-rated supplier set (replaced with real data post-launch)
 - [ ] Score updated automatically after every new delivery event or discrepancy flag
 - [ ] Score components shown separately (importer sees WHY a supplier is scored low)
 - [ ] Model registered in MLflow model registry under stage = "production"
@@ -1611,6 +1715,8 @@ Signal 4: No match above 0.3 → create new customer record, no HITL
 
 **Verify 7.6:** Discovery returns ranked results. Outreach in correct language. HITL controls all contact.
 
+**Timeline risk:** If Phase 7 exceeds its allocated time, Supplier Discovery (this sub-phase) is the designated drop. Replace `discovery.py` with a stub that returns an empty candidate list and logs a `feature_disabled` warning. The Supervisor topology does not change — the node exists but has no real implementation. The rest of Phase 7 (scoring, matching, reorder, segmentation) ships as planned. Supplier Discovery can be activated in Wave 1 when timeline permits.
+
 ---
 
 ### 7.7 — Reorder Automation with HITL
@@ -1674,6 +1780,8 @@ Signal 4: No match above 0.3 → create new customer record, no HITL
 - [ ] Classifier accuracy CI gate: F1 macro ≥ 0.85
 - [ ] Tier 1 + Tier 2 model artifacts registered in MLflow
 
+**Contingency — DistilBERT fine-tuning slip:** If Tier 2 cannot be completed within the Phase 8 timeline (fine-tuning takes longer than expected or ONNX export fails), skip Tier 2 and run the cascade as Tier 1 → Tier 3 (GPT-4o zero-shot) directly. This decision must be made by Day 3 of Phase 8 — not after the deadline. Tier 2 can be added in Phase 12 as a model registry update without changing the classifier interface.
+
 **Test:**
 - [ ] "Do you have Samsung TVs?" → Tier 1 → product search, no LLM call
 - [ ] "Find me the cheapest supplier for home appliances and draft an outreach" → COMPLEX_TASK → Supervisor
@@ -1734,10 +1842,19 @@ Signal 4: No match above 0.3 → create new customer record, no HITL
 
 *Each workflow built, triggered manually to verify, then left on schedule/webhook.*
 
+**Invoice PDF generation (prerequisite — build before WF-07):**
+- [ ] `POST /api/v1/invoices/generate` endpoint — accepts order_id, returns invoice_id + PDF stored in MinIO
+- [ ] PDF built with `reportlab` + `Jinja2` template: invoice number, line items, totals, tenant logo, payment link, due date
+- [ ] Unique payment link injected per invoice (tenant payment gateway URL + signed token)
+- [ ] Invoice PDF stored in MinIO at `/{tenant_id}/invoices/{invoice_id}.pdf`
+- [ ] `GET /api/v1/invoices/{id}/pdf` — returns presigned MinIO URL (15-min expiry) for download
+- [ ] Invoice record created in invoices table: amount, due_date, status=open, linked to consumer order
+- [ ] WF-07 calls this endpoint after payment webhook confirmation → PDF generated → email with link dispatched
+
 - [ ] **WF-01:** Tenant provisioning → create MinIO bucket, Redis namespace, send welcome email
 - [ ] **WF-02:** Document uploaded → call extraction API → queue enrichment jobs
 - [ ] **WF-03:** Enrichment complete → update internal catalog status → notify importer "X products ready to browse"
-- [ ] **WF-04:** Purchase Order approved (HITL) → send PO to supplier via email/WhatsApp → create shipment tracking record
+- [ ] **WF-04:** Purchase Order approved (HITL) → send PO to supplier via email (WhatsApp in Wave 1) → create shipment tracking record
 - [ ] **WF-05:** Shipment Arrival Alert (scheduled, daily) → find shipments arriving within configured days → admin panel notification + upcoming arrivals badge
 - [ ] **WF-06:** Goods Received submitted → update stock quantities → check all products against reorder thresholds → flag discrepancies
 - [ ] **WF-07:** Consumer Order confirmed (payment webhook) → generate invoice PDF → email to consumer → order appears in admin with status "pending fulfillment"
@@ -1809,7 +1926,7 @@ Signal 4: No match above 0.3 → create new customer record, no HITL
 ### 10.3 — Admin Panel Screens
 
 - [ ] **Dashboard:** summary cards + charts + upcoming shipments widget + recent HITL actions + AI health + quick actions ("Upload Catalog", "Add Supplier", "View Pending Approvals")
-- [ ] **HITL Approval Center:** Most important screen. All pending actions grouped by type. Each card: preview of message/PO/match, recipient, channel, invoice ref. Approve/Reject/Edit inline. Keyboard shortcuts (A/R). Badge on nav showing count.
+- [ ] **HITL Approval Center:** Most important screen. All pending actions grouped by type. Each card: preview of message/PO/match, recipient, channel, invoice ref. Approve/Reject/Edit inline. Keyboard shortcuts (A=Approve, R=Reject, E=Edit). Badge on nav showing count.
 - [ ] **Internal Catalog:** product table with tri-status badges (enrichment / stock / storefront) + upload drag-drop zone + barcode scanner + product detail slide-over (edit, re-enrich, publish toggle, retail price)
 - [ ] **Procurement:** Order drafts list → create new draft → submit draft → PO history → link to shipments
 - [ ] **Shipments:** timeline view of all active shipments with expected arrival, status updates, receiving button when arrived
@@ -1872,7 +1989,13 @@ Signal 4: No match above 0.3 → create new customer record, no HITL
 - [ ] Cart badge shows item count in header at all times
 - [ ] Real-time stock check on add-to-cart: cannot add more than published storefront qty
 - [ ] Checkout: name, email, phone — clean, minimal form
-- [ ] Payment: Stripe (card), OMT, Whish — with logos
+- [ ] Consumer order language: defaults to tenant's configured storefront language (set in admin Settings); stored on the order record at checkout time — used by dunning engine for B2C message language
+- [ ] Payment gateways — **Protocol-stub decision:**
+  - `PaymentGateway` Protocol defined in `infra/payments/protocol.py` (Phase 1 already defines this)
+  - **Stripe**: fully implemented — has a public sandbox, no business registration required. Capstone demo uses Stripe test mode.
+  - **OMT + Whish**: implemented as Protocol stubs in capstone — `raise NotImplementedError` with a log message. Real credentials require Lebanese business registration; stubs let CI pass and the architecture is correct. Activate when credentials confirmed.
+  - Gateway selection per checkout: tenant config field `payment_gateways: list[str]` — defaults to `["stripe"]`
+  - UI shows logos for all configured gateways; Stripe-only in capstone demo is acceptable and not a gap
 - [ ] Stripe Elements embedded: card input feels native
 - [ ] On payment success: confirmation page + "Invoice sent to [email]"
 - [ ] On payment failure: clear error + retry option
@@ -1881,10 +2004,12 @@ Signal 4: No match above 0.3 → create new customer record, no HITL
 
 ### 11.5 — Order Fulfillment Notification (HITL)
 
+*Handled as a direct API call — no n8n workflow. Fulfillment is admin-initiated (importer clicks a button), not schedule or event-triggered, so n8n adds no value here. The backend handles the full flow.*
+
 - [ ] Admin panel shows consumer orders with status: "pending fulfillment" / "fulfilled"
 - [ ] Importer marks order as fulfilled (ready for pickup / shipped) with optional tracking number
-- [ ] Communication Agent drafts consumer notification → HITL draft with action_type = "fulfillment_notification"
-- [ ] Importer reviews in HITL Approval Center → approve → notification sent (email + WhatsApp)
+- [ ] `POST /admin/orders/{id}/fulfill` → Communication Agent drafts consumer notification → HITL draft with action_type = "fulfillment_notification"
+- [ ] Importer reviews in HITL Approval Center → approve → `POST /admin/hitl/{id}/approve` → backend dispatches notification via email (WhatsApp in Wave 1)
 - [ ] Importer can edit the draft before approving
 - [ ] Order status updated to "fulfilled" after HITL approval
 
@@ -1904,7 +2029,28 @@ Signal 4: No match above 0.3 → create new customer record, no HITL
 - [ ] Result: product name, current stock qty, published qty, retail price, supplier name
 - [ ] Works on mobile camera (used during goods receiving for verification)
 
-**Verify Phase 11:** Full consumer journey: land → search → product detail → chatbot → add to cart → checkout (Stripe test mode) → invoice email. Importer marks fulfilled → HITL notification → consumer receives. All screens visually reviewed.
+### 11.7 — Embeddable Storefront Widget
+
+*The importer can embed their storefront chatbot on any existing website (e.g., their own WordPress site) using a single `<script>` tag. The widget is a floating chat button that opens the full RAG chatbot — scoped to their published catalog.*
+
+- [ ] Backend: `GET /api/v1/widget/token` — authenticated admin endpoint; returns a signed short-lived JWT (15-min expiry) scoped to the tenant's published catalog; payload: `{tenant_id, scope: "storefront", exp}`
+- [ ] Backend: `/widget.js` served as a public static file — self-contained JS bundle (~20KB) that injects a floating chat button into any page
+- [ ] Widget JS: loads the JWT from the embed snippet's `data-token` attribute; sends it as Bearer header on all chat API calls
+- [ ] Server-side origin check middleware: validates `Origin` header on widget chat requests against the tenant's configured `allowed_origins` list (set in admin Settings)
+- [ ] Admin Settings: `allowed_origins` field — comma-separated list of domains allowed to embed the widget
+- [ ] Embed snippet generated in admin Settings: `<script src="https://api.domain/widget.js" data-token="{token}"></script>`
+- [ ] Widget UI: floating button (tenant brand color) → slide-up chat panel → same RAG chatbot as storefront, published scope
+- [ ] Token refresh: widget requests a fresh token from `/widget/token` every 10 minutes via a tenant-proxied refresh call (avoids CORS issues)
+
+**Test:**
+- [ ] Generate embed snippet → paste into a plain HTML file → widget loads, chat works
+- [ ] Token expired → widget shows "session expired, click to refresh" — does not error silently
+- [ ] Request from non-allowed origin → 403 returned, widget shows error state
+- [ ] Widget only surfaces published products (same consumer chatbot scope)
+
+**Verify 11.7:** Widget embeds cleanly. Origin check enforced. Chatbot scoped to published products only. Token expiry handled gracefully.
+
+**Verify Phase 11:** Full consumer journey: land → search → product detail → chatbot → add to cart → checkout (Stripe test mode) → invoice email. Importer marks fulfilled → HITL notification → consumer receives. Widget embedded and functional. All screens visually reviewed.
 
 ---
 
@@ -1958,7 +2104,7 @@ Signal 4: No match above 0.3 → create new customer record, no HITL
 - [ ] Gate 3: pytest tests/unit/ — full unit suite with mocked LLM, < 60 seconds
 - [ ] Verify: push a lint error → fails in < 60 seconds
 
-**PR-to-main gate — verified to complete in < 15 minutes:**
+**PR-to-master gate — verified to complete in < 15 minutes:**
 - [ ] Gate 4: pytest tests/integration/ — real DB, real Redis, no LLM
 - [ ] Gate 5: cross-tenant red-team — 15 attack vectors, ALL blocked (ANY pass = hard fail)
   - Tenant A cannot read Tenant B's products, orders, invoices, HITL actions, customers, suppliers
@@ -1966,14 +2112,14 @@ Signal 4: No match above 0.3 → create new customer record, no HITL
   - Internal catalog products (not_published) never appear in storefront search for any tenant
   - pgvector search always returns only the querying tenant's embeddings
 - [ ] Gate 6: agent trajectory snapshot tests — 20 known intents, golden node sequence verified
-- [ ] Merge to main blocked until Gates 1-6 all pass on current commit
+- [ ] Merge to master blocked until Gates 1-6 all pass on current commit
 
 **Nightly eval gate — verified to fire and report correctly:**
 - [ ] Gate 7: RAGAS eval — context_precision, context_recall, faithfulness, answer_relevancy all meet eval_thresholds.yaml
 - [ ] Gate 8: intent classifier F1 macro ≥ 0.85 on held-out test set (150+ examples per class)
 - [ ] Gate 9: drift detection — PSI per feature, chi-square on categoricals, cosine on embedding centroid
 - [ ] Nightly failure → Telegram alert sent to configured channel
-- [ ] Nightly gate result blocks main merge if last nightly failed (enforced via GitHub status check)
+- [ ] Nightly gate result blocks master merge if last nightly failed (enforced via GitHub status check)
 
 **Test every gate catches its failure mode:**
 - [ ] Break a lint rule → Gate 1 fails, no other gate runs
@@ -1991,7 +2137,7 @@ Signal 4: No match above 0.3 → create new customer record, no HITL
 
 ## Phase 14 — Production Deployment
 
-**Goal:** Mawrid runs on a real server, HTTPS, automated deployment on every CI-passing push to main.
+**Goal:** Mawrid runs on a real server, HTTPS, automated deployment on every CI-passing push to master.
 
 ### 14.1 — Server Setup
 
@@ -2020,7 +2166,7 @@ Signal 4: No match above 0.3 → create new customer record, no HITL
 
 ### 14.4 — Automated Deployment
 
-- [ ] GitHub Actions deploy workflow: triggers only after all 7 CI gates pass
+- [ ] GitHub Actions deploy workflow: triggers only after all PR gates pass (Gates 1–6) on the master branch commit being deployed; nightly gates (7–9) must have passed within the last 24 hours
 - [ ] Deploy: SSH to VPS → git pull → docker compose pull → docker compose up -d → alembic upgrade head
 - [ ] Deployment completes in < 2 minutes
 - [ ] Rollback: revert commit → push → CI runs → auto-deploys previous version

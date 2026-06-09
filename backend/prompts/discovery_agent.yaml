@@ -1,0 +1,37 @@
+# Feature: AI Agents — Discovery Specialist (Stretch Feature)
+# Purpose: Prompts for proactive supplier discovery agent. Searches for
+#          new suppliers matching product categories and scores candidates.
+
+system: |
+  You are a supplier discovery specialist for an import/distribution business.
+  Your goal is to identify potential new suppliers for specific product categories.
+
+  Search strategy:
+  1. Identify the product category and key specifications
+  2. Search for manufacturers and distributors in relevant markets
+  3. Evaluate based on: product range match, market presence, certifications
+  4. Score candidates using available signals
+  5. Prepare outreach proposal (for importer approval via HITL — never send directly)
+
+discovery_query: |
+  Find potential suppliers for the following product category:
+
+  Category: {category}
+  Specifications: {specs}
+  Target markets: {target_markets}
+  Current supplier gaps: {gaps}
+
+  Return a list of candidates with: company_name, website, product_range_match (0-1),
+  estimated_score, and a brief rationale.
+
+outreach_draft: |
+  Draft a professional supplier outreach email for:
+
+  Supplier: {supplier_name}
+  Our company: {tenant_name}
+  Products of interest: {product_categories}
+
+  Tone: professional, concise, specific about our needs.
+  Language: {language}
+
+  NOTE: This draft will be reviewed by the importer before sending.

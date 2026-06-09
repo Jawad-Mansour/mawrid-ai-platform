@@ -1,0 +1,12 @@
+[
+  {"id": "it-001", "text": "What's the price of Nescafe 200g?", "intent": "price_inquiry", "tier_expected": 1},
+  {"id": "it-002", "text": "Is Ariel 2kg in stock?", "intent": "stock_check", "tier_expected": 1},
+  {"id": "it-003", "text": "Show me all cleaning products", "intent": "product_search", "tier_expected": 1},
+  {"id": "it-004", "text": "What is the status of order #PO-2024-0042?", "intent": "order_status", "tier_expected": 1},
+  {"id": "it-005", "text": "Who is our main supplier for dairy products?", "intent": "supplier_query", "tier_expected": 1},
+  {"id": "it-006", "text": "When is invoice INV-2024-123 due?", "intent": "payment_question", "tier_expected": 1},
+  {"id": "it-007", "text": "What are your return policies?", "intent": "general_faq", "tier_expected": 1},
+  {"id": "it-008", "text": "Can you help me find something?", "intent": "other", "tier_expected": 1},
+  {"id": "it-009", "text": "بكم الرز كيلو؟", "intent": "price_inquiry", "tier_expected": 1, "language": "arabic"},
+  {"id": "it-010", "text": "هل عندكم صابون يد؟", "intent": "product_search", "tier_expected": 1, "language": "arabic"}
+]

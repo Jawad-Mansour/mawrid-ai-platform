@@ -1,0 +1,39 @@
+# Feature: Infrastructure — Production Overrides
+# Purpose: Production docker-compose overrides. Use with:
+#          docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#          Key changes: pre-built images (no bind mounts), multi-worker uvicorn,
+#          Caddy TLS reverse proxy, full paths for all executables.
+
+version: "3.9"
+
+services:
+  backend:
+    image: ghcr.io/your-org/mawrid-backend:${IMAGE_TAG:-latest}
+    command: /opt/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+    volumes: []  # no bind mount in prod — code is baked into image
+    environment:
+      ENVIRONMENT: production
+
+  worker:
+    image: ghcr.io/your-org/mawrid-backend:${IMAGE_TAG:-latest}
+    command: /opt/venv/bin/python -m arq app.infra.workers.enrichment_worker.WorkerSettings
+    volumes: []
+
+  frontend:
+    image: ghcr.io/your-org/mawrid-frontend:${IMAGE_TAG:-latest}
+    # No command override — production nginx CMD is defined in frontend/Dockerfile
+    volumes: []
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:
