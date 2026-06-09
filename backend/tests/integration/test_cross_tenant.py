@@ -9,4 +9,3 @@ Purpose:  Integration tests for all 3 isolation layers. Verifies tenant A
 Depends:  pytest-asyncio, sqlalchemy, app.infra.db
 HITL:     None — testing isolation itself.
 """
-import pytest

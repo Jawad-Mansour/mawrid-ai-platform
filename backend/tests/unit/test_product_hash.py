@@ -9,20 +9,18 @@ HITL:     None.
 """
 import hashlib
 
-import pytest
-
 from app.core.catalog.hash import compute_product_hash
 
 
 def test_hash_format():
     h = compute_product_hash("tenant1", "Nescafe 200g", "SKU-001")
-    expected = hashlib.sha256("tenant1:Nescafe 200g:SKU-001".encode()).hexdigest()
+    expected = hashlib.sha256(b"tenant1:Nescafe 200g:SKU-001").hexdigest()
     assert h == expected
 
 
 def test_hash_no_sku():
     h = compute_product_hash("tenant1", "Nescafe 200g", None)
-    expected = hashlib.sha256("tenant1:Nescafe 200g:".encode()).hexdigest()
+    expected = hashlib.sha256(b"tenant1:Nescafe 200g:").hexdigest()
     assert h == expected
 
 

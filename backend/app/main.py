@@ -9,6 +9,7 @@ Depends:  All routers, all middleware, infra.scheduler, infra.db.session,
           infra.llm.openai, infra.llm.embedder, app.rag.reranking
 HITL:     None — bootstrap only.
 """
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -35,7 +36,7 @@ from app.middleware.tenant import TenantMiddleware
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):  # type: ignore[type-arg]
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Startup: load ML models, connect DB, start scheduler
     yield
     # Shutdown: close connections, stop scheduler

@@ -10,8 +10,6 @@ HITL:     product_published
 """
 from __future__ import annotations
 
-import pytest
-
 
 class TestPublishingGate:
     def test_cannot_publish_without_goods_received(self) -> None:

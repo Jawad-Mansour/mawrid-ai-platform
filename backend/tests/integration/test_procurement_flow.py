@@ -12,7 +12,6 @@ HITL:     po_draft_created, shipment_created, goods_received
 from __future__ import annotations
 
 import pytest
-import pytest_asyncio
 
 
 class TestProcurementLifecycle:

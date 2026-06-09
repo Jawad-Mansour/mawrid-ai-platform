@@ -8,6 +8,8 @@ Purpose:  SQLAlchemy ORM models for OrderDraft (procurement) and StorefrontOrder
 Depends:  app.infra.db.base, sqlalchemy
 HITL:     None — model only.
 """
+from typing import Any
+
 from sqlalchemy import JSON, DateTime, Numeric, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -20,7 +22,7 @@ class OrderDraft(TenantMixin, Base):
     order_id: Mapped[str] = mapped_column(primary_key=True)
     supplier_id: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(Text, default="draft")
-    line_items: Mapped[list] = mapped_column(JSON, default=list)
+    line_items: Mapped[list[Any]] = mapped_column(JSON, default=list)
     created_at: Mapped[str] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -32,5 +34,5 @@ class StorefrontOrder(TenantMixin, Base):
     payment_gateway: Mapped[str] = mapped_column(Text, nullable=False)
     total_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
     status: Mapped[str] = mapped_column(Text, default="pending_payment")
-    items: Mapped[list] = mapped_column(JSON, default=list)
+    items: Mapped[list[Any]] = mapped_column(JSON, default=list)
     created_at: Mapped[str] = mapped_column(DateTime(timezone=True), server_default=func.now())

@@ -11,10 +11,10 @@ HITL:     None
 """
 from __future__ import annotations
 
-import pytest
-import yaml
 from pathlib import Path
 
+import pytest
+import yaml
 
 THRESHOLDS_PATH = Path(__file__).parent.parent.parent / "ml_config" / "eval_thresholds.yaml"
 

@@ -12,10 +12,10 @@ HITL:     None
 from __future__ import annotations
 
 import json
-import pytest
-import yaml
 from pathlib import Path
 
+import pytest
+import yaml
 
 THRESHOLDS_PATH = Path(__file__).parent.parent.parent / "ml_config" / "eval_thresholds.yaml"
 EVAL_DATA_PATH = Path(__file__).parent / "eval_dataset" / "intent_test_data.json"
@@ -35,8 +35,8 @@ def load_eval_data() -> list[dict]:
 
 def test_tier1_weighted_f1() -> None:
     """Tier 1 (TF-IDF + LR) must achieve weighted F1 >= threshold (Gate 8)."""
-    from sklearn.metrics import f1_score
     from app.ml.intent.tier1 import Tier1IntentClassifier
+    from sklearn.metrics import f1_score
 
     thresholds = load_thresholds()
     min_f1 = thresholds["intent_classifier"]["weighted_f1"]
@@ -53,9 +53,9 @@ def test_tier1_weighted_f1() -> None:
 
 def test_cascade_weighted_f1() -> None:
     """Full 3-tier cascade must achieve weighted F1 >= threshold (Gate 8)."""
-    from sklearn.metrics import f1_score
     from app.ml.intent.tier1 import Tier1IntentClassifier
     from app.ml.intent.tier2 import Tier2IntentClassifier
+    from sklearn.metrics import f1_score
 
     thresholds = load_thresholds()
     min_f1 = thresholds["intent_classifier"]["weighted_f1"]

@@ -10,8 +10,6 @@ HITL:     None
 """
 from __future__ import annotations
 
-import pytest
-
 
 class TestSupplierScorer:
     def test_score_in_valid_range(self) -> None:

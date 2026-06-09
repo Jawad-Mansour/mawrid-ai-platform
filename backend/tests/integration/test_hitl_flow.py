@@ -9,4 +9,3 @@ Purpose:  Integration tests for full HITL lifecycle: create → approve → exec
 Depends:  pytest-asyncio, app.core.hitl.services, app.infra.db
 HITL:     None — testing the HITL system itself.
 """
-import pytest

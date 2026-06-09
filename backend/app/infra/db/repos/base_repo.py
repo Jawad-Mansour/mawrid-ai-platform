@@ -9,6 +9,8 @@ Purpose:  TenantRepository base class. ALL repository methods prepend
 Depends:  sqlalchemy, app.infra.db.session
 HITL:     None — infrastructure only.
 """
+from typing import Any
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -17,6 +19,6 @@ class TenantRepository:
         self._session = session
         self._tenant_id = tenant_id
 
-    def _tenant_filter(self, model_class: type) -> object:  # type: ignore[return]
+    def _tenant_filter(self, model_class: Any) -> Any:
         """Returns a WHERE clause fragment that filters by tenant_id."""
         return model_class.tenant_id == self._tenant_id

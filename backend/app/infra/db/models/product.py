@@ -9,6 +9,8 @@ Purpose:  SQLAlchemy ORM model for the `products` table. Includes all three
 Depends:  app.infra.db.base, sqlalchemy, pgvector
 HITL:     None — model only.
 """
+from typing import Any
+
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import JSON, Index, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
@@ -28,7 +30,7 @@ class Product(TenantMixin, Base):
     storefront_status: Mapped[str] = mapped_column(Text, default="draft")
     qty_in_stock: Mapped[int] = mapped_column(default=0)
     storefront_qty: Mapped[int] = mapped_column(default=0)
-    price_history: Mapped[list] = mapped_column(JSON, default=list)
+    price_history: Mapped[list[Any]] = mapped_column(JSON, default=list)
     embedding: Mapped[list[float] | None] = mapped_column(Vector(1536), nullable=True)
 
     __table_args__ = (

@@ -8,12 +8,12 @@ Purpose:  Structured JSON request logging: tenant_id, user_id, route, method,
 Depends:  starlette, structlog
 HITL:     None.
 """
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
 
 
 class LoggingMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next: object) -> Response:  # type: ignore[override]
-        response: Response = await call_next(request)  # type: ignore[arg-type]
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        response: Response = await call_next(request)
         return response

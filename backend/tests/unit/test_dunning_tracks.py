@@ -11,7 +11,6 @@ HITL:     dunning_payables_draft, dunning_receivables_draft, dunning_b2c_draft
 from __future__ import annotations
 
 from datetime import date, timedelta
-import pytest
 
 
 class TestTrack1Payables:
@@ -47,7 +46,7 @@ class TestTrack3Receivables:
         """Track 3 must count from due_date, not invoice_date."""
         from app.core.dunning.tracks import get_track3_step
 
-        invoice_date = date.today() - timedelta(days=21)
+        date.today() - timedelta(days=21)
         due_date = date.today() - timedelta(days=7)
         step = get_track3_step(due_date=due_date, today=date.today())
         assert step == "day7"

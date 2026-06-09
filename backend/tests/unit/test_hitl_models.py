@@ -9,9 +9,8 @@ Depends:  app.core.hitl.models
 HITL:     None — testing the model itself.
 """
 import pytest
-from pydantic import ValidationError
-
 from app.core.hitl.models import HITLAction, HITLActionType, HITLStatus
+from pydantic import ValidationError
 
 
 def test_valid_action_type():

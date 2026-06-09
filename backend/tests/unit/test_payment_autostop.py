@@ -11,8 +11,6 @@ HITL:     None
 """
 from __future__ import annotations
 
-import pytest
-
 
 class TestPaymentAutoStop:
     def test_full_payment_stops_sequence(self) -> None:

@@ -10,8 +10,6 @@ HITL:     None
 """
 from __future__ import annotations
 
-import pytest
-
 
 class TestCustomerMatching:
     def test_exact_email_match_deduplicates(self) -> None:

@@ -10,8 +10,6 @@ HITL:     All 14 action_types
 """
 from __future__ import annotations
 
-import pytest
-
 
 class TestHITLLifecycle:
     def test_approve_triggers_external_write(self, fake_email_sender) -> None:

@@ -12,7 +12,6 @@ HITL:     None
 from __future__ import annotations
 
 import pytest
-import pytest_asyncio
 
 
 class TestOutboxRelay:
@@ -40,8 +39,8 @@ class TestOutboxRelay:
     @pytest.mark.asyncio
     async def test_relay_marks_outbox_published(self, db_session, tenant_id) -> None:
         """After relay processes a record, it must be marked published."""
-        from app.infra.workers.outbox_relay import process_outbox_record
         from app.infra.db.repos.outbox_repo import OutboxRepository
+        from app.infra.workers.outbox_relay import process_outbox_record
 
         outbox_repo = OutboxRepository(db_session, tenant_id=tenant_id)
         record = await outbox_repo.get_pending_first()
