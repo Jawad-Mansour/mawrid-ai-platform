@@ -13,11 +13,11 @@ from __future__ import annotations
 
 
 class TestHITLLifecycle:
-    def test_approve_triggers_external_write(self, fake_email_sender) -> None:
+    async def test_approve_triggers_external_write(self, fake_email_sender) -> None:
         """Approving a HITL action must allow the downstream write to execute."""
         from app.core.hitl.services import approve_action
 
-        result = approve_action(
+        result = await approve_action(
             action_id="hitl_001",
             action_type="po_draft_created",
             payload={"to": "supplier@example.com", "subject": "PO #42"},

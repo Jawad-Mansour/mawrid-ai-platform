@@ -14,3 +14,24 @@ Purpose:  Ridge regression supplier scorer over 6 features. Score formula:
 Depends:  scikit-learn, numpy
 HITL:     None — scoring is internal.
 """
+
+from typing import Any
+
+
+def score_supplier(features: dict[str, Any]) -> float:
+    on_time = float(features.get("on_time_delivery_rate", 0.0))
+    defect = float(features.get("defect_rate", 0.0))
+    lead_time = float(features.get("avg_lead_time_days", 30.0))
+    price = float(features.get("price_competitiveness", 0.0))
+    comm = float(features.get("communication_responsiveness", 0.0))
+    fill = float(features.get("order_fill_rate", 0.0))
+
+    raw = (
+        on_time * 0.30
+        + (1.0 - defect) * 0.20
+        + max(0.0, 1.0 - lead_time / 60.0) * 0.15
+        + price * 0.15
+        + comm * 0.10
+        + fill * 0.10
+    )
+    return max(0.0, min(1.0, raw))
