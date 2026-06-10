@@ -63,6 +63,10 @@ Breaking tenant isolation is a hard CI fail (15 cross-tenant attack vectors in `
 
 **Outbox pattern** — enrichment result + embedding event are written atomically (one transaction: products table + outbox table). The outbox relay drains separately. Never dual-write (DB commit + queue publish as separate operations).
 
+**Embedding model** — `text-embedding-3-small` (OpenAI API, 1536-dim). The `products.embedding` column is `Vector(1536)`. Do not use local SentenceTransformer or 384-dim models — the DB column dimension is fixed.
+
+**Product embedding structure** — Phase 1: single `embedding` column on `products` table. Phase 4 adds parent/child chunk mapping with a separate `product_chunks` table (chunk text + chunk embedding + parent product_id). The `products.embedding` column holds the full-document embedding used for broad retrieval; chunks are used for precise passage extraction.
+
 **Idempotency** — ARQ enrichment jobs are keyed on `product_hash`; submitting the same job twice is a no-op. Payment webhooks check a dedupe table inside the same transaction as fulfillment.
 
 ### LangGraph Agents
