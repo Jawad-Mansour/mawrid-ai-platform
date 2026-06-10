@@ -11,6 +11,7 @@ HITL:     None
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from typing import Any
 
 import pytest
@@ -25,7 +26,7 @@ class FakeLLM:
     async def ainvoke(self, prompt: str, **kwargs: Any) -> str:
         return self._response
 
-    async def astream(self, prompt: str, **kwargs: Any):
+    async def astream(self, prompt: str, **kwargs: Any) -> AsyncIterator[str]:
         yield self._response
 
 

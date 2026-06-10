@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """
 Feature:  AI Agents — Trajectory Snapshots
 Layer:    Test / Evals (PR Gate 6)

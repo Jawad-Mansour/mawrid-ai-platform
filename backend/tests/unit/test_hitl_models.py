@@ -14,7 +14,7 @@ from app.core.hitl.models import HITLAction, HITLActionType, HITLStatus
 from pydantic import ValidationError
 
 
-def test_valid_action_type():
+def test_valid_action_type() -> None:
     action = HITLAction(
         action_id="act-001",
         tenant_id="t1",
@@ -25,7 +25,7 @@ def test_valid_action_type():
     assert action.status == HITLStatus.PENDING
 
 
-def test_all_action_types_valid():
+def test_all_action_types_valid() -> None:
     for at in HITLActionType:
         action = HITLAction(
             action_id=f"act-{at}",
@@ -37,7 +37,7 @@ def test_all_action_types_valid():
         assert action.action_type == at
 
 
-def test_extra_fields_forbidden():
+def test_extra_fields_forbidden() -> None:
     with pytest.raises(ValidationError):
         HITLAction(
             action_id="act-001",

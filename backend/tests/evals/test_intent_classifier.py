@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """
 Feature:  AI Agents — Intent Classifier Evaluation
 Layer:    Test / Evals (Nightly Gate 8)

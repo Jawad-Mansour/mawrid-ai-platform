@@ -12,6 +12,8 @@ HITL:     None
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 
@@ -49,7 +51,7 @@ class TestProductHash:
 
 class TestEnrichmentPipeline:
     @pytest.mark.asyncio
-    async def test_enriched_product_not_on_storefront(self, fake_llm) -> None:
+    async def test_enriched_product_not_on_storefront(self, fake_llm: Any) -> None:
         """Enriched product must have storefront_status = None (not published)."""
         from app.core.catalog.pipeline import EnrichmentPipeline
 
@@ -62,7 +64,7 @@ class TestEnrichmentPipeline:
         assert result.enrichment_status == "enriched"
 
     @pytest.mark.asyncio
-    async def test_pipeline_idempotent_on_same_hash(self, fake_llm) -> None:
+    async def test_pipeline_idempotent_on_same_hash(self, fake_llm: Any) -> None:
         """Submitting the same product twice must not create a duplicate."""
         from app.core.catalog.pipeline import EnrichmentPipeline
 

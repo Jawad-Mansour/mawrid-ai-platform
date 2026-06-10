@@ -13,25 +13,25 @@ import hashlib
 from app.core.catalog.hash import compute_product_hash
 
 
-def test_hash_format():
+def test_hash_format() -> None:
     h = compute_product_hash("tenant1", "Nescafe 200g", "SKU-001")
     expected = hashlib.sha256(b"tenant1:Nescafe 200g:SKU-001").hexdigest()
     assert h == expected
 
 
-def test_hash_no_sku():
+def test_hash_no_sku() -> None:
     h = compute_product_hash("tenant1", "Nescafe 200g", None)
     expected = hashlib.sha256(b"tenant1:Nescafe 200g:").hexdigest()
     assert h == expected
 
 
-def test_cross_tenant_isolation():
+def test_cross_tenant_isolation() -> None:
     h1 = compute_product_hash("tenant1", "Same Product", "SKU-X")
     h2 = compute_product_hash("tenant2", "Same Product", "SKU-X")
     assert h1 != h2
 
 
-def test_price_excluded():
+def test_price_excluded() -> None:
     # Adding different prices should NOT change the hash
     h1 = compute_product_hash("tenant1", "Ariel 2kg", "SKU-002")
     h2 = compute_product_hash("tenant1", "Ariel 2kg", "SKU-002")

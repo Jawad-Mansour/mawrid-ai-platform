@@ -13,6 +13,7 @@ HITL:     None
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 import yaml
@@ -20,9 +21,9 @@ import yaml
 THRESHOLDS_PATH = Path(__file__).parent.parent.parent / "ml_config" / "eval_thresholds.yaml"
 
 
-def load_thresholds() -> dict:
+def load_thresholds() -> dict[str, Any]:
     with open(THRESHOLDS_PATH) as f:
-        return yaml.safe_load(f)
+        return cast(dict[str, Any], yaml.safe_load(f))
 
 
 @pytest.mark.asyncio

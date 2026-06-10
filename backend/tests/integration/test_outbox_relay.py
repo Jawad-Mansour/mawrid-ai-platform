@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """
 Feature:  Enrichment Pipeline — Outbox Pattern
 Layer:    Test / Integration

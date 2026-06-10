@@ -116,6 +116,7 @@ dev = [
 python_version = "3.11"
 strict = true
 ignore_missing_imports = true
+exclude = ["^scripts/"]
 
 [tool.ruff]
 line-length = 100

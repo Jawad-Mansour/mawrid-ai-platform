@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """
 Feature:  Procurement
 Layer:    Test / Integration

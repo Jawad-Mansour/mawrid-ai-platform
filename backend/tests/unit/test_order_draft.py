@@ -11,12 +11,14 @@ HITL:     po_draft_created
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 
 class TestOrderDraft:
     @pytest.mark.asyncio
-    async def test_draft_starts_in_pending_approval(self, fake_email_sender) -> None:
+    async def test_draft_starts_in_pending_approval(self, fake_email_sender: Any) -> None:
         """Order draft must start in pending_approval, not sent."""
         from app.core.procurement.services import create_order_draft
 
@@ -30,7 +32,7 @@ class TestOrderDraft:
         assert len(fake_email_sender.sent) == 0
 
     @pytest.mark.asyncio
-    async def test_hitl_action_created_on_draft(self, fake_email_sender) -> None:
+    async def test_hitl_action_created_on_draft(self, fake_email_sender: Any) -> None:
         """A hitl_actions record must be created when a draft is submitted."""
         from app.core.procurement.services import create_order_draft
 

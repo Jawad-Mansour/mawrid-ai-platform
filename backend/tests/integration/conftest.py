@@ -12,19 +12,18 @@ HITL:     None
 
 from __future__ import annotations
 
+import os
 from collections.abc import AsyncGenerator
+from typing import Any
 
 import pytest
 import pytest_asyncio
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
 
 @pytest_asyncio.fixture(scope="session")
-async def db_engine():
+async def db_engine() -> AsyncGenerator[AsyncEngine, None]:
     """Async SQLAlchemy engine pointed at the test database."""
-    import os
-
-    from sqlalchemy.ext.asyncio import create_async_engine
-
     url = os.environ.get(
         "DATABASE_URL",
         "postgresql+asyncpg://mawrid:password@localhost:5432/mawrid_test",
@@ -35,24 +34,20 @@ async def db_engine():
 
 
 @pytest_asyncio.fixture
-async def db_session(db_engine) -> AsyncGenerator:
+async def db_session(db_engine: AsyncEngine) -> AsyncGenerator[AsyncSession, None]:
     """Transactional session. Rolls back after each test."""
-    from sqlalchemy.ext.asyncio import AsyncSession
-
     async with AsyncSession(db_engine, expire_on_commit=False) as session, session.begin():
         yield session
         await session.rollback()
 
 
 @pytest_asyncio.fixture(scope="session")
-async def redis_client():
+async def redis_client() -> AsyncGenerator[Any, None]:
     """Real Redis client for integration tests."""
-    import os
-
     import redis.asyncio as aioredis
 
     url = os.environ.get("REDIS_URL", "redis://localhost:6379/1")
-    client = aioredis.from_url(url)
+    client = aioredis.from_url(url)  # type: ignore[no-untyped-call]
     yield client
     await client.aclose()
 

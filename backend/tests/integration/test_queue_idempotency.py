@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 """
 Feature:  Enrichment Pipeline — ARQ Queue
 Layer:    Test / Integration

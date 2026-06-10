@@ -11,9 +11,11 @@ HITL:     All 14 action_types
 
 from __future__ import annotations
 
+from typing import Any
+
 
 class TestHITLLifecycle:
-    async def test_approve_triggers_external_write(self, fake_email_sender) -> None:
+    async def test_approve_triggers_external_write(self, fake_email_sender: Any) -> None:
         """Approving a HITL action must allow the downstream write to execute."""
         from app.core.hitl.services import approve_action
 
@@ -26,7 +28,7 @@ class TestHITLLifecycle:
         assert result.status == "approved"
         assert len(fake_email_sender.sent) == 1
 
-    def test_reject_blocks_external_write(self, fake_email_sender) -> None:
+    def test_reject_blocks_external_write(self, fake_email_sender: Any) -> None:
         """Rejecting a HITL action must prevent any external write."""
         from app.core.hitl.services import reject_action
 
@@ -34,7 +36,7 @@ class TestHITLLifecycle:
         assert result.status == "rejected"
         assert len(fake_email_sender.sent) == 0
 
-    def test_pending_action_blocks_external_write(self, fake_email_sender) -> None:
+    def test_pending_action_blocks_external_write(self, fake_email_sender: Any) -> None:
         """A HITL action in pending state must not trigger any external write."""
         from app.core.hitl.services import get_action_status
 
