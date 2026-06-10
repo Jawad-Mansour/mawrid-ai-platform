@@ -42,10 +42,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v4
       - name: Install dependencies
-        run: uv sync --dev
+        run: uv sync --frozen --dev
       - name: Run migrations
         env:
-          DATABASE_URL_SYNC: postgresql://mawrid:password@localhost:5432/mawrid_test
+          DATABASE_URL: postgresql+asyncpg://mawrid:password@localhost:5432/mawrid_test
         run: uv run alembic upgrade head
       - name: Run integration tests
         env:
@@ -76,7 +76,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v4
       - name: Install dependencies
-        run: uv sync --dev
+        run: uv sync --frozen --dev
+      - name: Run migrations
+        env:
+          DATABASE_URL: postgresql+asyncpg://mawrid:password@localhost:5432/mawrid_test
+        run: uv run alembic upgrade head
       - name: Run tenant isolation tests
         env:
           DATABASE_URL: postgresql+asyncpg://mawrid:password@localhost:5432/mawrid_test
@@ -91,6 +95,6 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v4
       - name: Install dependencies
-        run: uv sync --dev
+        run: uv sync --frozen --dev
       - name: Run agent trajectory snapshot tests
         run: uv run pytest backend/tests/evals/test_agent_trajectories.py -v --tb=short

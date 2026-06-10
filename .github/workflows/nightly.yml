@@ -29,14 +29,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v4
       - name: Install dependencies
-        run: uv sync --dev
+        run: uv sync --frozen --dev
       - name: Run RAGAS eval
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           DATABASE_URL: postgresql+asyncpg://mawrid:password@localhost:5432/mawrid_test
-        run: |
-          uv run pytest backend/tests/evals/ -v --tb=short \
-            --eval-thresholds backend/ml_config/eval_thresholds.yaml
+        run: uv run pytest backend/tests/evals/test_rag_quality.py -v --tb=short
 
   gate8-classifier-eval:
     name: "Gate 8: Classifier F1 Evaluation"
@@ -46,7 +44,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v4
       - name: Install dependencies
-        run: uv sync --dev
+        run: uv sync --frozen --dev
       - name: Intent classifier F1 check
         run: |
           uv run python -m app.ml.intent.trainer --eval-only \
@@ -66,7 +64,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v4
       - name: Install dependencies
-        run: uv sync --dev
+        run: uv sync --frozen --dev
       - name: Run drift monitor
         env:
           DATABASE_URL: postgresql+asyncpg://mawrid:password@localhost:5432/mawrid_test

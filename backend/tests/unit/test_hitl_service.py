@@ -19,7 +19,7 @@ class TestHITLLifecycle:
 
         result = await approve_action(
             action_id="hitl_001",
-            action_type="po_draft_created",
+            action_type="purchase_order_send",
             payload={"to": "supplier@example.com", "subject": "PO #42"},
             email_sender=fake_email_sender,
         )
@@ -30,7 +30,7 @@ class TestHITLLifecycle:
         """Rejecting a HITL action must prevent any external write."""
         from app.core.hitl.services import reject_action
 
-        result = reject_action(action_id="hitl_002", action_type="po_draft_created")
+        result = reject_action(action_id="hitl_002", action_type="purchase_order_send")
         assert result.status == "rejected"
         assert len(fake_email_sender.sent) == 0
 

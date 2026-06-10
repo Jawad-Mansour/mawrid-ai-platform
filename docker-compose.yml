@@ -11,6 +11,7 @@ services:
       POSTGRES_USER: mawrid
       POSTGRES_PASSWORD: password
       POSTGRES_DB: mawrid
+      POSTGRES_HOST_AUTH_METHOD: trust
     ports:
       - "5432:5432"
     volumes:
@@ -98,10 +99,16 @@ services:
     command: server -dev -dev-root-token-id=root
     environment:
       VAULT_DEV_ROOT_TOKEN_ID: root
+      VAULT_ADDR: http://0.0.0.0:8200
     ports:
       - "8200:8200"
     cap_add:
       - IPC_LOCK
+    healthcheck:
+      test: ["CMD", "vault", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # ── Backend (FastAPI) ────────────────────────────────────────────────────
   backend:
@@ -111,6 +118,8 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://mawrid:password@postgres:5432/mawrid
       REDIS_URL: redis://redis:6379/0
+      VAULT_ADDR: http://vault:8200
+      VAULT_TOKEN: root
     ports:
       - "8000:8000"
     volumes:
@@ -119,6 +128,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      vault:
         condition: service_healthy
     command: /opt/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
@@ -130,12 +141,16 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://mawrid:password@postgres:5432/mawrid
       REDIS_URL: redis://redis:6379/0
+      VAULT_ADDR: http://vault:8200
+      VAULT_TOKEN: root
     volumes:
       - ./backend:/app
     depends_on:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      vault:
         condition: service_healthy
     command: /opt/venv/bin/python -m arq app.infra.workers.enrichment_worker.WorkerSettings
 

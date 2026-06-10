@@ -3,16 +3,21 @@ Feature:  Platform Bootstrap
 Layer:    API / App Factory
 Module:   app.main
 Purpose:  FastAPI application factory. Registers all routers, middleware,
-          and lifespan hooks (ML model loading, scheduler start, DB engine,
-          Redis client). Entry point for uvicorn.
-Depends:  All routers, all middleware, infra.scheduler, infra.db.session,
-          infra.llm.openai, infra.llm.embedder, app.rag.reranking
+          and lifespan hooks (Vault secrets, DB engine, Redis, MLflow,
+          LangSmith). Entry point for uvicorn.
+Depends:  All routers, all middleware, infra.db.session, infra.cache.redis_client,
+          infra.secrets.vault, app.core.config
 HITL:     None — bootstrap only.
 """
 
+from __future__ import annotations
+
+import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
+import mlflow
+import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -31,19 +36,52 @@ from app.api import (
     suppliers,
     webhooks,
 )
+from app.core.config import get_settings
+from app.infra.cache.redis_client import close_redis, init_redis
+from app.infra.db.session import configure_engine
+from app.infra.secrets.vault import load_secrets
 from app.middleware.logging import LoggingMiddleware
 from app.middleware.rate_limit import RateLimitMiddleware
-from app.middleware.tenant import TenantMiddleware
+from app.middleware.tenant import TenantMiddleware, set_jwt_public_key
+
+logger = structlog.get_logger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    # Startup: load ML models, connect DB, start scheduler
+    settings = get_settings()
+
+    # 1. Load secrets from Vault (hard fail if unreachable)
+    secrets = load_secrets(settings)
+    set_jwt_public_key(secrets.jwt_public_key)
+    logger.info("vault_secrets_loaded")
+
+    # 2. Configure DB engine
+    configure_engine(settings.database_url)
+    logger.info("db_engine_configured", url=settings.database_url.split("@")[-1])
+
+    # 3. Init Redis
+    await init_redis(settings.redis_url)
+    logger.info("redis_initialized")
+
+    # 4. MLflow tracking URI
+    mlflow.set_tracking_uri("http://mlflow:5000")
+    logger.info("mlflow_configured")
+
+    # 5. LangSmith tracing
+    os.environ["LANGCHAIN_TRACING_V2"] = "true"
+    os.environ["LANGCHAIN_API_KEY"] = secrets.langsmith_api_key
+    logger.info("langsmith_configured")
+
     yield
-    # Shutdown: close connections, stop scheduler
+
+    # Shutdown
+    await close_redis()
+    logger.info("shutdown_complete")
 
 
 def create_app() -> FastAPI:
+    settings = get_settings()
     app = FastAPI(title="Mawrid AI Platform", lifespan=lifespan)
 
     app.add_middleware(LoggingMiddleware)
@@ -51,7 +89,7 @@ def create_app() -> FastAPI:
     app.add_middleware(TenantMiddleware)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[],
+        allow_origins=settings.allowed_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

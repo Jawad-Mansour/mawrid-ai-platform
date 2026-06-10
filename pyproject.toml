@@ -15,6 +15,9 @@ dependencies = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.30.0",
     "starlette>=0.41.0",
+    "python-multipart>=0.0.12",
+    "aiofiles>=24.1.0",
+    "slowapi>=0.1.9",
 
     # Data validation
     "pydantic[email]>=2.9.0",
@@ -23,6 +26,7 @@ dependencies = [
     # Database
     "sqlalchemy[asyncio]>=2.0.36",
     "asyncpg>=0.30.0",
+    "psycopg2-binary>=2.9.10",
     "alembic>=1.14.0",
     "pgvector>=0.3.6",
 
@@ -88,6 +92,9 @@ dependencies = [
     # MCP
     "mcp>=1.2.0",
 
+    # Vault
+    "hvac>=2.3.0",
+
     # Network
     "networkx>=3.4.2",
 ]
@@ -115,7 +122,7 @@ line-length = 100
 target-version = "py311"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "N", "UP", "B", "SIM"]
+select = ["E", "F", "I", "N", "UP", "B", "SIM", "ASYNC"]
 ignore = ["E501"]
 
 [tool.pytest.ini_options]

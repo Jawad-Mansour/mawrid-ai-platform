@@ -69,6 +69,8 @@ Breaking tenant isolation is a hard CI fail (15 cross-tenant attack vectors in `
 
 - `thread_id` format: `{tenant_id}:{user_id}:{session_uuid}` — enforces per-tenant conversation isolation at the checkpointer level
 - Supervisor routes to 5 specialists: Extraction, Enrichment, Communication, Stock Monitor, Discovery
+- Specialist agents live in `backend/app/agents/specialists/` (5 files: extraction_agent, enrichment_agent, communication_agent, stock_monitor_agent, discovery_agent)
+- MCP servers live in `backend/app/agents/mcp_servers/` (4 files: db_server, email_server, filesystem_server, n8n_server)
 - Communication Agent drafts only — all drafts go to `hitl_actions`, never sent directly
 - Enrichment ReAct agent: max 5 steps enforced in `prompts/enrichment_agent.yaml`
 
@@ -95,9 +97,18 @@ All classical ML models (intent classifier tiers 1-2, tone classifier, supplier 
 
 All secrets come from HashiCorp Vault (`backend/app/infra/secrets/vault.py`). The backend refuses to start if Vault is unreachable. Never commit real secrets. `.env.example` contains documented variable names only.
 
+**Vault dev mode resets on every `docker compose down/up`** — secrets are in-memory only. Always re-seed after a full stack restart:
+```bash
+VAULT_ADDR=http://localhost:8200 VAULT_TOKEN=root bash scripts/seed-vault.sh
+```
+
 ### WhatsApp
 
 WhatsApp is deferred to Wave 1 (DEC-011). In the capstone: B2B communications = email only. B2C = email + SMS. All dunning, PO, and fulfillment code must reflect this.
+
+### Deferred ORM Models
+
+`storefront_orders` table exists in the DB (created in migration 0001) but has no ORM model — the model will be added in Phase 11 (Storefront). Do not add it earlier.
 
 ## File Header Convention
 
@@ -127,8 +138,8 @@ This makes `grep -r "Feature: Dunning"` find the full stack for any feature inst
 
 | When | Gates | Time limit |
 |------|-------|------------|
-| Every push | Gate 1: ruff · Gate 2: mypy · Gate 3: unit tests (LLM mocked) | < 3 min |
-| PR to master | + Gate 4: integration · Gate 5: cross-tenant red-team · Gate 6: agent snapshots | < 15 min |
+| Every push | Gate 1: ruff + mypy · Gate 2: unit tests (LLM mocked) · Gate 3: bandit + CORS/RS256/argon2id/HMAC invariants | < 3 min |
+| PR to master | + Gate 4: integration · Gate 5: cross-tenant red-team · Gate 6: agent trajectory snapshots | < 15 min |
 | Nightly on master | Gate 7: RAGAS · Gate 8: classifier F1 ≥ 0.85 · Gate 9: drift (PSI ≥ 0.25 = alarm) | — |
 
 Merge to master requires all PR gates green + nightly eval passed within 24 hours.
@@ -139,15 +150,16 @@ Track what is done. Update this section when each phase's Verify gate passes.
 
 | Phase | Sub-phase | Status |
 |-------|-----------|--------|
-| **0 — Spec & Skills** | 0.1 SpecKit documents (10 files) | ✅ Done |
+| **0 — Spec & Skills** | 0.1 SpecKit documents (9 files) | ✅ Done |
 | | 0.2 Claude Code skills (8 skills) | ✅ Done |
 | | 0.3 Tone classifier training data (240 examples) | ⬜ Pending |
 | | 0.4 Intent classifier training data (1200+ examples) | ⬜ Pending |
-| **1 — Foundation** | 1.1 Local environment + Docker Compose | ⬜ Pending |
-| | 1.2 CI/CD skeleton (Gates 1–3) | ⬜ Pending |
-| | 1.3 Auth + tenant onboarding | ⬜ Pending |
-| | 1.4 Database schema + Alembic migrations | ⬜ Pending |
-| | 1.5 MLflow + LangSmith live | ⬜ Pending |
+| **1 — Foundation** | 1.1 Local environment + Docker Compose | ✅ Done |
+| | 1.2 CI/CD skeleton (Gates 1–3) | ✅ Done |
+| | 1.3 Auth + tenant onboarding | ✅ Done |
+| | 1.4 Database schema + Alembic migrations | ✅ Done |
+| | 1.5 MLflow + LangSmith live | ✅ Done |
+| | **Phase 1 complete — all 5 sub-phases verified** | ✅ |
 | **2 — Enrichment** | Full pipeline (6 layers) | ⬜ Pending |
 | **3 — Procurement** | Draft → PO → shipment → receive → publish | ⬜ Pending |
 | **4 — RAG** | 6-technique pipeline + chatbots | ⬜ Pending |

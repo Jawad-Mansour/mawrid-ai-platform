@@ -5,7 +5,7 @@ Module:   app.infra.db.models.product
 Purpose:  SQLAlchemy ORM model for the `products` table. Includes all three
           independent status columns (enrichment_status, inventory_status,
           storefront_status), product_hash (unique per tenant), price_history
-          JSONB, and pgvector embedding column (1536-dim for text-embedding-3-small).
+          JSONB, and pgvector embedding column (1536-dim for OpenAI text-embedding-3-small).
 Depends:  app.infra.db.base, sqlalchemy, pgvector
 HITL:     None — model only.
 """
@@ -26,9 +26,10 @@ class Product(TenantMixin, Base):
     product_hash: Mapped[str] = mapped_column(Text, nullable=False)
     product_name: Mapped[str] = mapped_column(Text, nullable=False)
     sku: Mapped[str | None] = mapped_column(Text, nullable=True)
+    barcode: Mapped[str | None] = mapped_column(Text, nullable=True)
     enrichment_status: Mapped[str] = mapped_column(Text, default="pending")
-    inventory_status: Mapped[str] = mapped_column(Text, default="out_of_stock")
-    storefront_status: Mapped[str] = mapped_column(Text, default="draft")
+    inventory_status: Mapped[str] = mapped_column(Text, default="not_ordered")
+    storefront_status: Mapped[str] = mapped_column(Text, default="not_published")
     qty_in_stock: Mapped[int] = mapped_column(default=0)
     storefront_qty: Mapped[int] = mapped_column(default=0)
     price_history: Mapped[list[Any]] = mapped_column(JSON, default=list)

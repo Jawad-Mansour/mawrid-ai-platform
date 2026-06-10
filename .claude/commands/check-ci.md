@@ -26,7 +26,7 @@ Run: `uv run pytest tests/integration/test_cross_tenant.py -v`
 - [ ] Zero cross-tenant leaks
 
 **Gate 6 — Agent trajectory snapshots (PR to master)**
-Run: `uv run pytest tests/integration/test_agent_snapshots.py -v`
+Run: `uv run pytest tests/evals/test_agent_trajectories.py -v`
 - [ ] All 20 golden sequences match expected node paths
 
 **Gate 7 — RAGAS eval (nightly only)**
