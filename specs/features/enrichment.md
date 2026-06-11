@@ -122,9 +122,11 @@ The pipeline has six sequential layers. Each layer must be verified independentl
 
 ---
 
-### Layer 3 — Data Extraction (NER / BERT)
+### Layer 3 — Data Extraction (GPT-4o Batch Extraction)
 
 **Responsibility**: Extract every product field from the detected rows. Nothing fabricated.
+
+> **Implementation note (DEC-021)**: Extraction uses GPT-4o in batches of 20 rows, not a local BERT/NER model. Headers in any language are normalised to English keys. `product_name` is preserved verbatim — never translated.
 
 **Extracted fields per product row:**
 `name`, `sku`, `barcode` (if present), `price`, `unit`, `quantity`, any additional specification columns detected.
@@ -162,33 +164,32 @@ Current price = the last entry. Previous prices are never deleted.
 
 ---
 
-### Layer 4 — Product Enrichment (ReAct Agent)
+### Layer 4 — Product Enrichment (Sequential Pipeline, 5 Steps)
 
 **Responsibility**: Enrich each extracted product with real, accurate information from external sources.
 
 **Runs per product** (not per document). Each product is an independent enrichment job.
 
-**Agent tools available:**
-- Web search
-- Product image search
+> **Implementation note (DEC-022)**: This is a **deterministic sequential pipeline**, NOT a LangGraph ReAct agent. Phase 8's Enrichment Specialist wraps this pipeline in a single LangGraph node. The pipeline itself has no agent loop — it executes exactly 5 steps in order, with graceful degradation at each.
 
-**Bounded execution**: maximum **5 reasoning steps** per product. The agent stops at 5 regardless of what is left to find.
+**The 5 steps (executed in order):**
 
-**Target enrichment fields:**
-- Full product description (narrative text)
-- Detailed specifications (key-value pairs: dimensions, weight, power, voltage, capacity, etc.)
-- Product image URL (sourced externally, then downloaded to MinIO)
+| Step | Source | Action |
+|---|---|---|
+| 1 | Icecat Open API | Lookup by EAN barcode first; fall back to product name. Confidence: `high` if EAN + ≥5 specs; `medium` if name + ≥3 specs. |
+| 2 | SearXNG | Search `"{name} {sku} specifications datasheet"` → top 3 URLs. **Skipped** if Step 1 returned `high` confidence. |
+| 3 | httpx + trafilatura | Fetch each URL, extract clean text (8 000 chars max). Concurrent fetches, timeout per URL. |
+| 4 | GPT-4o spec fill | Merge Icecat specs + web text → final `specifications` dict. No invented values — only what appears in sources. |
+| 5 | GPT-4o description | 2–3 sentence English product description from merged context. |
 
-**Immutable fields — agent never touches these:**
-`price`, `sku`, `quantity` — locked at extraction, never overwritten by the agent.
+**Graceful degradation**: a timeout or error in any step does not abort the pipeline. The product is saved with whatever data was gathered before the failure.
 
-**Partial enrichment**: if any target field is not found after 5 steps, that field is `null`. The product is saved as `enrichment_status = partial`, not failed. Partial products are still in the internal catalog and searchable.
+**Immutable fields — pipeline never overwrites:**
+`price`, `sku`, `barcode` — locked at extraction.
 
-**Tool failure handling**: a `ToolError` on any search step is caught. The agent continues with whatever it has found so far — it does not crash or retry the same failed tool call.
+**Partial enrichment**: if description or specifications are empty after all 5 steps, `enrichment_status = partial`. Partial products are still in the internal catalog and searchable.
 
-**Tracing**: every enrichment agent call is traced in LangSmith — tool used, result, reasoning step text, latency, token count.
-
-**Duplicate skip**: if `product_hash` already has `enrichment_status = enriched` → skip. No re-enrichment, no resource waste.
+**Duplicate skip**: if `product_hash` already has `enrichment_status = enriched` → skip. No re-enrichment. ARQ job returns `{status: "skipped", reason: "already_enriched"}`.
 
 **State after successful enrichment:**
 ```
@@ -198,10 +199,9 @@ storefront_status = not_published
 ```
 
 **Failure modes:**
-- All tools fail → `enrichment_status = failed`, error recorded, product goes to DLQ after 3 attempts
-- Agent exceeds 5 steps → hard stop, save what was found, status = `partial`
-- No description found, no image found → `partial` (not `failed`)
-- LangSmith trace unavailable → enrichment still completes, log the trace failure separately
+- All 5 steps return nothing → `enrichment_status = partial`, product saved with empty specs
+- Network timeout on every step → `partial` (graceful fallback, not crash)
+- Product not found anywhere → `partial` with only extraction-time fields
 
 ---
 
@@ -225,17 +225,14 @@ After enrichment succeeds, a single transaction writes:
 If either write fails, both are rolled back. The job is retried from the queue.
 
 **Outbox relay (separate process):**
-- Polls outbox for unprocessed events
-- Generates embedding using `paraphrase-multilingual-MiniLM-L12-v2` (384-dim, loaded once at startup)
-- Writes to `product_embeddings` with HNSW index and `chunk_type` tag (parent / child)
-- Marks outbox event as `sent = true`
-- If relay crashes: on restart, any event where `sent = false` is re-processed
-- Idempotent: checks for existing embedding with same `product_id` + `chunk_type` before inserting
+- Polls outbox for unprocessed events (`FOR UPDATE SKIP LOCKED` — crash-safe, no duplicate processing)
+- Generates embedding using OpenAI **text-embedding-3-small** (1536-dim) via API call (DEC-027)
+- Writes vector to `products.embedding` (`Vector(1536)` column, HNSW index)
+- Marks outbox event as processed
+- If relay crashes: on restart, any unprocessed event is re-processed idempotently
+- Single full-document embedding per product in Phase 2
 
-**Chunking strategy:**
-- **Parent chunk**: full product context, ~1024 tokens — used as LLM context
-- **Child chunk**: precise search target, ~256 tokens — used for vector matching
-- Both stored in `product_embeddings` with `chunk_type = 'parent' | 'child'`
+> **Phase 4 adds chunking**: In Phase 4, a separate `product_chunks` table stores parent chunks (~1024 tokens, LLM context) and child chunks (~256 tokens, vector search targets). Phase 2 uses a single full-document embedding on the `products` table only.
 
 **Image storage:**
 - Product image URL found by enrichment agent → downloaded → stored in MinIO at `{tenant_id}/images/{product_id}.{ext}`

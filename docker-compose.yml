@@ -154,6 +154,42 @@ services:
         condition: service_healthy
     command: /opt/venv/bin/python -m arq app.infra.workers.enrichment_worker.WorkerSettings
 
+  # ── SearXNG (self-hosted meta search — Phase 2 enrichment) ───────────────
+  searxng:
+    image: searxng/searxng:latest
+    environment:
+      SEARXNG_BASE_URL: http://searxng:8080
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./searxng/settings.yml:/etc/searxng/settings.yml:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Outbox Relay (embedding relay — Phase 2) ──────────────────────────────
+  relay:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      DATABASE_URL: postgresql+asyncpg://mawrid:password@postgres:5432/mawrid
+      REDIS_URL: redis://redis:6379/0
+      VAULT_ADDR: http://vault:8200
+      VAULT_TOKEN: root
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      vault:
+        condition: service_healthy
+    command: /opt/venv/bin/python -m app.infra.workers.outbox_relay
+
   # ── Frontend (Vite + React 18) ────────────────────────────────────────────
   frontend:
     build:

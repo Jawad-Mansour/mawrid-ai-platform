@@ -21,12 +21,15 @@ from sqlalchemy.ext.asyncio import (
 )
 
 import app.infra.db.models.customer  # noqa: F401
+import app.infra.db.models.document  # noqa: F401
 import app.infra.db.models.dunning  # noqa: F401
 import app.infra.db.models.graph  # noqa: F401
 import app.infra.db.models.hitl  # noqa: F401
 import app.infra.db.models.order  # noqa: F401
 import app.infra.db.models.outbox  # noqa: F401
 import app.infra.db.models.product  # noqa: F401
+import app.infra.db.models.product_chunks  # noqa: F401
+import app.infra.db.models.review_queue  # noqa: F401
 import app.infra.db.models.storefront  # noqa: F401
 import app.infra.db.models.supplier  # noqa: F401
 

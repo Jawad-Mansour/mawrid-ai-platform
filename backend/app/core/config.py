@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     vault_token: str = "root"
     environment: str = "development"
     allowed_origins: list[str] = []
+    searxng_base_url: str = "http://searxng:8080"
 
 
 @lru_cache

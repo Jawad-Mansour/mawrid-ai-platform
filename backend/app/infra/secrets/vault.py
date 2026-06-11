@@ -28,6 +28,10 @@ class VaultSecrets:
     sendgrid_api_key: str
     stripe_secret_key: str
     langsmith_api_key: str
+    icecat_api_key: str
+    minio_access_key: str
+    minio_secret_key: str
+    minio_endpoint: str
 
 
 # Module-level cache — set once by lifespan, read everywhere
@@ -65,6 +69,10 @@ def load_secrets(settings: Settings) -> VaultSecrets:
         sendgrid_api_key = _read_kv(client, "mawrid/sendgrid", "api_key")
         stripe_secret_key = _read_kv(client, "mawrid/stripe", "secret_key")
         langsmith_api_key = _read_kv(client, "mawrid/langsmith", "api_key")
+        icecat_api_key = _read_kv(client, "mawrid/icecat", "api_key")
+        minio_access_key = _read_kv(client, "mawrid/minio", "access_key")
+        minio_secret_key = _read_kv(client, "mawrid/minio", "secret_key")
+        minio_endpoint = _read_kv(client, "mawrid/minio", "endpoint")
     except Exception as exc:
         raise RuntimeError(f"Failed to load secrets from Vault: {exc}") from exc
 
@@ -75,5 +83,9 @@ def load_secrets(settings: Settings) -> VaultSecrets:
         sendgrid_api_key=sendgrid_api_key,
         stripe_secret_key=stripe_secret_key,
         langsmith_api_key=langsmith_api_key,
+        icecat_api_key=icecat_api_key,
+        minio_access_key=minio_access_key,
+        minio_secret_key=minio_secret_key,
+        minio_endpoint=minio_endpoint,
     )
     return _secrets

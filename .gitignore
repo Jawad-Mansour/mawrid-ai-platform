@@ -22,6 +22,13 @@ coverage.xml
 .env.prod
 .env.staging
 
+# ── Secrets / keys — NEVER commit ────────────────────────────────────────────
+keys
+keys.txt
+*.key
+secrets.txt
+api_keys*
+
 # ── uv ───────────────────────────────────────────────────────────────────────
 # uv.lock IS committed — ensures reproducible installs across all environments
 # .python-version IS committed — pins interpreter version

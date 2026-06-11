@@ -23,5 +23,7 @@ class Supplier(TenantMixin, Base):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     email: Mapped[str | None] = mapped_column(Text, nullable=True)
     phone: Mapped[str | None] = mapped_column(Text, nullable=True)
+    language: Mapped[str] = mapped_column(Text, nullable=False, server_default="en")
+    currency: Mapped[str] = mapped_column(Text, nullable=False, server_default="USD")
     score: Mapped[float | None] = mapped_column(Numeric(5, 2), nullable=True)
     embedding: Mapped[list[float] | None] = mapped_column(Vector(1536), nullable=True)

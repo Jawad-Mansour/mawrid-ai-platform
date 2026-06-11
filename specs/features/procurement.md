@@ -75,8 +75,10 @@ This separation gives the importer a final review of the product list before the
 
 **Trigger**: Importer clicks "Place Order" on a submitted draft.
 
+> **Phase 3 vs Phase 8 implementation note**: "Communication Agent" is the Phase 8 LangGraph agent. In Phase 3, PO drafting is a direct `chat_completion()` call using `prompts/communication/purchase_order.yaml`. The Phase 8 Communication Agent wraps this exact service call in a LangGraph node — no logic changes, only the caller changes. The HITL gate and all payload formats are identical.
+
 **Flow**:
-1. Communication Agent drafts the PO in the supplier's registered language (AR / FR / EN)
+1. PO drafted in the supplier's registered language (AR / FR / EN) via `chat_completion()` with the purchase order prompt template
 2. PO content: supplier name, importer name + contact, ordered product list (name, qty, unit price), requested delivery date, total value
 3. PO draft written to `hitl_actions` table with `action_type = purchase_order_send`
 4. Importer sees PO in HITL Approval Center: full PO text, supplier contact details, delivery channel

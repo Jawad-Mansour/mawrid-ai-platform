@@ -68,8 +68,17 @@ dependencies = [
     # Explicit so [tool.uv.sources] can redirect to the CPU-only wheel
     "torch>=2.0.0",
 
+    # Document parsing (Phase 2 enrichment pipeline)
+    # docling: PDF/table/text parsing. Cap docling-ibm-models below 3.0 to avoid
+    # RTDetrImageProcessor/granite_vision eager imports that fail in CPU-only image.
+    "docling>=2.5.0,<2.30.0",
+    "docling-ibm-models>=2.0.0,<3.0.0",
+    "openpyxl>=3.1.0",
+    "trafilatura>=1.9.0",
+
     # Storage
     "aioboto3>=13.2.0",
+    "minio>=7.2.0",
 
     # Payments
     "stripe>=11.3.0",
@@ -110,6 +119,7 @@ dev = [
     "ragas>=0.2.6",
     "bandit>=1.8.0",
     "pre-commit>=4.0.0",
+    "reportlab>=4.2.0",
 ]
 
 [tool.mypy]

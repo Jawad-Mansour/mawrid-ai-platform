@@ -16,6 +16,7 @@ OPENAI_KEY="${1:-sk-placeholder-replace-me}"
 SENDGRID_KEY="${2:-SG.placeholder}"
 STRIPE_KEY="${3:-sk_test_placeholder}"
 LANGSMITH_KEY="${4:-ls__placeholder}"
+ICECAT_KEY="${5:-icecat-placeholder}"
 
 echo "==> Seeding Vault at ${VAULT_ADDR}"
 
@@ -66,6 +67,12 @@ vault_put "mawrid/stripe" "{\"secret_key\": \"${STRIPE_KEY}\"}"
 # LangSmith
 vault_put "mawrid/langsmith" "{\"api_key\": \"${LANGSMITH_KEY}\"}"
 
+# Icecat Open (Phase 2 enrichment — product specs database)
+vault_put "mawrid/icecat" "{\"api_key\": \"${ICECAT_KEY}\"}"
+
+# MinIO (Phase 2 enrichment — document + image storage)
+vault_put "mawrid/minio" "{\"access_key\": \"minioadmin\", \"secret_key\": \"minioadmin\", \"endpoint\": \"minio:9000\"}"
+
 echo ""
 echo "==> Vault seeded successfully."
-echo "    Pass your real keys as arguments: bash scripts/seed-vault.sh sk-real-openai-key ..."
+echo "    Pass your real keys as arguments: bash scripts/seed-vault.sh sk-real-openai-key SG.key sk_key ls__key icecat-key"

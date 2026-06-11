@@ -109,9 +109,10 @@ Applied at the Dense Retrieval step. Determines which products can appear in res
 
 ### 5.1 — Dense Retrieval (pgvector HNSW)
 
-- Embedding model: `paraphrase-multilingual-MiniLM-L12-v2`, 384 dimensions, loaded once at startup
-- Searches on child chunks (256-token precision units)
-- HNSW index on `product_embeddings` — never a sequential scan
+- Embedding model: OpenAI **text-embedding-3-small**, 1536 dimensions (API call, DEC-027 — locked)
+- Query embeddings generated via the same API call at search time; product embeddings pre-computed and stored
+- Searches on child chunks (256-token precision units) in the `product_chunks` table (added Phase 4)
+- HNSW index on the chunk embedding column — never a sequential scan
 - Returns top-20 child chunk results per search vector
 
 ### 5.2 — Parent-Document Chunking

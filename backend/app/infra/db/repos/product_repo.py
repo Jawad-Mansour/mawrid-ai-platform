@@ -43,6 +43,21 @@ class ProductRepository(TenantRepository):
             existing.product_name = product.product_name
             existing.sku = product.sku
             existing.barcode = product.barcode
+            # Phase 2 enrichment fields — only overwrite if provided
+            if product.description is not None:
+                existing.description = product.description
+            if product.specifications is not None:
+                existing.specifications = product.specifications
+            if product.image_path is not None:
+                existing.image_path = product.image_path
+            if product.enrichment_source is not None:
+                existing.enrichment_source = product.enrichment_source
+            if product.enrichment_confidence is not None:
+                existing.enrichment_confidence = product.enrichment_confidence
+            if product.currency is not None:
+                existing.currency = product.currency
+            if product.price_history:
+                existing.price_history = product.price_history
             await self._session.flush()
             return existing
         self._session.add(product)
@@ -78,6 +93,15 @@ class ProductRepository(TenantRepository):
             )
             .values(storefront_status=status)
         )
+
+    async def list_all(self, limit: int = 50) -> list[Product]:
+        result = await self._session.execute(
+            select(Product)
+            .where(self._tenant_filter(Product))
+            .order_by(Product.product_name)
+            .limit(limit)
+        )
+        return list(result.scalars().all())
 
     async def list_pending_enrichment(self, limit: int = 50) -> list[Product]:
         result = await self._session.execute(

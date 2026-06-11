@@ -213,8 +213,8 @@ These decisions are made and closed. They are not re-opened without a documented
 | **uv** (not pip, not poetry, not conda) | All deps in `pyproject.toml`. `uv sync` installs. `uv run` executes. `uv.lock` committed. |
 | **PostgreSQL + pgvector** | All structured data + vector embeddings in one database |
 | **LangGraph + AsyncRedisSaver** | Agent state persisted in Redis. `thread_id = {tenant_id}:{user_id}:{session_uuid}` |
-| **paraphrase-multilingual-MiniLM-L12-v2** | Local 384-dim embedding model for EN/AR/FR. Loaded once at startup. |
-| **ms-marco-MiniLM-L-6-v2** | Cross-encoder reranker. Top-20 → top-6. Loaded once at startup. |
+| **OpenAI text-embedding-3-small** | Remote API embedding model, 1536-dim. All product embeddings stored in pgvector as `Vector(1536)`. (DEC-027 — locked; DB schema cannot change without migration) |
+| **ms-marco-MiniLM-L-6-v2** | Cross-encoder reranker. Top-20 → top-6. Loaded locally at startup. Runs in < 150ms on CPU. |
 | **ARQ + Redis** | Async job queue for enrichment pipeline |
 | **n8n** | All event-driven automation — 15 core workflows in capstone |
 | **MLflow** | ML model registry and experiment tracking, running from Phase 1 |

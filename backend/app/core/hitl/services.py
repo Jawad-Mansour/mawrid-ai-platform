@@ -2,14 +2,15 @@
 Feature:  HITL Approval Center (cross-cutting)
 Layer:    Core / Service
 Module:   app.core.hitl.services
-Purpose:  Business logic for HITL action lifecycle: create (any feature can call),
-          approve (validates transition, enqueues execution), reject, edit (returns
-          to pending), expire (background job). Single transaction guarantee:
-          no external side effect fires before status='approved'.
-Depends:  app.core.hitl.models, app.infra.db.repos.hitl_repo,
-          app.infra.queue.client (ARQ for execution)
+Purpose:  Business logic for HITL action lifecycle: create, approve (calls
+          email_sender if payload has to/subject), reject, edit (returns to
+          pending), get_action_status. All transitions are explicit — no
+          external write fires without approval.
+Depends:  app.core.hitl.models, typing.Protocol
 HITL:     This IS the HITL service.
 """
+
+from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any, Protocol
@@ -34,9 +35,12 @@ async def approve_action(
     payload: dict[str, Any],
     email_sender: _EmailSender,
 ) -> ActionResult:
+    """Approve a HITL action. Sends email if payload contains 'to' and 'subject'."""
     to = payload.get("to", "")
     subject = payload.get("subject", "")
-    await email_sender.send(to=to, subject=subject, body="")
+    body = payload.get("body", "")
+    if to and subject:
+        await email_sender.send(to=str(to), subject=str(subject), body=str(body))
     return ActionResult(action_id=action_id, status=HITLStatus.APPROVED, payload=payload)
 
 
