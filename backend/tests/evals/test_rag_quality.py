@@ -3,10 +3,12 @@ Feature:  RAG Pipeline — Quality Evaluation
 Layer:    Test / Evals (Nightly)
 Module:   tests.evals.test_rag_quality
 Purpose:  RAGAS-based nightly evaluation of the 6-technique RAG pipeline.
-          Uses a real LLM (GPT-4o) and real pgvector DB. Thresholds from
-          backend/ml_config/eval_thresholds.yaml. Fails if any metric falls
-          below threshold — this is Gate 7 in CI.
-Depends:  ragas, app.rag, app.infra.vector.pgvector, real LLM, real DB
+          Uses a real LLM (GPT-4o) and real pgvector DB with seeded product data.
+          Thresholds from backend/ml_config/eval_thresholds.yaml (ragas section).
+          Fails if any metric falls below threshold — this is Gate 7 in CI.
+          Run: uv run pytest backend/tests/evals/test_rag_quality.py
+          Requires: docker compose up + alembic upgrade head + vault seeded
+Depends:  ragas>=0.2.6, app.rag, real LLM, real DB
 HITL:     None
 """
 
@@ -31,7 +33,7 @@ async def test_rag_faithfulness_above_threshold() -> None:
     """RAG pipeline faithfulness must meet nightly threshold (Gate 7)."""
     pytest.importorskip("ragas")
     thresholds = load_thresholds()
-    min_faithfulness = thresholds["rag_pipeline"]["faithfulness"]
+    min_faithfulness: float = thresholds["ragas"]["faithfulness"]
 
     from tests.evals.helpers.rag_evaluator import evaluate_rag_faithfulness
 
@@ -43,16 +45,16 @@ async def test_rag_faithfulness_above_threshold() -> None:
 
 @pytest.mark.asyncio
 async def test_rag_answer_relevance_above_threshold() -> None:
-    """RAG pipeline answer relevance must meet nightly threshold (Gate 7)."""
+    """RAG pipeline answer relevancy must meet nightly threshold (Gate 7)."""
     pytest.importorskip("ragas")
     thresholds = load_thresholds()
-    min_relevance = thresholds["rag_pipeline"]["answer_relevance"]
+    min_relevance: float = thresholds["ragas"]["answer_relevancy"]
 
     from tests.evals.helpers.rag_evaluator import evaluate_rag_answer_relevance
 
     score = await evaluate_rag_answer_relevance()
     assert score >= min_relevance, (
-        f"RAG answer relevance {score:.3f} below threshold {min_relevance}"
+        f"RAG answer relevancy {score:.3f} below threshold {min_relevance}"
     )
 
 
@@ -61,7 +63,7 @@ async def test_rag_context_precision_above_threshold() -> None:
     """RAG pipeline context precision must meet nightly threshold (Gate 7)."""
     pytest.importorskip("ragas")
     thresholds = load_thresholds()
-    min_precision = thresholds["rag_pipeline"]["context_precision"]
+    min_precision: float = thresholds["ragas"]["context_precision"]
 
     from tests.evals.helpers.rag_evaluator import evaluate_rag_context_precision
 

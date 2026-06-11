@@ -2,42 +2,163 @@
   {
     "id": "rq-001",
     "question": "What is the unit price of Barada mineral water 500ml?",
-    "ground_truth": "The unit price of Barada mineral water 500ml is listed in the catalog.",
-    "context_required": ["product_catalog"],
+    "ground_truth": "The Barada mineral water 500ml is priced for wholesale distribution. The exact unit price can be found in the product catalog under the Beverages category.",
+    "sample_context": "Product: Barada Mineral Water 500ml. SKU: BRD-500ML. Category: Beverages. Currency: USD. Enrichment source: icecat. Enrichment confidence: high. Available in packs of 24.",
     "scope": "admin",
     "category": "price_inquiry"
   },
   {
     "id": "rq-002",
     "question": "Which products are currently out of stock?",
-    "ground_truth": "Products with inventory_status='out_of_stock' are listed.",
-    "context_required": ["inventory"],
+    "ground_truth": "Products with inventory_status set to out_of_stock are currently unavailable. Check the inventory dashboard for real-time stock levels.",
+    "sample_context": "Inventory status tracking: products transition from not_ordered to in_stock after goods received. Products with qty_in_stock=0 are flagged as out_of_stock. Run a stock check to see current availability.",
     "scope": "admin",
     "category": "stock_check"
   },
   {
     "id": "rq-003",
     "question": "What cleaning products do you carry?",
-    "ground_truth": "Published cleaning products are listed for the storefront customer.",
-    "context_required": ["published_products"],
-    "scope": "storefront",
+    "ground_truth": "The catalog includes cleaning products such as Ariel detergent, Mr. Muscle surface cleaner, and Dettol disinfectant in various sizes.",
+    "sample_context": "Product: Ariel Automatic Detergent 3kg. Category: Cleaning. Specifications: enzyme formula, suitable for front-load machines. Product: Mr. Muscle Kitchen Cleaner 500ml. Category: Cleaning. Active ingredient: surfactants.",
+    "scope": "consumer",
     "category": "product_search"
   },
   {
     "id": "rq-004",
     "question": "What are the specifications of the Ariel 2kg detergent?",
-    "ground_truth": "Specifications extracted during enrichment phase.",
-    "context_required": ["product_specs"],
+    "ground_truth": "Ariel 2kg detergent specifications include: enzyme-based formula, suitable for all washing machine types, effective at 30°C, available in original and lavender scents.",
+    "sample_context": "Product: Ariel Automatic Detergent 2kg. SKU: ARL-2KG-AUTO. Specifications: {type: automatic, weight: 2000g, formula: enzyme, temperature: 30C-60C, scent: original}. Enrichment confidence: high.",
     "scope": "admin",
-    "category": "product_search"
+    "category": "product_specs"
   },
   {
     "id": "rq-005",
     "question": "كم سعر زيت الزيتون؟",
-    "ground_truth": "Price of olive oil product from catalog.",
-    "context_required": ["product_catalog"],
-    "scope": "storefront",
+    "ground_truth": "سعر زيت الزيتون يختلف حسب الحجم والعلامة التجارية. يمكن مراجعة الكتالوج للاطلاع على الأسعار الحالية.",
+    "sample_context": "Product: Extra Virgin Olive Oil 750ml. Brand: Rahit. Origin: Syria. SKU: OLV-750ML. Category: Oils & Condiments. Price: listed in catalog. Enrichment source: web.",
+    "scope": "consumer",
     "category": "price_inquiry",
     "language": "arabic"
+  },
+  {
+    "id": "rq-006",
+    "question": "How many units of Samsung 55-inch TVs do we have in stock?",
+    "ground_truth": "The current stock quantity for Samsung 55-inch TV is available in the inventory system. Check the product page for exact qty_in_stock.",
+    "sample_context": "Product: Samsung UHD Smart TV 55 inch. Model: UN55TU8000. Inventory status: in_stock. qty_in_stock tracked after goods received. Category: Electronics. Specifications: 4K UHD, HDR, SmartThings.",
+    "scope": "admin",
+    "category": "stock_check"
+  },
+  {
+    "id": "rq-007",
+    "question": "What is the lead time for products from our Chinese suppliers?",
+    "ground_truth": "Lead times from Chinese suppliers vary by product category. Electronics typically take 30-45 days, while household goods take 20-30 days including shipping.",
+    "sample_context": "Supplier: Guangzhou Electronics Co. Language: zh. Currency: USD. Average shipment time: 35 days. Product categories: electronics, small appliances. Typical shipping: sea freight.",
+    "scope": "admin",
+    "category": "supplier_info"
+  },
+  {
+    "id": "rq-008",
+    "question": "Which baby food products are available for purchase?",
+    "ground_truth": "Published baby food products include Nestlé Cerelac rice cereal and Aptamil formula milk in various stages.",
+    "sample_context": "Product: Nestlé Cerelac Rice 250g (stage 1). Category: Baby Food. Published: yes. Storefront status: published. Product: Aptamil Stage 2 Follow-On Formula 800g. Category: Baby Food. Published: yes.",
+    "scope": "consumer",
+    "category": "product_search"
+  },
+  {
+    "id": "rq-009",
+    "question": "What are the dimensions and weight of the Philips air fryer?",
+    "ground_truth": "The Philips Air Fryer HD9252 has dimensions of 28.7 x 38.8 x 31.5 cm and weighs 3.9 kg. It has a 1.2kg capacity and 1400W power.",
+    "sample_context": "Product: Philips Air Fryer HD9252/90. SKU: PHL-AF-HD9252. Specifications: {capacity: 1.2kg, power: 1400W, dimensions: 28.7x38.8x31.5cm, weight: 3900g, temperature_range: 80-200C}. Enrichment confidence: high.",
+    "scope": "admin",
+    "category": "product_specs"
+  },
+  {
+    "id": "rq-010",
+    "question": "Do you have any products that are gluten-free?",
+    "ground_truth": "The catalog includes gluten-free products such as rice-based cereals, certain cooking oils, and specific snack lines. Check individual product specifications for allergen information.",
+    "sample_context": "Product: Organic Rice Crackers 150g. Specifications: {gluten_free: true, allergens: none, certification: organic}. Product: Sunflower Cooking Oil 1L. Specifications: {gluten_free: true, fat_type: unsaturated}.",
+    "scope": "consumer",
+    "category": "dietary_inquiry"
+  },
+  {
+    "id": "rq-011",
+    "question": "What is the barcode for the Nescafé 3-in-1 Classic?",
+    "ground_truth": "The barcode (EAN) for Nescafé 3-in-1 Classic 30-sticks box is available in the product catalog. It was matched from Icecat with high confidence.",
+    "sample_context": "Product: Nescafé 3-in-1 Classic 30 sticks. Barcode: 6901028073524. SKU: NES-3IN1-30S. Enrichment source: icecat. Enrichment confidence: high. Category: Hot Beverages.",
+    "scope": "admin",
+    "category": "product_lookup"
+  },
+  {
+    "id": "rq-012",
+    "question": "Which supplier provides the Persil detergent range?",
+    "ground_truth": "The Persil detergent range is supplied by the Henkel distributor. The supplier details including contact email and language preference are recorded in the system.",
+    "sample_context": "Supplier: Henkel Middle East Distributor. Email: procurement@henkel-mena.com. Language: en. Currency: USD. Products supplied: Persil automatic detergent 3kg, Persil gel 1.5L.",
+    "scope": "admin",
+    "category": "supplier_info"
+  },
+  {
+    "id": "rq-013",
+    "question": "What refrigerators are available in the 500-liter range?",
+    "ground_truth": "Available refrigerators in the 500-liter capacity range include the Samsung RT50 and LG GN-H702 models, both featuring frost-free technology.",
+    "sample_context": "Product: Samsung RT50K6341SL 500L Fridge. Specifications: {capacity: 500L, type: frost_free, energy_class: A++, dimensions: 178x70x73cm}. Product: LG GN-H702HLHU 506L. Specifications: {capacity: 506L, inverter: true}.",
+    "scope": "admin",
+    "category": "product_search"
+  },
+  {
+    "id": "rq-014",
+    "question": "What is the reorder threshold for Pampers size 3?",
+    "ground_truth": "The reorder threshold for Pampers Baby-Dry Size 3 is the minimum stock level below which a reorder signal is triggered in the procurement system.",
+    "sample_context": "Product: Pampers Baby-Dry Size 3 (6-10kg) 52 diapers. SKU: PAM-BD-S3-52. reorder_threshold: 200. qty_in_stock: tracked. Category: Baby Care. Enrichment confidence: high.",
+    "scope": "admin",
+    "category": "stock_check"
+  },
+  {
+    "id": "rq-015",
+    "question": "Are there any energy drinks available in the store?",
+    "ground_truth": "Published energy drink products include Red Bull 250ml and Monster Energy Original 500ml, available for purchase in the storefront.",
+    "sample_context": "Product: Red Bull Energy Drink 250ml. Category: Energy Drinks. Storefront status: published. Retail price: listed. Product: Monster Energy Original 500ml. Category: Energy Drinks. Storefront status: published.",
+    "scope": "consumer",
+    "category": "product_search"
+  },
+  {
+    "id": "rq-016",
+    "question": "What cooking oils are enriched in the catalog?",
+    "ground_truth": "Enriched cooking oils in the catalog include sunflower oil, corn oil, and extra virgin olive oil from multiple brands. All have been processed through the enrichment pipeline.",
+    "sample_context": "Product: Liza Sunflower Oil 1L. enrichment_status: enriched. Specifications: {type: refined, fatty_acids: omega-6, smoke_point: 227C}. Product: Mazola Corn Oil 1.5L. enrichment_status: enriched.",
+    "scope": "admin",
+    "category": "product_search"
+  },
+  {
+    "id": "rq-017",
+    "question": "ما هي مواصفات الغسالة الأوتوماتيكية سامسونج 7 كيلو؟",
+    "ground_truth": "غسالة سامسونج 7 كيلو تتميز بمحرك ديجيتال إنفرتر، سرعة دوران 1200 لفة في الدقيقة، وتقنية EcoBubble لغسيل فعال بالماء البارد.",
+    "sample_context": "Product: Samsung WW70J3280KW Washing Machine 7kg. Specifications: {capacity: 7kg, spin_speed: 1200rpm, motor: digital_inverter, technology: EcoBubble, energy_class: A+++}. Language enrichment: ar.",
+    "scope": "admin",
+    "category": "product_specs",
+    "language": "arabic"
+  },
+  {
+    "id": "rq-018",
+    "question": "Which products have been enriched from Icecat with high confidence?",
+    "ground_truth": "Products enriched from Icecat with high confidence include those where the EAN was matched and at least 5 specifications were found. These have enrichment_source=icecat and enrichment_confidence=high.",
+    "sample_context": "Icecat enrichment confidence rules: high = EAN matched AND spec_count >= 5; medium = name matched AND spec_count >= 3. Products with high confidence have full spec sheets from Icecat database.",
+    "scope": "admin",
+    "category": "enrichment_status"
+  },
+  {
+    "id": "rq-019",
+    "question": "What is the retail price of Dove Body Wash 500ml?",
+    "ground_truth": "The retail price of Dove Body Wash 500ml is set by the importer after the product is received and published to the storefront.",
+    "sample_context": "Product: Dove Body Wash Deep Moisture 500ml. Storefront status: published. retail_price: set at publish time. Category: Personal Care. SKU: DOV-BW-500ML.",
+    "scope": "consumer",
+    "category": "price_inquiry"
+  },
+  {
+    "id": "rq-020",
+    "question": "How many products are pending enrichment in the catalog?",
+    "ground_truth": "Products with enrichment_status=pending are awaiting processing by the enrichment pipeline. These are products extracted from uploaded documents but not yet enriched via Icecat, web search, or GPT-4o.",
+    "sample_context": "Enrichment lifecycle: extracted → pending → enriched. Products in pending state have been extracted from PDF/Excel imports but are queued for the 5-step enrichment pipeline (Icecat → SearXNG → web → GPT-4o spec fill → GPT-4o description).",
+    "scope": "admin",
+    "category": "enrichment_status"
   }
 ]
