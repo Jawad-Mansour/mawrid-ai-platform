@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     searxng_base_url: str = "http://searxng:8080"
     n8n_base_url: str = "http://n8n:5678"
     n8n_service_token: str = "dev-n8n-service-token"
+    n8n_api_key: str = ""
+    mlflow_tracking_uri: str = "http://localhost:5000"
 
 
 @lru_cache

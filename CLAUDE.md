@@ -99,6 +99,7 @@ Breaking tenant isolation is a hard CI fail (15 cross-tenant attack vectors in `
 - `GET /catalog/products` calls `product_repo.list_all()` — lists ALL products regardless of enrichment_status. Use `list_pending_enrichment()` only if you specifically want unprocessed ones.
 - `infra/llm/embedder.py` does NOT exist — it was deleted. Real embedder: `infra/vector/embedder.py` (OpenAI text-embedding-3-small, 1536-dim).
 - `infra/queue/client.py` does NOT exist — ARQ job submission is in `enrichment_worker.py` directly.
+- `POST /invoices/generate` does NOT exist — invoice PDF generation (reportlab + Jinja2) is deferred to Phase 11. Current `GET /invoices/{id}/pdf-url` returns a presigned MinIO URL only if `invoice.pdf_key` is already set. WF-07 (order confirmed) will send the invoice email correctly only after Phase 11's checkout flow generates the PDF and writes the `pdf_key`.
 
 ### LangGraph Agents (Phase 8)
 
@@ -188,7 +189,7 @@ Track what is done. Update this section when each phase's Verify gate passes.
 | **0 — Spec & Skills** | 0.1 SpecKit documents (9 files) | ✅ Done |
 | | 0.2 Claude Code skills (9 skills — added check-suppliers) | ✅ Done |
 | | 0.3 Tone classifier training data (3000 examples, 1000/class — committed) | ✅ Done |
-| | 0.4 Intent classifier training data (1200+ examples) | ⬜ Pending — run `scripts/generate_intent_data.py` |
+| | 0.4 Intent classifier training data (960 examples, 120/class × 8 classes — committed) | ✅ Done |
 | **1 — Foundation** | 1.1 Local environment + Docker Compose | ✅ Done |
 | | 1.2 CI/CD skeleton (Gates 1–3) | ✅ Done |
 | | 1.3 Auth + tenant onboarding | ✅ Done |
@@ -248,8 +249,10 @@ Track what is done. Update this section when each phase's Verify gate passes.
 | | **Phase 8 complete — all 8 sub-phases verified** | ✅ |
 | **9 — n8n** | 15 workflow JSONs (WF-01 through WF-15) | ✅ Done |
 | | **Phase 9 complete — all 17 workflows implemented (WF-01–WF-15 + WF-10a/b/c)** | ✅ |
-| **10 — Admin UI** | Operations dashboard + all feature UIs + HITL keyboard shortcuts | ⬜ Pending |
-| **11 — Storefront** | Consumer store + cart + checkout (Stripe/OMT/Whish) + consumer chatbot | ⬜ Pending |
+| **10 — Admin UI** | 10.0 Backend APIs: GET /admin/summary, GET /admin/ai-health, GET /admin/workflows, GET /admin/consumer-orders, POST /admin/consumer-orders/{id}/fulfill, GET /admin/enrichment/dlq, POST /admin/enrichment/dlq/{id}/retry | ✅ Done |
+| | 10.1 ConsumerOrderRepository (list, get, create, set_status) | ✅ Done |
+| | 10.2 Frontend: Operations dashboard + all feature UIs + HITL keyboard shortcuts | ⬜ Pending (after Phases 11–13 backend) |
+| **11 — Storefront** | Consumer store + cart + checkout (Stripe/OMT/Whish) + consumer chatbot + `POST /invoices/generate` (reportlab PDF, required for WF-07) | ⬜ Pending |
 | **12 — MLOps** | Drift detection (PSI) + MLflow experiment tracking + champion/challenger | ⬜ Pending |
 | **13 — CI/CD** | All 9 gates verified to catch their target failure mode | ⬜ Pending |
 | **14 — Deploy** | VPS production deployment + Caddy HTTPS + smoke test | ⬜ Pending |
