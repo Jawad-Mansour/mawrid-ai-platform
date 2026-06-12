@@ -2,22 +2,35 @@
 Feature:  Supplier Intelligence
 Layer:    API / Router
 Module:   app.api.suppliers
-Purpose:  HTTP routes for supplier CRUD. Supplier language drives PO language
-          and dunning message language. Phase 7 extends this with scoring and
-          matching waterfall endpoints.
-Depends:  app.infra.db.repos.supplier_repo, app.api.deps
-HITL:     supplier_outreach (Phase 7), supplier_match_review (Phase 7)
+Purpose:  HTTP routes for supplier CRUD, matching waterfall, delivery event
+          recording, score retrieval, supplier discovery, and reorder signal.
+          POST /suppliers/{id}/delivery-event records a delivery then immediately
+          recomputes the supplier score.
+          POST /suppliers/match runs the 5-step matching waterfall.
+          POST /suppliers/reorder-check triggers the reorder signal for all
+          products below threshold.
+Depends:  app.core.suppliers.services, app.infra.db.repos.supplier_repo, app.api.deps
+HITL:     supplier_match_review, supplier_outreach, purchase_order_send (reorder)
 """
 
 from __future__ import annotations
 
 import uuid
+from typing import Any
 
 import structlog
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
 from app.api.deps import CurrentUser, SessionDep
+from app.core.suppliers.models import DeliveryEventInput, SupplierMatchResult
+from app.core.suppliers.services import (
+    discover_suppliers,
+    get_supplier_score,
+    match_supplier,
+    record_delivery_event,
+    trigger_reorder_check,
+)
 from app.infra.db.repos.supplier_repo import SupplierRepository
 
 logger = structlog.get_logger(__name__)
@@ -44,6 +57,16 @@ class SupplierUpdate(BaseModel):
     currency: str | None = None
 
 
+class SupplierMatchRequest(BaseModel):
+    name: str
+    embedding: list[float] | None = None
+
+
+class DiscoverRequest(BaseModel):
+    product_name: str
+    category: str
+
+
 class SupplierResponse(BaseModel):
     supplier_id: str
     name: str
@@ -52,6 +75,14 @@ class SupplierResponse(BaseModel):
     language: str
     currency: str
     score: float | None
+
+
+class ScoreResponse(BaseModel):
+    supplier_id: str
+    score: float
+    method: str
+    sample_count: int
+    features: dict[str, float]
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
@@ -156,12 +187,11 @@ async def update_supplier(
     if supplier is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Supplier not found.")
 
-    updates = {k: v for k, v in body.model_dump().items() if v is not None}
+    updates: dict[str, Any] = {k: v for k, v in body.model_dump().items() if v is not None}
     if updates:
         await repo.update(supplier_id, **updates)
     await session.commit()
 
-    # Re-fetch to return updated values
     updated = await repo.get_by_id(supplier_id)
     assert updated is not None
     return SupplierResponse(
@@ -173,3 +203,162 @@ async def update_supplier(
         currency=updated.currency,
         score=float(updated.score) if updated.score is not None else None,
     )
+
+
+@router.post(
+    "/match",
+    response_model=SupplierMatchResult,
+    summary="Run supplier matching waterfall (exact → TF-IDF → embedding → HITL → new?)",
+)
+async def match_supplier_endpoint(
+    body: SupplierMatchRequest,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> SupplierMatchResult:
+    """
+    Attempts to match the given name against existing suppliers:
+    1. Exact name → auto-link (confidence 1.0)
+    2. TF-IDF char n-gram ≥ 0.9 → auto-link
+    3. Embedding cosine ≥ 0.9 → auto-link (if embedding provided)
+    4. Best similarity 0.3–0.9 → HITL supplier_match_review
+    5. All < 0.3 → HITL "create new supplier?" prompt
+    """
+    result = await match_supplier(
+        session=session,
+        tenant_id=current_user.tenant_id,
+        name=body.name,
+        embedding=body.embedding,
+    )
+    if result.match_type != "hitl":
+        await session.commit()
+    return result
+
+
+@router.post(
+    "/{supplier_id}/delivery-event",
+    response_model=ScoreResponse,
+    summary="Record a delivery event and recompute supplier score",
+)
+async def add_delivery_event(
+    supplier_id: str,
+    body: DeliveryEventInput,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> ScoreResponse:
+    """
+    Records one delivery performance event and immediately recomputes the supplier
+    score using the Ridge regression model (or formula fallback).
+    Called after goods-receiving to keep scores current.
+    """
+    try:
+        result = await record_delivery_event(
+            session=session,
+            tenant_id=current_user.tenant_id,
+            supplier_id=supplier_id,
+            event_in=body,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    await session.commit()
+    f = result.features
+    return ScoreResponse(
+        supplier_id=supplier_id,
+        score=result.score,
+        method=result.method,
+        sample_count=result.sample_count,
+        features={
+            "on_time_delivery_rate": f.on_time_delivery_rate,
+            "damage_rate": f.damage_rate,
+            "avg_price_vs_market": f.avg_price_vs_market,
+            "response_time_hours": f.response_time_hours,
+            "discrepancy_rate": f.discrepancy_rate,
+            "catalog_completeness": f.catalog_completeness,
+        },
+    )
+
+
+@router.get(
+    "/{supplier_id}/score",
+    response_model=ScoreResponse,
+    summary="Get current supplier score with feature breakdown",
+)
+async def get_score(
+    supplier_id: str,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> ScoreResponse:
+    try:
+        result = await get_supplier_score(
+            session=session,
+            tenant_id=current_user.tenant_id,
+            supplier_id=supplier_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    await session.commit()
+    f = result.features
+    return ScoreResponse(
+        supplier_id=supplier_id,
+        score=result.score,
+        method=result.method,
+        sample_count=result.sample_count,
+        features={
+            "on_time_delivery_rate": f.on_time_delivery_rate,
+            "damage_rate": f.damage_rate,
+            "avg_price_vs_market": f.avg_price_vs_market,
+            "response_time_hours": f.response_time_hours,
+            "discrepancy_rate": f.discrepancy_rate,
+            "catalog_completeness": f.catalog_completeness,
+        },
+    )
+
+
+@router.post(
+    "/reorder-check",
+    summary="Trigger reorder signal for all products below threshold",
+)
+async def reorder_check(
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> dict[str, object]:
+    """
+    Checks all products where qty_in_stock ≤ reorder_threshold.
+    For each: selects best-scored supplier, drafts PO via GPT-4o, creates
+    HITL purchase_order_send action.
+    Guard: skips products that already have a pending PO HITL action.
+    """
+    action_ids = await trigger_reorder_check(
+        session=session,
+        tenant_id=current_user.tenant_id,
+    )
+    await session.commit()
+    return {"actions_created": len(action_ids), "action_ids": action_ids}
+
+
+@router.post(
+    "/discover",
+    summary="Discover potential new suppliers via web search (SearXNG)",
+)
+async def discover(
+    body: DiscoverRequest,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> dict[str, object]:
+    """
+    Searches SearXNG for '{product_name} {category} wholesale supplier distributor',
+    drafts outreach emails for up to 3 candidates via GPT-4o, and creates a HITL
+    supplier_outreach action for each. No email is sent without importer approval.
+    """
+    from app.core.config import get_settings  # noqa: PLC0415
+
+    settings = get_settings()
+    searxng_url = settings.searxng_base_url
+    action_ids = await discover_suppliers(
+        session=session,
+        tenant_id=current_user.tenant_id,
+        product_name=body.product_name,
+        category=body.category,
+        searxng_url=str(searxng_url),
+    )
+    await session.commit()
+    return {"actions_created": len(action_ids), "action_ids": action_ids}

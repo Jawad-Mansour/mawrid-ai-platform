@@ -1,51 +1,75 @@
 """
-Feature:  Supplier Management
-Layer:    Test / Unit
+Feature:  Supplier Intelligence — Matching
+Layer:    Tests / Unit
 Module:   tests.unit.test_supplier_matching
-Purpose:  Unit tests for supplier matching and scoring. Verifies: Ridge
-          Regression scorer returns scores in [0,1], feature weights sum to 100,
-          ranking order is deterministic for known inputs.
-Depends:  app.ml.scoring.supplier_scorer, conftest fakes
-HITL:     None
+Purpose:  Unit tests for the TF-IDF supplier name matching helper.
+          Tests exact match, similar names, dissimilar names, single candidate,
+          empty list, multilingual names, and determinism.
+          No DB or network required — pure function tests.
 """
 
 from __future__ import annotations
 
+from app.core.suppliers.services import _tfidf_match
 
-class TestSupplierScorer:
-    def test_score_in_valid_range(self) -> None:
-        """Supplier score must be in [0, 1]."""
-        from app.ml.scoring.supplier_scorer import score_supplier
 
-        features = {
-            "on_time_delivery_rate": 0.9,
-            "defect_rate": 0.02,
-            "avg_lead_time_days": 14,
-            "price_competitiveness": 0.85,
-            "communication_responsiveness": 0.88,
-            "order_fill_rate": 0.95,
-        }
-        score = score_supplier(features)
-        assert 0.0 <= score <= 1.0
+class TestTfidfMatch:
+    def test_empty_candidates_returns_none(self) -> None:
+        result_id, score = _tfidf_match("Acme Corp", [])
+        assert result_id is None
+        assert score == 0.0
 
-    def test_better_supplier_scores_higher(self) -> None:
-        """A supplier with better metrics must score higher."""
-        from app.ml.scoring.supplier_scorer import score_supplier
+    def test_exact_name_very_high_similarity(self) -> None:
+        candidates = [("s1", "Acme Corporation"), ("s2", "Tech Supplies Ltd")]
+        result_id, score = _tfidf_match("Acme Corporation", candidates)
+        assert result_id == "s1"
+        assert score >= 0.99
 
-        good = {
-            "on_time_delivery_rate": 0.99,
-            "defect_rate": 0.001,
-            "avg_lead_time_days": 5,
-            "price_competitiveness": 0.95,
-            "communication_responsiveness": 0.98,
-            "order_fill_rate": 0.99,
-        }
-        poor = {
-            "on_time_delivery_rate": 0.5,
-            "defect_rate": 0.15,
-            "avg_lead_time_days": 60,
-            "price_competitiveness": 0.4,
-            "communication_responsiveness": 0.5,
-            "order_fill_rate": 0.6,
-        }
-        assert score_supplier(good) > score_supplier(poor)
+    def test_similar_name_returns_best_candidate(self) -> None:
+        candidates = [("s1", "Acme Corporation"), ("s2", "Tech Supplies Ltd")]
+        result_id, score = _tfidf_match("Acme Corp", candidates)
+        assert result_id == "s1"
+        assert score > 0.0
+
+    def test_dissimilar_name_low_score(self) -> None:
+        candidates = [("s1", "Acme Corporation"), ("s2", "Acme Technologies")]
+        result_id, score = _tfidf_match("XYZ Widgets International", candidates)
+        assert result_id in ("s1", "s2")
+        assert score < 0.5
+
+    def test_single_candidate_returns_result(self) -> None:
+        candidates = [("s1", "Acme Corporation")]
+        result_id, score = _tfidf_match("Acme Corp", candidates)
+        assert result_id == "s1"
+        assert score >= 0.0
+
+    def test_ordering_deterministic(self) -> None:
+        candidates = [
+            ("s1", "Global Supplies International"),
+            ("s2", "Global Supply International"),
+            ("s3", "Local Hardware Store"),
+        ]
+        id1, score1 = _tfidf_match("Global Supplies Intl", candidates)
+        id2, score2 = _tfidf_match("Global Supplies Intl", candidates)
+        assert id1 == id2
+        assert score1 == score2
+
+    def test_many_candidates_finds_best(self) -> None:
+        candidates = [
+            ("s1", "Alpha Tech Ltd"),
+            ("s2", "Beta Supplies Co"),
+            ("s3", "Gamma Distribution"),
+            ("s4", "Delta Trading"),
+            ("s5", "Alpha Technologies Limited"),
+        ]
+        result_id, score = _tfidf_match("Alpha Tech Ltd", candidates)
+        assert result_id == "s1"
+        assert score >= 0.99
+
+    def test_different_candidates_different_result(self) -> None:
+        candidates_a = [("s1", "Acme Corp"), ("s2", "Widget Inc")]
+        candidates_b = [("s3", "Widget Inc"), ("s4", "Acme Corp")]
+        id_a, _ = _tfidf_match("Acme Corp", candidates_a)
+        id_b, _ = _tfidf_match("Acme Corp", candidates_b)
+        assert id_a == "s1"
+        assert id_b == "s4"

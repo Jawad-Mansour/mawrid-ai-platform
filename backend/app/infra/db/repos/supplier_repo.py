@@ -104,3 +104,36 @@ class SupplierRepository(TenantRepository):
             )
         )
         return result.scalar_one_or_none()
+
+    async def get_best_scored(self) -> Supplier | None:
+        """Return the supplier with the highest score. Used for reorder auto-selection."""
+        result = await self._session.execute(
+            select(Supplier)
+            .where(
+                self._tenant_filter(Supplier),
+                Supplier.score.isnot(None),
+            )
+            .order_by(Supplier.score.desc())
+            .limit(1)
+        )
+        return result.scalar_one_or_none()
+
+    async def list_with_embeddings(self) -> list[Supplier]:
+        """Return suppliers that have computed embeddings for cosine matching."""
+        result = await self._session.execute(
+            select(Supplier).where(
+                self._tenant_filter(Supplier),
+                Supplier.embedding.isnot(None),
+            )
+        )
+        return list(result.scalars().all())
+
+    async def set_score(self, supplier_id: str, score: float) -> None:
+        await self._session.execute(
+            update(Supplier)
+            .where(
+                self._tenant_filter(Supplier),
+                Supplier.supplier_id == supplier_id,
+            )
+            .values(score=score)
+        )

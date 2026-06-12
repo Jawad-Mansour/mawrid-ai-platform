@@ -67,3 +67,41 @@ class CustomerRepository(TenantRepository):
             )
             .values(previous_dunning_count=0)
         )
+
+    async def get_by_phone(self, phone: str) -> Customer | None:
+        result = await self._session.execute(
+            select(Customer).where(
+                self._tenant_filter(Customer),
+                Customer.phone == phone,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def list_all(self, limit: int = 500) -> list[Customer]:
+        result = await self._session.execute(
+            select(Customer)
+            .where(self._tenant_filter(Customer))
+            .order_by(Customer.name)
+            .limit(limit)
+        )
+        return list(result.scalars().all())
+
+    async def update_segment(self, customer_id: str, segment: str) -> None:
+        await self._session.execute(
+            update(Customer)
+            .where(
+                self._tenant_filter(Customer),
+                Customer.customer_id == customer_id,
+            )
+            .values(segment=segment)
+        )
+
+    async def update_payment_history_score(self, customer_id: str, new_score: float) -> None:
+        await self._session.execute(
+            update(Customer)
+            .where(
+                self._tenant_filter(Customer),
+                Customer.customer_id == customer_id,
+            )
+            .values(payment_history_score=new_score)
+        )
