@@ -134,3 +134,32 @@ class ProductRepository(TenantRepository):
             )
         )
         return list(result.scalars().all())
+
+    async def list_published(self, limit: int = 200) -> list[Product]:
+        """Return storefront_status='published' products — storefront consumer listing."""
+        result = await self._session.execute(
+            select(Product)
+            .where(
+                self._tenant_filter(Product),
+                Product.storefront_status == "published",
+            )
+            .order_by(Product.product_name)
+            .limit(limit)
+        )
+        return list(result.scalars().all())
+
+    async def decrement_storefront_qty(self, product_id: str, qty: int) -> bool:
+        """
+        Atomic storefront_qty decrement. Returns True if succeeded, False if
+        insufficient qty (prevents oversell). Uses WHERE storefront_qty >= qty.
+        """
+        result = await self._session.execute(
+            update(Product)
+            .where(
+                self._tenant_filter(Product),
+                Product.product_id == product_id,
+                Product.storefront_qty >= qty,
+            )
+            .values(storefront_qty=Product.storefront_qty - qty)
+        )
+        return bool(result.rowcount > 0)  # type: ignore[attr-defined]

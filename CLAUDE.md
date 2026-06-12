@@ -252,7 +252,13 @@ Track what is done. Update this section when each phase's Verify gate passes.
 | **10 — Admin UI** | 10.0 Backend APIs: GET /admin/summary, GET /admin/ai-health, GET /admin/workflows, GET /admin/consumer-orders, POST /admin/consumer-orders/{id}/fulfill, GET /admin/enrichment/dlq, POST /admin/enrichment/dlq/{id}/retry | ✅ Done |
 | | 10.1 ConsumerOrderRepository (list, get, create, set_status) | ✅ Done |
 | | 10.2 Frontend: Operations dashboard + all feature UIs + HITL keyboard shortcuts | ⬜ Pending (after Phases 11–13 backend) |
-| **11 — Storefront** | Consumer store + cart + checkout (Stripe/OMT/Whish) + consumer chatbot + `POST /invoices/generate` (reportlab PDF, required for WF-07) | ⬜ Pending |
+| **11 — Storefront** | 11.1 Payment gateways (Stripe/OMT/Whish) + PaymentGateway Protocol | ✅ Done |
+| | 11.2 Invoice PDF generation (reportlab Platypus, `POST /invoices/generate`) | ✅ Done |
+| | 11.3 Storefront API (`/store/products`, `/store/cart/validate`, `/store/checkout`, `/store/orders/{id}`) | ✅ Done |
+| | 11.4 Stripe webhook: atomic qty decrement + order status update + WF-07 fire | ✅ Done |
+| | 11.5 Unit tests (storefront: 17, invoice_pdf: 11; 285 total unit tests passing) | ✅ Done |
+| | **Phase 11 backend complete — all 5 sub-phases verified** | ✅ |
+| | 11.6 Consumer chatbot frontend | ⬜ Pending (Phase 10.2 frontend sprint) |
 | **12 — MLOps** | Drift detection (PSI) + MLflow experiment tracking + champion/challenger | ⬜ Pending |
 | **13 — CI/CD** | All 9 gates verified to catch their target failure mode | ⬜ Pending |
 | **14 — Deploy** | VPS production deployment + Caddy HTTPS + smoke test | ⬜ Pending |

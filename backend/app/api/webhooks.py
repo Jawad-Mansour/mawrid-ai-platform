@@ -182,8 +182,46 @@ async def stripe_payment_webhook(
     if invoice.paid_at is None:
         await invoice_repo.mark_paid(invoice_id)
         await auto_stop_on_payment(session, tenant_id, invoice_id)
+
+        # Decrement storefront_qty for each consumer order item atomically
+        if invoice.order_id:
+            from app.infra.db.repos.consumer_order_repo import (
+                ConsumerOrderRepository,  # noqa: PLC0415
+            )
+            from app.infra.db.repos.product_repo import ProductRepository  # noqa: PLC0415
+
+            order_repo = ConsumerOrderRepository(session, tenant_id)
+            product_repo = ProductRepository(session, tenant_id)
+
+            items = await order_repo.list_items(invoice.order_id)
+            for item in items:
+                ok = await product_repo.decrement_storefront_qty(item.product_id, item.qty)
+                if not ok:
+                    logger.warning(
+                        "storefront_qty_decrement_failed",
+                        product_id=item.product_id,
+                        order_id=invoice.order_id,
+                    )
+            await order_repo.set_status(invoice.order_id, "paid")
+
         await session.commit()
         logger.info("stripe_payment_processed", invoice_id=invoice_id, tenant_id=tenant_id)
+
+        # Fire n8n WF-07 to trigger invoice PDF generation + email
+        from app.infra.n8n.client import fire_event  # noqa: PLC0415
+
+        await fire_event(
+            "wf07-order-confirmed",
+            {
+                "tenant_id": tenant_id,
+                "invoice_id": invoice_id,
+                "order_id": invoice.order_id or "",
+                "consumer_email": invoice.contact_email or "",
+                "total_amount": float(invoice.amount_due),
+            },
+        )
+    else:
+        await session.commit()
 
     return WebhookResponse(status="ok", detail="payment recorded")
 

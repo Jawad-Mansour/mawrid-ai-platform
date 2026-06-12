@@ -285,6 +285,7 @@ class TestStripeWebhook:
         payload = json.dumps(self._stripe_payload()).encode()
         mock_invoice = MagicMock()
         mock_invoice.paid_at = None
+        mock_invoice.order_id = None  # skip consumer-order qty-decrement path
         mock_repo = MagicMock()
         mock_repo.get_by_id = AsyncMock(return_value=mock_invoice)
         mock_repo.mark_paid = AsyncMock()

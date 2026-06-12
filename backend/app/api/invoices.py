@@ -244,6 +244,105 @@ async def mark_invoice_paid(
     return response
 
 
+@router.post(
+    "/generate",
+    summary="Generate invoice PDF → upload to MinIO → update invoice.pdf_key (called by n8n WF-07)",
+)
+async def generate_invoice_pdf(
+    body: InvoiceCreate,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> dict[str, Any]:
+    """
+    Generate a PDF for the given invoice_id, upload to MinIO, update invoice.pdf_key,
+    return a presigned URL. Called by n8n WF-07 after payment confirmation.
+    Idempotent: if pdf_key already set, returns existing presigned URL.
+    """
+    from sqlalchemy import update  # noqa: PLC0415
+
+    from app.infra.db.models.dunning import Invoice as InvoiceModel  # noqa: PLC0415
+    from app.infra.db.repos.consumer_order_repo import ConsumerOrderRepository  # noqa: PLC0415
+    from app.infra.db.repos.tenant_repo import TenantRepo  # noqa: PLC0415
+    from app.infra.documents.invoice_pdf import (  # noqa: PLC0415
+        InvoiceData,
+        InvoiceLineItem,
+        generate_invoice_pdf,
+    )
+    from app.infra.storage.minio import get_presigned_url, upload_document  # noqa: PLC0415
+
+    repo = InvoiceRepository(session, current_user.tenant_id)
+    invoice = await repo.get_by_id(body.invoice_id)
+    if invoice is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invoice not found.")
+
+    # Idempotent: return existing URL if already generated
+    if invoice.pdf_key:
+        url = await get_presigned_url(current_user.tenant_id, invoice.pdf_key, expires_seconds=900)
+        return {"invoice_id": invoice.invoice_id, "pdf_key": invoice.pdf_key, "pdf_url": url}
+
+    # Load line items from consumer order if linked
+    line_items: list[InvoiceLineItem] = []
+    if invoice.order_id:
+        order_repo = ConsumerOrderRepository(session, current_user.tenant_id)
+        order_items = await order_repo.list_items(invoice.order_id)
+        line_items = [
+            InvoiceLineItem(
+                product_name=item.product_id,  # product_name resolved at render if needed
+                qty=item.qty,
+                unit_price=float(item.unit_price),
+            )
+            for item in order_items
+        ]
+
+    # Tenant name from repo (fallback to tenant_id)
+    tenant_repo = TenantRepo(session)
+    tenant = await tenant_repo.get_by_id(current_user.tenant_id)
+    tenant_name = tenant.name if tenant else current_user.tenant_id
+
+    inv_data = InvoiceData(
+        invoice_id=invoice.invoice_id,
+        invoice_number=invoice.invoice_id[:8].upper(),
+        invoice_date=invoice.invoice_date,
+        due_date=invoice.due_date,
+        currency=invoice.currency,
+        status=invoice.status,
+        tenant_name=tenant_name,
+        tenant_email=invoice.contact_email or "",
+        consumer_name=invoice.contact_name or "Valued Customer",
+        consumer_email=invoice.contact_email or "",
+        consumer_address="",
+        items=line_items if line_items else [
+            InvoiceLineItem("Order items", 1, float(invoice.amount_due))
+        ],
+    )
+
+    pdf_bytes = generate_invoice_pdf(inv_data)
+    object_name = f"invoices/{invoice.invoice_id}.pdf"
+    pdf_key = await upload_document(
+        tenant_id=current_user.tenant_id,
+        object_name=object_name,
+        data=pdf_bytes,
+        content_type="application/pdf",
+    )
+
+    # Update invoice.pdf_key in DB
+    await session.execute(
+        update(InvoiceModel)
+        .where(InvoiceModel.invoice_id == invoice.invoice_id)
+        .values(pdf_key=pdf_key)
+    )
+    await session.commit()
+
+    url = await get_presigned_url(current_user.tenant_id, object_name, expires_seconds=900)
+    logger.info(
+        "invoice_pdf_generated",
+        invoice_id=invoice.invoice_id,
+        pdf_key=pdf_key,
+        tenant_id=current_user.tenant_id,
+    )
+    return {"invoice_id": invoice.invoice_id, "pdf_key": pdf_key, "pdf_url": url}
+
+
 @router.get(
     "/{invoice_id}/pdf-url",
     summary="Get a presigned MinIO URL for the invoice PDF (valid 15 min)",
