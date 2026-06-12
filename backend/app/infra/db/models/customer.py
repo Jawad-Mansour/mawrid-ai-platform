@@ -4,13 +4,13 @@ Layer:    Infra / DB Models
 Module:   app.infra.db.models.customer
 Purpose:  SQLAlchemy ORM model for customers table. Unique constraints on
           (tenant_id, email) and (tenant_id, phone) for exact-match lookups
-          in customer matching waterfall. payment_history_score used by
-          dunning tone classifier.
+          in customer matching waterfall. payment_history_score and segment
+          used by dunning tone classifier. language used for message drafting.
 Depends:  app.infra.db.base, sqlalchemy
 HITL:     None — model only.
 """
 
-from sqlalchemy import Numeric, Text, UniqueConstraint
+from sqlalchemy import Integer, Numeric, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infra.db.base import Base, TenantMixin
@@ -25,6 +25,14 @@ class Customer(TenantMixin, Base):
     email: Mapped[str | None] = mapped_column(Text, nullable=True)
     phone: Mapped[str | None] = mapped_column(Text, nullable=True)
     payment_history_score: Mapped[float] = mapped_column(Numeric(3, 2), default=1.0)
+    # VIP | Regular | At-Risk | Dormant — used by tone classifier (Phase 6)
+    segment: Mapped[str] = mapped_column(Text, nullable=False, server_default="Regular")
+    # ISO 639-1 language code — used for dunning message drafting
+    language: Mapped[str] = mapped_column(Text, nullable=False, server_default="en")
+    # Running count of dunning messages sent — resets on payment; used by tone classifier
+    previous_dunning_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="0"
+    )
 
     __table_args__ = (
         UniqueConstraint("tenant_id", "email", name="uq_customer_email_per_tenant"),

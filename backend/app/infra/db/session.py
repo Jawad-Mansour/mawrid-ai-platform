@@ -53,6 +53,12 @@ def get_engine() -> AsyncEngine:
     return _engine
 
 
+def get_session_factory() -> async_sessionmaker[AsyncSession]:
+    if _session_factory is None:
+        raise RuntimeError("Database not initialized. Call configure_engine() in lifespan.")
+    return _session_factory
+
+
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     if _session_factory is None:
         raise RuntimeError("Database not initialized. Call configure_engine() in lifespan.")

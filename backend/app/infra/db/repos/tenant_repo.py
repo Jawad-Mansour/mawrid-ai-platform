@@ -31,6 +31,13 @@ class TenantRepo:
         result = await self._session.execute(select(Tenant).where(Tenant.tenant_id == tenant_id))
         return result.scalar_one_or_none()
 
+    async def list_active_tenant_ids(self) -> list[str]:
+        """Return all active tenant IDs — used by scheduler to run per-tenant dunning jobs."""
+        result = await self._session.execute(
+            select(Tenant.tenant_id).where(Tenant.is_active.is_(True))
+        )
+        return list(result.scalars().all())
+
 
 class UserRepo:
     def __init__(self, session: AsyncSession) -> None:

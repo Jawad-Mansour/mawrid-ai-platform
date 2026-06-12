@@ -39,6 +39,7 @@ from app.api import (
 from app.core.config import get_settings
 from app.infra.cache.redis_client import close_redis, init_redis
 from app.infra.db.session import configure_engine
+from app.infra.scheduler import start_scheduler, stop_scheduler
 from app.infra.secrets.vault import load_secrets
 from app.middleware.logging import LoggingMiddleware
 from app.middleware.rate_limit import RateLimitMiddleware
@@ -73,9 +74,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     os.environ["LANGCHAIN_API_KEY"] = secrets.langsmith_api_key
     logger.info("langsmith_configured")
 
+    # 6. Start dunning scheduler (Tracks 1/3/4 daily cron jobs)
+    start_scheduler()
+    logger.info("dunning_scheduler_started")
+
     yield
 
     # Shutdown
+    stop_scheduler()
     await close_redis()
     logger.info("shutdown_complete")
 

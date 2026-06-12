@@ -111,3 +111,20 @@ class HITLRepository(TenantRepository):
             .values(status="expired")
         )
         return int(result.rowcount)  # type: ignore[attr-defined]
+
+    async def bulk_cancel_by_invoice(self, invoice_id: str) -> int:
+        """
+        Cancel all pending HITL actions whose payload.invoice_id == invoice_id.
+        Used by payment auto-stop to atomically clean up the dunning queue.
+        Returns count of cancelled actions.
+        """
+        result = await self._session.execute(
+            update(HITLAction)
+            .where(
+                self._tenant_filter(HITLAction),
+                HITLAction.status == "pending",
+                HITLAction.payload["invoice_id"].as_string() == invoice_id,
+            )
+            .values(status="rejected")
+        )
+        return int(result.rowcount)  # type: ignore[attr-defined]
