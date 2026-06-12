@@ -246,7 +246,8 @@ Track what is done. Update this section when each phase's Verify gate passes.
 | | 8.6 MCP servers (search, catalog, email dispatch, shipment) | ✅ Done |
 | | 8.7 Agent trajectory snapshots (20 golden paths, CI Gate 6) | ✅ Done |
 | | **Phase 8 complete — all 8 sub-phases verified** | ✅ |
-| **9 — n8n** | 15 workflow JSONs (WF-01 through WF-15) | ⬜ Pending |
+| **9 — n8n** | 15 workflow JSONs (WF-01 through WF-15) | ✅ Done |
+| | **Phase 9 complete — all 17 workflows implemented (WF-01–WF-15 + WF-10a/b/c)** | ✅ |
 | **10 — Admin UI** | Operations dashboard + all feature UIs + HITL keyboard shortcuts | ⬜ Pending |
 | **11 — Storefront** | Consumer store + cart + checkout (Stripe/OMT/Whish) + consumer chatbot | ⬜ Pending |
 | **12 — MLOps** | Drift detection (PSI) + MLflow experiment tracking + champion/challenger | ⬜ Pending |

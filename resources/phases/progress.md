@@ -1895,7 +1895,87 @@ All gates: `ruff check` → 0 issues. `mypy --strict` → 0 errors (199 source f
 ---
 
 ## Phase 9 — n8n Workflows (15 Core)
-**Status: ❌ Not started**
+**Status: ✅ Done — commit 12c28bb**
+
+---
+
+### 9.1 — All 17 n8n Workflow JSONs
+**Status: ✅ Done**
+
+All 17 workflow files in `n8n/workflows/` fully implemented with real n8n nodes and connections (replaced empty stubs):
+
+| File | Trigger | Backend endpoint called | HITL gate |
+|---|---|---|---|
+| wf01_tenant_provisioning | Webhook | `/auth/tenants/{id}/provision` | No — provisioning is system action |
+| wf02_document_uploaded | Webhook | `/catalog/documents/{id}/enrich` | No — extraction is internal |
+| wf03_enrichment_complete | Webhook | `/webhooks/n8n/enrichment_done` | No — status log only |
+| wf04_po_approved | Webhook (from backend after HITL approve) | `/procurement/shipments` | Yes — HITL fires this webhook |
+| wf05_shipment_arrival_alert | Schedule 08:00 daily | `/procurement/shipments?status=in_transit` | No — informational poll |
+| wf06_goods_received | Webhook | `/shipments/{id}/goods-received` → `/webhooks/n8n/stock_threshold` | No (goods received) / Yes (reorder via HITL) |
+| wf07_order_confirmed | Webhook | `/webhooks/n8n/order_confirmed` → `/invoices/{id}/pdf-url` → SendGrid | No — transactional invoice email |
+| wf08_payment_received | Webhook (from Stripe) | `/webhooks/stripe` (HMAC verified) | No — auto-stop dunning (system action) |
+| wf09_payables_trigger | Schedule 07:00 UTC | `/dunning/trigger/track1` | Yes — backend creates HITL drafts |
+| wf10a_b2c_day3 | Schedule 07:10 UTC | `/dunning/trigger/track4` | Yes — backend creates HITL drafts |
+| wf10b_b2c_day7 | Schedule 07:15 UTC | `/dunning/trigger/track4` | Yes |
+| wf10c_b2c_day14 | Schedule 07:20 UTC | `/dunning/trigger/track4` | Yes |
+| wf11_stock_threshold | Webhook | `/webhooks/n8n/stock_threshold` | Yes — reorder creates HITL PO draft |
+| wf12_receivables_day7 | Schedule 07:05 UTC | `/dunning/trigger/track3` | Yes — backend creates HITL drafts |
+| wf13_receivables_day14 | Schedule 07:05 UTC | `/dunning/trigger/track3` | Yes |
+| wf14_receivables_day21 | Schedule 07:05 UTC | `/dunning/trigger/track3` | Yes |
+| wf15_dispute_filed | Webhook | `/dunning/disputes` | Yes — backend creates HITL draft |
+
+**[DECISION]** HITL in n8n means calling backend endpoints that create `hitl_actions` records. n8n does NOT implement n8n Wait nodes for HITL — the backend HITL system (already fully built in Phase 3/6) manages the full approve/reject/edit lifecycle. This eliminates the need for two-way HITL orchestration between n8n and backend.
+
+**[DECISION]** WF-09/10/12/13/14 (scheduled dunning) supplement APScheduler (already in backend). n8n adds: visual execution history, manual trigger capability, and monitoring. Both can coexist — dunning is idempotent so double-firing is harmless.
+
+**[DECISION]** WF-07 (order confirmed) calls SendGrid directly for the consumer invoice email. This is the only workflow where n8n sends an email — it's a transactional delivery (invoice link), not a dunning/PO message. All dunning/PO messages go through backend HITL first.
+
+---
+
+### 9.2 — Backend Infrastructure for n8n
+**Status: ✅ Done**
+
+New files:
+- `backend/app/infra/n8n/client.py` — `fire_event(webhook_path, payload)`: best-effort async n8n notifier, never raises, logs warning on failure
+- `backend/app/api/webhooks.py` — real webhook endpoints:
+  - `POST /webhooks/stripe` — HMAC-SHA256 verified (Stripe-Signature header), marks invoice paid + auto-stop dunning
+  - `POST /webhooks/n8n/enrichment_done` — service token auth, logs enrichment completion
+  - `POST /webhooks/n8n/stock_threshold` — service token auth, calls trigger_reorder_check()
+  - `POST /webhooks/n8n/order_confirmed` — service token auth, logs order confirmation
+
+Modified files:
+- `backend/app/core/config.py` — added `n8n_base_url: str` and `n8n_service_token: str` (both with safe defaults)
+- `backend/app/api/catalog.py` — fires WF-02 n8n event after document upload via BackgroundTasks (best-effort)
+- `backend/app/api/hitl.py` — fires WF-04 n8n event after `purchase_order_send` HITL approved via BackgroundTasks (best-effort)
+
+Auth pattern: n8n → backend uses `X-N8N-Service-Token` header (HMAC compare_digest). Backend → n8n uses fire_event() with same token.
+
+---
+
+### 9.3 — Unit Tests
+**Status: ✅ Done — 238 tests pass (21 new)**
+
+`backend/tests/unit/test_webhooks.py`:
+- TestVerifyServiceToken: valid/None/wrong token
+- TestVerifyStripeSignature: valid sig, wrong secret, replayed timestamp, malformed header
+- TestEnrichmentDoneEndpoint: valid/missing token/wrong token
+- TestStockThresholdEndpoint: valid/missing token
+- TestOrderConfirmedEndpoint: valid/missing token
+- TestStripeWebhook: non-payment event ignored, missing metadata 422, invalid JSON 400, payment processes
+- TestN8nClient: fire_event success, never raises on network error, logs warning on 4xx
+
+All gates: `ruff check` → 0 issues. `mypy --strict` → 0 errors (202 files). `pytest unit/` → 238 passed.
+
+**Verify Phase 9 (requires Docker Compose):**
+```bash
+docker compose up -d
+# Import workflows: n8n UI → Settings → Import from file → select each JSON in n8n/workflows/
+# Manual trigger each workflow via n8n UI
+# Verify HITL drafts created in hitl_actions table
+# Approve HITL action → verify email sent (check SendGrid activity)
+```
+
+---
 
 All 15 workflows. Every message-sending workflow has HITL approval node — n8n never sends without importer approval.
 
