@@ -26,6 +26,9 @@ class Tenant(Base):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     mode: Mapped[str] = mapped_column(Text, nullable=False, default="hybrid")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Comma-separated list of domains allowed to embed the storefront widget
+    # e.g. "https://shop.example.com,https://www.example.com"
+    allowed_origins: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

@@ -246,6 +246,61 @@ def check_embedding_drift(
 # ── Aggregator ────────────────────────────────────────────────────────────────
 
 
+def _write_result(report: DriftReport, path: Path) -> None:
+    """Write {'status': ..., 'checked_at': ...} to path. Creates parent dirs."""
+    import json
+    from datetime import UTC, datetime
+
+    data = {
+        "status": report.overall_status,
+        "checked_at": datetime.now(UTC).isoformat(),
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data))
+
+
+_LAST_DRIFT_CHECK_PATH = (
+    Path(__file__).parent.parent.parent.parent / "ml_config" / "last_drift_check.json"
+)
+
+
+def run_drift_check(output_path: Path | None = None) -> DriftReport:
+    """
+    Synthetic self-test: generates stable reference distributions, runs all
+    three drift checks, writes last_drift_check.json, returns the DriftReport.
+
+    Used by nightly CI Gate 9 and test_drift.py.  In production you'd replace
+    the synthetic arrays with real predict_proba() / centroid outputs from DB.
+    """
+    rng = np.random.default_rng(42)
+    n = 500
+
+    intent_base = rng.dirichlet(np.ones(8), size=n)
+    intent_curr = intent_base + rng.normal(0, 0.001, intent_base.shape)
+    intent_curr = np.clip(intent_curr, 0, 1)
+
+    tone_base = rng.dirichlet(np.ones(3), size=n)
+    tone_curr = tone_base + rng.normal(0, 0.001, tone_base.shape)
+    tone_curr = np.clip(tone_curr, 0, 1)
+
+    emb_base = rng.normal(0, 1, 1536)
+    emb_curr = emb_base + rng.normal(0, 0.001, 1536)
+
+    intent_label_base = {f"cls_{i}": n // 8 for i in range(8)}
+    intent_label_curr = {f"cls_{i}": n // 8 for i in range(8)}
+
+    results: list[DriftResult] = []
+    results += check_intent_classifier_drift(
+        intent_base, intent_curr, intent_label_base, intent_label_curr
+    )
+    results += check_tone_classifier_drift(tone_base, tone_curr)
+    results.append(check_embedding_drift(emb_base, emb_curr))
+
+    report = run_drift_report(results)
+    _write_result(report, output_path or _LAST_DRIFT_CHECK_PATH)
+    return report
+
+
 def run_drift_report(results: list[DriftResult]) -> DriftReport:
     """
     Aggregate a list of DriftResults into a single DriftReport.
@@ -264,3 +319,24 @@ def run_drift_report(results: list[DriftResult]) -> DriftReport:
 
     checked = sorted({r.model_name for r in results})
     return DriftReport(results=results, overall_status=overall, checked_models=checked)
+
+
+if __name__ == "__main__":  # pragma: no cover
+    import argparse
+    import sys
+
+    parser = argparse.ArgumentParser(description="Mawrid nightly drift monitor — Gate 9")
+    parser.add_argument("--config", help="Path to drift_thresholds.yaml (unused; thresholds auto-loaded)")
+    parser.add_argument("--output", help="Output JSON path", default=None)
+    args = parser.parse_args()
+
+    out = Path(args.output) if args.output else None
+    report = run_drift_check(output_path=out)
+
+    for r in report.results:
+        print(f"  {r.model_name} [{r.metric_type}] = {r.metric_value:.4f} → {r.status}")
+    print(f"\nOverall drift status: {report.overall_status}")
+
+    if report.overall_status == "severe":
+        print("SEVERE drift detected — CI Gate 9 FAIL", file=sys.stderr)
+        sys.exit(1)

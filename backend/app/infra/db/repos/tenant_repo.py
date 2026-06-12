@@ -31,6 +31,15 @@ class TenantRepo:
         result = await self._session.execute(select(Tenant).where(Tenant.tenant_id == tenant_id))
         return result.scalar_one_or_none()
 
+    async def update_allowed_origins(self, tenant_id: str, allowed_origins: str | None) -> None:
+        from sqlalchemy import update as sa_update
+
+        await self._session.execute(
+            sa_update(Tenant)
+            .where(Tenant.tenant_id == tenant_id)
+            .values(allowed_origins=allowed_origins)
+        )
+
     async def list_active_tenant_ids(self) -> list[str]:
         """Return all active tenant IDs — used by scheduler to run per-tenant dunning jobs."""
         result = await self._session.execute(

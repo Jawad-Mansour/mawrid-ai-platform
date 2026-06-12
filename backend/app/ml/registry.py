@@ -168,12 +168,11 @@ def promote_model(
     MLflow was unreachable.
     """
     champion = get_mlflow_production_model(name, tracking_uri)
-    if champion is not None:
-        if not champion_challenger_gate(
-            new_metrics, champion.metrics, metric_key, higher_is_better
-        ):
-            logger.warning("promote_model: challenger rejected for '%s'", name)
-            return False
+    if champion is not None and not champion_challenger_gate(
+        new_metrics, champion.metrics, metric_key, higher_is_better
+    ):
+        logger.warning("promote_model: challenger rejected for '%s'", name)
+        return False
 
     try:
         import mlflow  # noqa: PLC0415

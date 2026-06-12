@@ -35,6 +35,7 @@ from app.api import (
     storefront,
     suppliers,
     webhooks,
+    widget,
 )
 from app.core.config import get_settings
 from app.infra.cache.redis_client import close_redis, init_redis
@@ -115,6 +116,7 @@ def create_app() -> FastAPI:
         storefront.router,
         webhooks.router,
         admin.router,
+        widget.router,
     ]:
         app.include_router(router, prefix="/api/v1")
 

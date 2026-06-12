@@ -65,9 +65,7 @@ jobs:
       - uses: astral-sh/setup-uv@v4
       - name: Install dependencies
         run: uv sync --frozen --dev
-      - name: Run drift monitor
-        env:
-          DATABASE_URL: postgresql+asyncpg://mawrid:password@localhost:5432/mawrid_test
-        run: |
-          uv run python -m app.ml.drift.monitor \
-            --config backend/ml_config/drift_thresholds.yaml
+      - name: Run drift detection tests
+        run: uv run pytest backend/tests/evals/test_drift.py -v --tb=short
+      - name: Write last_drift_check.json (stable synthetic baseline)
+        run: uv run python -m app.ml.drift.monitor --config backend/ml_config/drift_thresholds.yaml

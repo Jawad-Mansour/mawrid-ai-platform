@@ -11,11 +11,7 @@ HITL:     None.
 from __future__ import annotations
 
 import hashlib
-import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
-
-import pytest
 
 from app.ml.registry import (
     ModelRecord,
@@ -23,7 +19,6 @@ from app.ml.registry import (
     compute_sha256,
     verify_sha256,
 )
-
 
 # ── compute_sha256 ────────────────────────────────────────────────────────────
 

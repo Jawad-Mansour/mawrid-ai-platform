@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-
 from app.ml.drift.monitor import (
     DriftResult,
     check_embedding_drift,
@@ -23,7 +22,6 @@ from app.ml.drift.monitor import (
     compute_psi,
     run_drift_report,
 )
-
 
 # ── compute_psi ───────────────────────────────────────────────────────────────
 
