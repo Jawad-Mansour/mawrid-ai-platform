@@ -28,6 +28,8 @@ FROM base AS deps
 COPY pyproject.toml uv.lock .python-version ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
+RUN /opt/venv/bin/python -m spacy download en_core_web_sm && \
+    /opt/venv/bin/python -m spacy download fr_core_news_sm
 
 # ── Development stage (used by docker-compose.yml) ───────────────────────────
 FROM deps AS development

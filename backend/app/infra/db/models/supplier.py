@@ -26,4 +26,6 @@ class Supplier(TenantMixin, Base):
     language: Mapped[str] = mapped_column(Text, nullable=False, server_default="en")
     currency: Mapped[str] = mapped_column(Text, nullable=False, server_default="USD")
     score: Mapped[float | None] = mapped_column(Numeric(5, 2), nullable=True)
+    discrepancy_count: Mapped[int] = mapped_column(nullable=False, server_default="0")
+    damage_count: Mapped[int] = mapped_column(nullable=False, server_default="0")
     embedding: Mapped[list[float] | None] = mapped_column(Vector(1536), nullable=True)

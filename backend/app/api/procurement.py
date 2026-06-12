@@ -31,6 +31,9 @@ from app.infra.db.repos.shipment_repo import ShipmentRepository
 from app.infra.db.repos.supplier_repo import SupplierRepository
 from app.infra.llm.openai import chat_completion
 
+# Loaded lazily inside dispute endpoint to avoid circular imports at module load
+_dispute_prompt_cache: dict[str, Any] = {}
+
 logger = structlog.get_logger(__name__)
 
 router = APIRouter(prefix="/procurement", tags=["procurement"])
@@ -632,6 +635,20 @@ async def receive_goods(
         notes=body.notes,
     )
     await shipment_repo.set_status(shipment_id, "arrived")
+
+    # Record supplier performance events — feed Phase 7 scoring
+    if shipment.po_id:
+        po_list = await order_repo.list_purchase_orders()
+        supplier_id_for_po: str | None = next(
+            (p.supplier_id for p in po_list if p.po_id == shipment.po_id), None
+        )
+        if supplier_id_for_po:
+            supplier_repo = SupplierRepository(session, tenant_id)
+            if result.discrepancy_detected:
+                await supplier_repo.increment_discrepancy(supplier_id_for_po)
+            if result.damage_detected:
+                await supplier_repo.increment_damage(supplier_id_for_po)
+
     await session.commit()
 
     return ReceiveGoodsResponse(
@@ -731,3 +748,120 @@ async def unpublish_product(
         .values(storefront_status="not_published")
     )
     await session.commit()
+
+
+# ── Supplier Dispute (Track 2) ─────────────────────────────────────────────────
+
+
+class FileDisputeRequest(BaseModel):
+    damaged_items: list[dict[str, Any]]
+    damage_description: str
+    po_reference: str | None = None
+
+
+class FileDisputeResponse(BaseModel):
+    hitl_action_id: str
+    action_type: str
+    status: str
+
+
+@router.post(
+    "/shipments/{shipment_id}/dispute",
+    response_model=FileDisputeResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary=(
+        "File a supplier dispute for damaged goods received on this shipment "
+        "(creates dispute_letter HITL action — Track 2)"
+    ),
+)
+async def file_supplier_dispute(
+    shipment_id: str,
+    body: FileDisputeRequest,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> FileDisputeResponse:
+    """
+    Creates a dispute_letter HITL action. The Communication Agent (Phase 8) will
+    draft a formal complaint in the supplier's language; for now GPT-4o drafts it
+    directly. Nothing is sent until the importer approves in the HITL center.
+    HITL Rule: no external write without explicit importer approval.
+    """
+    tenant_id = current_user.tenant_id
+    shipment_repo = ShipmentRepository(session, tenant_id)
+    order_repo = OrderRepository(session, tenant_id)
+    supplier_repo = SupplierRepository(session, tenant_id)
+    hitl_repo = HITLRepository(session, tenant_id)
+
+    shipment = await shipment_repo.get_by_id(shipment_id)
+    if shipment is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shipment not found.")
+
+    # Resolve supplier from PO
+    supplier_name = "Supplier"
+    supplier_email = ""
+    supplier_language = "en"
+    if shipment.po_id:
+        po_list = await order_repo.list_purchase_orders()
+        for po in po_list:
+            if po.po_id == shipment.po_id:
+                sup = await supplier_repo.get_by_id(po.supplier_id)
+                if sup:
+                    supplier_name = sup.name
+                    supplier_email = sup.email or ""
+                    supplier_language = sup.language
+                break
+
+    po_ref = body.po_reference or (shipment.po_id or "N/A")
+
+    try:
+        dispute_prompt = _load_prompt("dispute_letter")
+        system_prompt = dispute_prompt.get("system", "You are a procurement specialist.")
+        system_prompt = system_prompt.format(language=supplier_language)
+        user_prompt = dispute_prompt.get("draft_dispute", "").format(
+            supplier_name=supplier_name,
+            po_reference=po_ref,
+            shipment_id=shipment_id,
+            damaged_items=str(body.damaged_items),
+            damage_description=body.damage_description,
+        )
+    except Exception:
+        system_prompt = f"You are a procurement specialist. Write in {supplier_language}."
+        user_prompt = (
+            f"Draft a formal supplier dispute letter. Supplier: {supplier_name}. "
+            f"PO: {po_ref}. Shipment: {shipment_id}. "
+            f"Damages: {body.damage_description}. Items: {body.damaged_items}."
+        )
+
+    draft_text = await chat_completion(
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        temperature=0.1,
+        max_tokens=1024,
+    )
+
+    action_id = uuid.uuid4().hex
+    await hitl_repo.create(
+        action_id=action_id,
+        action_type="dispute_letter",
+        payload={
+            "shipment_id": shipment_id,
+            "po_reference": po_ref,
+            "supplier_name": supplier_name,
+            "to": supplier_email,
+            "subject": f"Formal Dispute — Shipment {shipment_id}",
+            "body": draft_text,
+            "language": supplier_language,
+            "damaged_items": body.damaged_items,
+            "damage_description": body.damage_description,
+        },
+    )
+    await session.commit()
+
+    logger.info("dispute_hitl_created", action_id=action_id, shipment_id=shipment_id)
+    return FileDisputeResponse(
+        hitl_action_id=action_id,
+        action_type="dispute_letter",
+        status="pending",
+    )

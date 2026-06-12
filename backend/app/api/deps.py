@@ -22,7 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth.models import UserDomain
 from app.core.auth.services import JWT_ALGORITHM
-from app.infra.db.repos.tenant_repo import UserRepo
+from app.infra.db.repos.tenant_repo import TenantRepo, UserRepo
 from app.infra.db.session import get_db_session
 from app.infra.secrets.vault import get_secrets
 
@@ -92,10 +92,15 @@ CurrentUser = Annotated[UserDomain, Depends(get_current_user)]
 def require_mode(*modes: str):  # type: ignore[no-untyped-def]
     """Return a dependency that enforces operational mode access."""
 
-    async def _check(user: CurrentUser) -> UserDomain:
-        # Mode guard is evaluated at route level, so we check tenant mode via user's tenant_id.
-        # For now: all modes pass — mode enforcement added in Phase 3 when routes diverge.
-        _ = modes  # will be used in Phase 3
+    async def _check(user: CurrentUser, session: SessionDep) -> UserDomain:
+        tenant_repo = TenantRepo(session)
+        tenant = await tenant_repo.get_by_id(user.tenant_id)
+        current_mode = tenant.mode if tenant else "unknown"
+        if current_mode not in modes:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Feature not available in '{current_mode}' mode.",
+            )
         return user
 
     return Depends(_check)

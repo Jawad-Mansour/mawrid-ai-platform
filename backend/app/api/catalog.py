@@ -379,6 +379,63 @@ async def list_review_queue(
 
 
 @router.get(
+    "/barcode/{barcode}",
+    response_model=ProductSummary,
+    summary="Look up a product by barcode (EAN-13/UPC/Code-128)",
+)
+async def get_product_by_barcode(
+    barcode: str,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> ProductSummary:
+    product_repo = ProductRepository(session, current_user.tenant_id)
+    product = await product_repo.get_by_barcode(barcode)
+    if product is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No product with barcode '{barcode}'.",
+        )
+    return ProductSummary(
+        product_id=product.product_id,
+        product_name=product.product_name,
+        sku=product.sku,
+        enrichment_status=product.enrichment_status,
+        storefront_status=product.storefront_status,
+        enrichment_confidence=product.enrichment_confidence,
+        enrichment_source=product.enrichment_source,
+    )
+
+
+@router.post(
+    "/products/{product_id}/retry-enrichment",
+    summary="Re-queue enrichment for a failed product (DLQ retry)",
+)
+async def retry_product_enrichment(
+    product_id: str,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> dict[str, str]:
+    """Re-submits an enrichment job for a product that previously failed.
+    Idempotent: ARQ skips the job if the product is already enriched.
+    """
+    product_repo = ProductRepository(session, current_user.tenant_id)
+    product = await product_repo.get_by_id(product_id)
+    if product is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found.")
+    if product.enrichment_status == "enriched":
+        return {"product_id": product_id, "status": "already_enriched"}
+
+    arq = get_arq_pool()
+    await arq.enqueue_job(
+        "enrich_product",
+        tenant_id=current_user.tenant_id,
+        product_id=product_id,
+    )
+    logger.info("enrichment_retried", product_id=product_id)
+    return {"product_id": product_id, "status": "queued"}
+
+
+@router.get(
     "/products",
     response_model=list[ProductSummary],
     summary="List internal catalog products (not storefront — use /storefront for published)",

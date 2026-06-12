@@ -76,6 +76,26 @@ class SupplierRepository(TenantRepository):
                 .values(**values)
             )
 
+    async def increment_discrepancy(self, supplier_id: str) -> None:
+        await self._session.execute(
+            update(Supplier)
+            .where(
+                self._tenant_filter(Supplier),
+                Supplier.supplier_id == supplier_id,
+            )
+            .values(discrepancy_count=Supplier.discrepancy_count + 1)
+        )
+
+    async def increment_damage(self, supplier_id: str) -> None:
+        await self._session.execute(
+            update(Supplier)
+            .where(
+                self._tenant_filter(Supplier),
+                Supplier.supplier_id == supplier_id,
+            )
+            .values(damage_count=Supplier.damage_count + 1)
+        )
+
     async def find_by_name_exact(self, name: str) -> Supplier | None:
         result = await self._session.execute(
             select(Supplier).where(

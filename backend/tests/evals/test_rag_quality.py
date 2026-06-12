@@ -71,3 +71,18 @@ async def test_rag_context_precision_above_threshold() -> None:
     assert score >= min_precision, (
         f"RAG context precision {score:.3f} below threshold {min_precision}"
     )
+
+
+@pytest.mark.asyncio
+async def test_rag_context_recall_above_threshold() -> None:
+    """RAG pipeline context recall must meet nightly threshold (Gate 7)."""
+    pytest.importorskip("ragas")
+    thresholds = load_thresholds()
+    min_recall: float = thresholds["ragas"]["context_recall"]
+
+    from tests.evals.helpers.rag_evaluator import evaluate_rag_context_recall
+
+    score = await evaluate_rag_context_recall()
+    assert score >= min_recall, (
+        f"RAG context recall {score:.3f} below threshold {min_recall}"
+    )

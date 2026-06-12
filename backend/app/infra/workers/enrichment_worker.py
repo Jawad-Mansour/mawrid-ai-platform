@@ -109,7 +109,7 @@ async def startup(ctx: dict[str, object]) -> None:
         settings.database_url, echo=False, pool_pre_ping=True
     )
     ctx["engine"] = engine
-    ctx["session_factory"] = async_sessionmaker(bind=engine, expire_on_commit=False)
+    ctx["session_factory"] = async_sessionmaker(engine, expire_on_commit=False)
     logger.info("enrichment_worker_started")
 
 
@@ -132,3 +132,4 @@ class WorkerSettings:
     )
     job_timeout = 300
     max_jobs = 10
+    max_tries = 3

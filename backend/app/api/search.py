@@ -16,6 +16,7 @@ from fastapi import APIRouter, Query
 from pydantic import BaseModel
 
 from app.api.deps import CurrentUser, SessionDep
+from app.guardrails.nemo_guard import get_default_guard
 from app.rag.pipeline import run_rag
 
 router = APIRouter(prefix="/search", tags=["search"])
@@ -55,6 +56,7 @@ async def search_catalog(
         scope="admin",
         top_k_retrieval=20,
         top_k_rerank=6,
+        guard=get_default_guard(),
     )
     return SearchResponse(
         query=q,
@@ -91,6 +93,7 @@ async def search_store(
         scope="consumer",
         top_k_retrieval=20,
         top_k_rerank=6,
+        guard=get_default_guard(),
     )
     return SearchResponse(
         query=q,

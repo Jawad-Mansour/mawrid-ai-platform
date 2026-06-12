@@ -68,7 +68,7 @@ async def rerank(
     if not candidates:
         return []
 
-    return await asyncio.get_event_loop().run_in_executor(
+    return await asyncio.get_running_loop().run_in_executor(
         None,
         _rerank_sync,
         query,

@@ -153,3 +153,19 @@ async def evaluate_rag_context_precision() -> float:
     result = evaluate(dataset=dataset, metrics=[ContextPrecision()])
     scores = result.to_pandas()["context_precision"].dropna()
     return float(scores.mean()) if len(scores) > 0 else 0.0
+
+
+async def evaluate_rag_context_recall() -> float:
+    """Run RAGAS context recall metric. Returns score 0–1."""
+    from ragas import evaluate
+    from ragas.metrics import ContextRecall
+
+    questions = _load_questions()
+    samples = await _run_pipeline_for_questions(questions, scope="admin")
+    if not samples:
+        return 0.0
+
+    dataset = _build_ragas_dataset(samples)
+    result = evaluate(dataset=dataset, metrics=[ContextRecall()])
+    scores = result.to_pandas()["context_recall"].dropna()
+    return float(scores.mean()) if len(scores) > 0 else 0.0

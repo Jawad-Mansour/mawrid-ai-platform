@@ -103,6 +103,15 @@ class ProductRepository(TenantRepository):
         )
         return list(result.scalars().all())
 
+    async def get_by_barcode(self, barcode: str) -> Product | None:
+        result = await self._session.execute(
+            select(Product).where(
+                self._tenant_filter(Product),
+                Product.barcode == barcode,
+            )
+        )
+        return result.scalar_one_or_none()
+
     async def list_pending_enrichment(self, limit: int = 50) -> list[Product]:
         result = await self._session.execute(
             select(Product)
