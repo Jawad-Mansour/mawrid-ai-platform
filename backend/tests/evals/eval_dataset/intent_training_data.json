@@ -1,0 +1,6722 @@
+[
+  {
+    "id": "it-0819",
+    "text": "Arr\u00eater les relances pour INV-2025-018",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0974",
+    "text": "Create a purchase order for Baraka water 500ml and notify the supplier",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0710",
+    "text": "Total unpaid amount from INV-2025-022",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1190",
+    "text": "OK",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0062",
+    "text": "Je cherche Samsung TV 55in",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0591",
+    "text": "Track my container for LG refrigerator",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1172",
+    "text": "Tell me a joke",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0083",
+    "text": "Show me all dairy products",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0063",
+    "text": "Do you have Baraka water 500ml?",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0128",
+    "text": "List all available personal care",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0360",
+    "text": "What's my current inventory of Dove soap?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1186",
+    "text": "Tell me a joke",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1008",
+    "text": "\u0627\u0628\u062d\u062b \u0639\u0646 \u0645\u0648\u0631\u062f \u062c\u062f\u064a\u062f \u0644food items \u0648\u062d\u0636\u0631 \u0631\u0633\u0627\u0644\u0629 \u062a\u0648\u0627\u0635\u0644",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0554",
+    "text": "\u0648\u064a\u0646 \u0627\u0644\u0634\u062d\u0646\u0629 \u062a\u0628\u0639\u062a LG refrigerator\u061f",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0828",
+    "text": "Cancel the dunning sequence for INV-2025-004",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0685",
+    "text": "Has invoice INV-2025-018 been paid?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0568",
+    "text": "Track my container for Samsung TV 55in",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0042",
+    "text": "Do you have Maggi noodles?",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0352",
+    "text": "\u0647\u0644 \u064a\u0648\u062c\u062f Bosch washing machine \u0641\u064a \u0627\u0644\u0645\u062e\u0632\u0646\u061f",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0526",
+    "text": "Track my container for Maggi noodles",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0396",
+    "text": "Is Bosch washing machine in stock?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0992",
+    "text": "\u0627\u0628\u062d\u062b \u0639\u0646 \u0645\u0648\u0631\u062f \u062c\u062f\u064a\u062f \u0644personal care \u0648\u062d\u0636\u0631 \u0631\u0633\u0627\u0644\u0629 \u062a\u0648\u0627\u0635\u0644",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0019",
+    "text": "Search catalog for Bosch washing machine",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0735",
+    "text": "Quelles factures sont en retard?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0416",
+    "text": "What's the stock level for Heinz ketchup 500ml?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1038",
+    "text": "Analyze our top suppliers and recommend which to reorder from",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0937",
+    "text": "Review overdue invoices and start dunning sequences for all",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0545",
+    "text": "Where is my Nescafe 200g shipment?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0023",
+    "text": "\u0634\u0648 \u0639\u0646\u062f\u0643\u0645 \u0645\u0646 appliances\u061f",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0191",
+    "text": "Has order PO-2025-0022 shipped?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0553",
+    "text": "Track my container for Dove soap",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0194",
+    "text": "\u0634\u0648 \u0635\u0627\u0631 \u0628\u0627\u0644\u0623\u0648\u0631\u062f\u0631 PO-2025-0016\u061f",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0449",
+    "text": "Inventory count for Ariel 2kg",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1083",
+    "text": "Never mind",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0991",
+    "text": "Review overdue invoices and start dunning sequences for all",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0869",
+    "text": "Pause collections for INV-2025-014",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1056",
+    "text": "\u0634\u0648 \u0627\u0644\u0637\u0642\u0633 \u0627\u0644\u064a\u0648\u0645\u061f",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1066",
+    "text": "What time is it?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0750",
+    "text": "\u0634\u0648 \u0627\u0644\u0641\u0648\u0627\u062a\u064a\u0631 \u0627\u0644\u0644\u064a \u0645\u0648 \u0645\u062f\u0641\u0648\u0639\u0629\u061f",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0373",
+    "text": "How many units of Dove soap do I have?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0426",
+    "text": "\u0647\u0644 \u064a\u0648\u062c\u062f Baraka water 500ml \u0641\u064a \u0627\u0644\u0645\u062e\u0632\u0646\u061f",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0161",
+    "text": "Has order PO-2025-0016 shipped?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1184",
+    "text": "Hello",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0607",
+    "text": "Quelles factures sont en retard?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0258",
+    "text": "\u0648\u064a\u0646 \u0637\u0644\u0628\u064a\u062a\u064a PO-2025-0015\u061f",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0619",
+    "text": "Invoice aging report",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0370",
+    "text": "\u0647\u0644 \u064a\u0648\u062c\u062f Baraka water 500ml \u0641\u064a \u0627\u0644\u0645\u062e\u0632\u0646\u061f",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0492",
+    "text": "O\u00f9 est mon exp\u00e9dition de Baraka water 500ml?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0512",
+    "text": "Has the shipment for PO-2025-0004 left port?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0203",
+    "text": "Quel est le statut de la commande PO-2025-0021?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0129",
+    "text": "Find me electronics items",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0064",
+    "text": "Search catalog for Maggi noodles",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0269",
+    "text": "Update on purchase order PO-2025-0024",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0490",
+    "text": "What's the ETA for my appliances delivery?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1101",
+    "text": "\u0645\u0631\u062d\u0628\u0627",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0968",
+    "text": "Audit our inventory and flag products below reorder threshold",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0267",
+    "text": "Show me PO PO-2025-0001",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0021",
+    "text": "Find me personal care items",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0235",
+    "text": "Quel est le statut de la commande PO-2025-0013?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0774",
+    "text": "Stop dunning on invoice INV-2025-009",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0487",
+    "text": "Track my container for Dove soap",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0286",
+    "text": "Is PO-2025-0022 confirmed?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0679",
+    "text": "\u0634\u0648 \u0627\u0644\u0641\u0648\u0627\u062a\u064a\u0631 \u0627\u0644\u0644\u064a \u0645\u0648 \u0645\u062f\u0641\u0648\u0639\u0629\u061f",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0595",
+    "text": "Track my container for Maggi noodles",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0374",
+    "text": "Inventory count for Ariel 2kg",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0606",
+    "text": "Show me unpaid B2B invoices",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1022",
+    "text": "Analyze our top suppliers and recommend which to reorder from",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0859",
+    "text": "Cancel the dunning sequence for INV-2025-017",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0142",
+    "text": "List all available beverages",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1080",
+    "text": "Who won the World Cup?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0272",
+    "text": "Has order PO-2025-0024 shipped?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0015",
+    "text": "Find me dairy items",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0864",
+    "text": "Pause collections for INV-2025-021",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0335",
+    "text": "Current quantity of Nescafe 200g",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0049",
+    "text": "\u0623\u0631\u064a\u062f frozen food",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0017",
+    "text": "Search catalog for Ariel 2kg",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1095",
+    "text": "\u0645\u0631\u062d\u0628\u0627",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0875",
+    "text": "Stop dunning on invoice INV-2025-023",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1194",
+    "text": "Never mind",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0840",
+    "text": "Pause collections for INV-2025-005",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0328",
+    "text": "What's my current inventory of Ariel 2kg?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0355",
+    "text": "What's my current inventory of Tide detergent?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0008",
+    "text": "\u0623\u0631\u064a\u062f appliances",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0910",
+    "text": "Find me a new electronics supplier and draft an outreach email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0309",
+    "text": "\u0647\u0644 \u064a\u0648\u062c\u062f Bosch washing machine \u0641\u064a \u0627\u0644\u0645\u062e\u0632\u0646\u061f",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0264",
+    "text": "Has order PO-2025-0008 shipped?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0337",
+    "text": "Inventory count for Heinz ketchup 500ml",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0131",
+    "text": "Je cherche Bosch washing machine",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1097",
+    "text": "Write me a poem",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0297",
+    "text": "Has order PO-2025-0015 shipped?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0217",
+    "text": "how many did I order in PO-2025-0004?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0694",
+    "text": "Invoice aging report",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0265",
+    "text": "Track order PO-2025-0009",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0522",
+    "text": "\u0627\u0645\u062a\u0649 \u0628\u062a\u0648\u0635\u0644 \u0628\u0636\u0627\u0639\u0629 appliances\u061f",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0794",
+    "text": "Arr\u00eater les relances pour INV-2025-023",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0143",
+    "text": "Je cherche Nescafe 200g",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0249",
+    "text": "Show me PO PO-2025-0021",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0499",
+    "text": "O\u00f9 est mon exp\u00e9dition de Nescafe 200g?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0518",
+    "text": "Shipment update for PO-2025-0010",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0173",
+    "text": "Where is my order PO-2025-0003?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0353",
+    "text": "Current quantity of Baraka water 500ml",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0908",
+    "text": "Find low stock items and draft reorder requests for all",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0673",
+    "text": "\u0634\u0648 \u0627\u0644\u0641\u0648\u0627\u062a\u064a\u0631 \u0627\u0644\u0644\u064a \u0645\u0648 \u0645\u062f\u0641\u0648\u0639\u0629\u061f",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0367",
+    "text": "Combien d'unit\u00e9s de Heinz ketchup 500ml ai-je?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0259",
+    "text": "\u0648\u064a\u0646 \u0637\u0644\u0628\u064a\u062a\u064a PO-2025-0018\u061f",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0547",
+    "text": "Shipment update for PO-2025-0002",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0930",
+    "text": "Review overdue invoices and start dunning sequences for all",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0114",
+    "text": "What electronics do you carry?",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0209",
+    "text": "\u0634\u0648 \u0635\u0627\u0631 \u0628\u0627\u0644\u0623\u0648\u0631\u062f\u0631 PO-2025-0003\u061f",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0400",
+    "text": "What's the stock level for Samsung TV 55in?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0934",
+    "text": "\u0627\u0628\u062d\u062b \u0639\u0646 \u0645\u0648\u0631\u062f \u062c\u062f\u064a\u062f \u0644cleaning products \u0648\u062d\u0636\u0631 \u0631\u0633\u0627\u0644\u0629 \u062a\u0648\u0627\u0635\u0644",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0882",
+    "text": "Manually trigger Track 3 for invoice INV-2025-022",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0225",
+    "text": "Update on purchase order PO-2025-0011",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0929",
+    "text": "Review overdue invoices and start dunning sequences for all",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1003",
+    "text": "Cherche un nouveau fournisseur de food items et r\u00e9dige un email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1012",
+    "text": "Generate a supplier performance report and score all suppliers",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0525",
+    "text": "\u0627\u0645\u062a\u0649 \u0628\u062a\u0648\u0635\u0644 \u0628\u0636\u0627\u0639\u0629 beverages\u061f",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0087",
+    "text": "\u0639\u0646\u062f\u0643\u0645 LG refrigerator\u061f",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0165",
+    "text": "\u0648\u064a\u0646 \u0637\u0644\u0628\u064a\u062a\u064a PO-2025-0007\u061f",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0315",
+    "text": "\u0643\u0645 \u0642\u0637\u0639\u0629 \u0639\u0646\u062f\u064a \u0645\u0646 Ariel 2kg\u061f",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0744",
+    "text": "What's the balance on invoice INV-2025-008?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0226",
+    "text": "Update on purchase order PO-2025-0014",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0084",
+    "text": "I'm looking for Maggi noodles",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0699",
+    "text": "Quelles factures sont en retard?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0786",
+    "text": "Manually trigger Track 3 for invoice INV-2025-016",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0692",
+    "text": "What's the balance on invoice INV-2025-011?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0035",
+    "text": "\u0634\u0648 \u0639\u0646\u062f\u0643\u0645 \u0645\u0646 food items\u061f",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1128",
+    "text": "Hello",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0086",
+    "text": "What cleaning products do you carry?",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1140",
+    "text": "OK",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1198",
+    "text": "What time is it?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0227",
+    "text": "Has order PO-2025-0019 shipped?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0671",
+    "text": "Quelles factures sont en retard?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0011",
+    "text": "\u0634\u0648 \u0639\u0646\u062f\u0643\u0645 \u0645\u0646 food items\u061f",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0081",
+    "text": "Do you have Ariel 2kg?",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0870",
+    "text": "Manually trigger Track 3 for invoice INV-2025-020",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1076",
+    "text": "Hello",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0216",
+    "text": "\u0634\u0648 \u0635\u0627\u0631 \u0628\u0627\u0644\u0623\u0648\u0631\u062f\u0631 PO-2025-0002\u061f",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0230",
+    "text": "Track order PO-2025-0021",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0362",
+    "text": "Combien d'unit\u00e9s de Heinz ketchup 500ml ai-je?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0174",
+    "text": "Show me PO PO-2025-0005",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0928",
+    "text": "Find me a new personal care supplier and draft an outreach email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0243",
+    "text": "\u0648\u064a\u0646 \u0637\u0644\u0628\u064a\u062a\u064a PO-2025-0007\u061f",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0940",
+    "text": "Generate a supplier performance report and score all suppliers",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0100",
+    "text": "List all available appliances",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0098",
+    "text": "Avez-vous des dairy?",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0703",
+    "text": "Which invoices are overdue?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0814",
+    "text": "\u0627\u0628\u0639\u062b \u062a\u0630\u0643\u064a\u0631 \u0641\u0648\u0631\u064a \u0644\u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-007",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1078",
+    "text": "What's the weather today?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0947",
+    "text": "\u0627\u0628\u062d\u062b \u0639\u0646 \u0645\u0648\u0631\u062f \u062c\u062f\u064a\u062f \u0644dairy \u0648\u062d\u0636\u0631 \u0631\u0633\u0627\u0644\u0629 \u062a\u0648\u0627\u0635\u0644",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1175",
+    "text": "What's the weather today?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0103",
+    "text": "What appliances do you carry?",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0852",
+    "text": "Arr\u00eater les relances pour INV-2025-014",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0413",
+    "text": "What's the stock level for Baraka water 500ml?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1069",
+    "text": "Who won the World Cup?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0514",
+    "text": "Where is my LG refrigerator shipment?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0478",
+    "text": "Is the Ariel 2kg delivery on schedule?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0334",
+    "text": "What's the stock level for LG refrigerator?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0876",
+    "text": "Arr\u00eater les relances pour INV-2025-001",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0301",
+    "text": "What's the stock level for Samsung TV 55in?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0054",
+    "text": "\u0634\u0648 \u0639\u0646\u062f\u0643\u0645 \u0645\u0646 food items\u061f",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1040",
+    "text": "Generate a supplier performance report and score all suppliers",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0113",
+    "text": "What food items do you carry?",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1114",
+    "text": "Who won the World Cup?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0099",
+    "text": "Search catalog for Dove soap",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0346",
+    "text": "Current quantity of Baraka water 500ml",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0834",
+    "text": "Stop dunning on invoice INV-2025-011",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0838",
+    "text": "Send an immediate reminder for INV-2025-012",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0220",
+    "text": "Update on purchase order PO-2025-0021",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0562",
+    "text": "Where is my Maggi noodles shipment?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0637",
+    "text": "Total unpaid amount from INV-2025-015",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1039",
+    "text": "Analyze our top suppliers and recommend which to reorder from",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0892",
+    "text": "\u0648\u0642\u0641 \u0627\u0644\u062a\u062d\u0635\u064a\u0644 \u0639\u0644\u0649 \u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-011",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0681",
+    "text": "Which invoices are overdue?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0612",
+    "text": "\u0634\u0648 \u0631\u0635\u064a\u062f \u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-021\u061f",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1075",
+    "text": "Never mind",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1052",
+    "text": "\u0634\u0643\u0631\u0627\u064b",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0578",
+    "text": "\u0648\u064a\u0646 \u0627\u0644\u0634\u062d\u0646\u0629 \u062a\u0628\u0639\u062a LG refrigerator\u061f",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0755",
+    "text": "Which invoices are in active dunning?",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0822",
+    "text": "Pause collections for INV-2025-021",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0830",
+    "text": "Which invoices are in active dunning?",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1030",
+    "text": "Find me a new food items supplier and draft an outreach email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1096",
+    "text": "\u0634\u0648 \u0627\u0644\u0637\u0642\u0633 \u0627\u0644\u064a\u0648\u0645\u061f",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0996",
+    "text": "Check all shipments arriving this week and prepare receiving forms",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0508",
+    "text": "Has the shipment for PO-2025-0010 left port?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1108",
+    "text": "Never mind",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1119",
+    "text": "What's the weather today?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0276",
+    "text": "\u0648\u064a\u0646 \u0637\u0644\u0628\u064a\u062a\u064a PO-2025-0003\u061f",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0421",
+    "text": "How many units of Samsung TV 55in do I have?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1104",
+    "text": "Who won the World Cup?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0727",
+    "text": "Which invoices are overdue?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0376",
+    "text": "Inventory count for Samsung TV 55in",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0405",
+    "text": "What's my current inventory of Maggi noodles?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0716",
+    "text": "Show me unpaid B2B invoices",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0829",
+    "text": "Stop dunning on invoice INV-2025-021",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0482",
+    "text": "Where is my Dove soap shipment?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0130",
+    "text": "\u0639\u0646\u062f\u0643\u0645 LG refrigerator\u061f",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0597",
+    "text": "O\u00f9 est mon exp\u00e9dition de Heinz ketchup 500ml?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0022",
+    "text": "\u0639\u0646\u062f\u0643\u0645 Maggi noodles\u061f",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0410",
+    "text": "Combien d'unit\u00e9s de Samsung TV 55in ai-je?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0432",
+    "text": "Combien d'unit\u00e9s de Samsung TV 55in ai-je?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0931",
+    "text": "Analyze our top suppliers and recommend which to reorder from",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1041",
+    "text": "Find me a new beverages supplier and draft an outreach email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0691",
+    "text": "Show me invoices due this month",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0879",
+    "text": "Send an immediate reminder for INV-2025-015",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0169",
+    "text": "What's the status of order PO-2025-0023?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0275",
+    "text": "Where is my order PO-2025-0003?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0544",
+    "text": "Where is my Bosch washing machine shipment?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0398",
+    "text": "Is Samsung TV 55in in stock?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0245",
+    "text": "Quel est le statut de la commande PO-2025-0004?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0485",
+    "text": "What's the ETA for my electronics delivery?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0255",
+    "text": "Track order PO-2025-0012",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1064",
+    "text": "\u0634\u0643\u0631\u0627\u064b",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0734",
+    "text": "What's the balance on invoice INV-2025-013?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0500",
+    "text": "\u0627\u0645\u062a\u0649 \u0628\u062a\u0648\u0635\u0644 \u0628\u0636\u0627\u0639\u0629 cleaning products\u061f",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0517",
+    "text": "\u0648\u064a\u0646 \u0627\u0644\u0634\u062d\u0646\u0629 \u062a\u0628\u0639\u062a Maggi noodles\u061f",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0456",
+    "text": "Has the shipment for PO-2025-0024 left port?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0078",
+    "text": "Do you have LG refrigerator?",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0601",
+    "text": "Total unpaid amount from INV-2025-004",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0559",
+    "text": "\u0648\u064a\u0646 \u0627\u0644\u0634\u062d\u0646\u0629 \u062a\u0628\u0639\u062a Heinz ketchup 500ml\u061f",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0178",
+    "text": "Update on purchase order PO-2025-0020",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0010",
+    "text": "\u0639\u0646\u062f\u0643\u0645 Dove soap\u061f",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0924",
+    "text": "Create a purchase order for Bosch washing machine and notify the supplier",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0075",
+    "text": "Avez-vous des appliances?",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0357",
+    "text": "Check availability of Samsung TV 55in",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0898",
+    "text": "Cancel the dunning sequence for INV-2025-021",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0377",
+    "text": "Is Ariel 2kg in stock?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0108",
+    "text": "Search catalog for Heinz ketchup 500ml",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1195",
+    "text": "Thanks",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1035",
+    "text": "Audit our inventory and flag products below reorder threshold",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0567",
+    "text": "Is the Heinz ketchup 500ml delivery on schedule?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0236",
+    "text": "\u0648\u064a\u0646 \u0637\u0644\u0628\u064a\u062a\u064a PO-2025-0023\u061f",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1120",
+    "text": "Quel temps fait-il?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0132",
+    "text": "Je cherche Nescafe 200g",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1048",
+    "text": "Find me a new personal care supplier and draft an outreach email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0918",
+    "text": "Analyze our top suppliers and recommend which to reorder from",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0003",
+    "text": "Search catalog for Bosch washing machine",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0371",
+    "text": "What's my current inventory of Bosch washing machine?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1090",
+    "text": "\u0634\u0643\u0631\u0627\u064b",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0437",
+    "text": "\u0643\u0645 \u0642\u0637\u0639\u0629 \u0639\u0646\u062f\u064a \u0645\u0646 LG refrigerator\u061f",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1122",
+    "text": "Never mind",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0014",
+    "text": "Find me personal care items",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0157",
+    "text": "Update on purchase order PO-2025-0017",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0080",
+    "text": "\u0634\u0648 \u0639\u0646\u062f\u0643\u0645 \u0645\u0646 frozen food\u061f",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0752",
+    "text": "Arr\u00eater les relances pour INV-2025-016",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0205",
+    "text": "how many did I order in PO-2025-0008?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0856",
+    "text": "Stop dunning on invoice INV-2025-012",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0800",
+    "text": "Escalate dunning for INV-2025-015",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0857",
+    "text": "Cancel the dunning sequence for INV-2025-017",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1162",
+    "text": "Never mind",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0172",
+    "text": "Track order PO-2025-0016",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0440",
+    "text": "how many do I have of Tide detergent?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0884",
+    "text": "Cancel the dunning sequence for INV-2025-006",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0839",
+    "text": "Escalate dunning for INV-2025-018",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0617",
+    "text": "\u0634\u0648 \u0627\u0644\u0641\u0648\u0627\u062a\u064a\u0631 \u0627\u0644\u0644\u064a \u0645\u0648 \u0645\u062f\u0641\u0648\u0639\u0629\u061f",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0242",
+    "text": "Is PO-2025-0003 confirmed?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0126",
+    "text": "Show me all frozen food products",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0395",
+    "text": "\u0643\u0645 \u0642\u0637\u0639\u0629 \u0639\u0646\u062f\u064a \u0645\u0646 Dove soap\u061f",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0263",
+    "text": "Has order PO-2025-0003 shipped?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0464",
+    "text": "Is the Bosch washing machine delivery on schedule?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0144",
+    "text": "\u0623\u0631\u064a\u062f personal care",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0520",
+    "text": "\u0627\u0645\u062a\u0649 \u0628\u062a\u0648\u0635\u0644 \u0628\u0636\u0627\u0639\u0629 electronics\u061f",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1058",
+    "text": "Never mind",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0407",
+    "text": "Is Heinz ketchup 500ml in stock?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0442",
+    "text": "Is Maggi noodles in stock?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0961",
+    "text": "Review overdue invoices and start dunning sequences for all",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0248",
+    "text": "What's the status of order PO-2025-0015?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0769",
+    "text": "Send an immediate reminder for INV-2025-009",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1091",
+    "text": "Quel temps fait-il?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0188",
+    "text": "Update on purchase order PO-2025-0017",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0563",
+    "text": "When does the container with Tide detergent arrive?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1141",
+    "text": "\u0627\u062d\u0643\u064a\u0644\u064a \u0646\u0643\u062a\u0629",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0843",
+    "text": "Cancel the dunning sequence for INV-2025-009",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0672",
+    "text": "Show me unpaid B2B invoices",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0256",
+    "text": "how many did I order in PO-2025-0014?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0790",
+    "text": "Cancel the dunning sequence for INV-2025-023",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1031",
+    "text": "Cherche un nouveau fournisseur de dairy et r\u00e9dige un email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0825",
+    "text": "Pause collections for INV-2025-009",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0862",
+    "text": "Pause collections for INV-2025-008",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0804",
+    "text": "\u0627\u0628\u0639\u062b \u062a\u0630\u0643\u064a\u0631 \u0641\u0648\u0631\u064a \u0644\u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-006",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0305",
+    "text": "What's the stock level for Nescafe 200g?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1124",
+    "text": "\u0627\u062d\u0643\u064a\u0644\u064a \u0646\u0643\u062a\u0629",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0771",
+    "text": "\u0627\u0628\u0639\u062b \u062a\u0630\u0643\u064a\u0631 \u0641\u0648\u0631\u064a \u0644\u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-013",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0802",
+    "text": "Pause collections for INV-2025-019",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0447",
+    "text": "how many do I have of Bosch washing machine?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0844",
+    "text": "Which invoices are in active dunning?",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0658",
+    "text": "Total unpaid amount from INV-2025-003",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0785",
+    "text": "Send an immediate reminder for INV-2025-016",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0667",
+    "text": "Show me unpaid B2B invoices",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0071",
+    "text": "Do you have Maggi noodles?",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0900",
+    "text": "Arr\u00eater les relances pour INV-2025-016",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0652",
+    "text": "List all outstanding invoices",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0224",
+    "text": "\u0634\u0648 \u0635\u0627\u0631 \u0628\u0627\u0644\u0623\u0648\u0631\u062f\u0631 PO-2025-0015\u061f",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0386",
+    "text": "What's my current inventory of Dove soap?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0460",
+    "text": "Track my container for Heinz ketchup 500ml",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0009",
+    "text": "\u0639\u0646\u062f\u0643\u0645 Ariel 2kg\u061f",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1110",
+    "text": "Tell me a joke",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0987",
+    "text": "Generate a supplier performance report and score all suppliers",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0069",
+    "text": "Show me all food items products",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0065",
+    "text": "I'm looking for Heinz ketchup 500ml",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0148",
+    "text": "Do you have Bosch washing machine?",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0079",
+    "text": "\u0639\u0646\u062f\u0643\u0645 Baraka water 500ml\u061f",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0768",
+    "text": "Manually trigger Track 3 for invoice INV-2025-009",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0678",
+    "text": "List all outstanding invoices",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0742",
+    "text": "Which invoices are overdue?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0380",
+    "text": "What's the stock level for Nescafe 200g?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0097",
+    "text": "Find me frozen food items",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0958",
+    "text": "Create a purchase order for Nescafe 200g and notify the supplier",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0443",
+    "text": "How many units of Nescafe 200g do I have?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0773",
+    "text": "Which invoices are in active dunning?",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1093",
+    "text": "Never mind",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0536",
+    "text": "O\u00f9 est mon exp\u00e9dition de Samsung TV 55in?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0732",
+    "text": "Show me unpaid B2B invoices",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0643",
+    "text": "Has invoice INV-2025-022 been paid?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0375",
+    "text": "\u0643\u0645 \u0642\u0637\u0639\u0629 \u0639\u0646\u062f\u064a \u0645\u0646 Bosch washing machine\u061f",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0196",
+    "text": "Track order PO-2025-0023",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0345",
+    "text": "What's the stock level for Ariel 2kg?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0202",
+    "text": "how many did I order in PO-2025-0015?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0401",
+    "text": "What's my current inventory of Samsung TV 55in?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0588",
+    "text": "Is the Maggi noodles delivery on schedule?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0435",
+    "text": "Combien d'unit\u00e9s de Heinz ketchup 500ml ai-je?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0445",
+    "text": "how many do I have of Baraka water 500ml?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0436",
+    "text": "How many units of Ariel 2kg do I have?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0756",
+    "text": "Pause collections for INV-2025-005",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0907",
+    "text": "\u0627\u0628\u062d\u062b \u0639\u0646 \u0645\u0648\u0631\u062f \u062c\u062f\u064a\u062f \u0644food items \u0648\u062d\u0636\u0631 \u0631\u0633\u0627\u0644\u0629 \u062a\u0648\u0627\u0635\u0644",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0287",
+    "text": "\u0634\u0648 \u0635\u0627\u0631 \u0628\u0627\u0644\u0623\u0648\u0631\u062f\u0631 PO-2025-0024\u061f",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0575",
+    "text": "What's the ETA for my electronics delivery?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1060",
+    "text": "What time is it?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1062",
+    "text": "Hello",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0758",
+    "text": "Manually trigger Track 3 for invoice INV-2025-004",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0921",
+    "text": "Cherche un nouveau fournisseur de appliances et r\u00e9dige un email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0151",
+    "text": "how many did I order in PO-2025-0015?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0431",
+    "text": "\u0643\u0645 \u0642\u0637\u0639\u0629 \u0639\u0646\u062f\u064a \u0645\u0646 Maggi noodles\u061f",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0982",
+    "text": "Create a purchase order for Heinz ketchup 500ml and notify the supplier",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0262",
+    "text": "Show me PO PO-2025-0002",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1187",
+    "text": "Quel temps fait-il?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0782",
+    "text": "Which invoices are in active dunning?",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1183",
+    "text": "\u0645\u0631\u062d\u0628\u0627",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0555",
+    "text": "Has the shipment for PO-2025-0021 left port?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0177",
+    "text": "Quel est le statut de la commande PO-2025-0019?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0602",
+    "text": "Which invoices are overdue?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0994",
+    "text": "Analyze our top suppliers and recommend which to reorder from",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0919",
+    "text": "Cherche un nouveau fournisseur de personal care et r\u00e9dige un email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0809",
+    "text": "Arr\u00eater les relances pour INV-2025-010",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0163",
+    "text": "\u0648\u064a\u0646 \u0637\u0644\u0628\u064a\u062a\u064a PO-2025-0009\u061f",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0976",
+    "text": "Generate a supplier performance report and score all suppliers",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0566",
+    "text": "\u0627\u0645\u062a\u0649 \u0628\u062a\u0648\u0635\u0644 \u0628\u0636\u0627\u0639\u0629 food items\u061f",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0915",
+    "text": "Generate a supplier performance report and score all suppliers",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1089",
+    "text": "What time is it?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0458",
+    "text": "O\u00f9 est mon exp\u00e9dition de Bosch washing machine?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0200",
+    "text": "Has order PO-2025-0020 shipped?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1014",
+    "text": "Review overdue invoices and start dunning sequences for all",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0476",
+    "text": "What's the ETA for my frozen food delivery?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1092",
+    "text": "What time is it?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0077",
+    "text": "Find me electronics items",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1168",
+    "text": "OK",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0076",
+    "text": "I'm looking for Dove soap",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0001",
+    "text": "Search catalog for Ariel 2kg",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1017",
+    "text": "Cherche un nouveau fournisseur de beverages et r\u00e9dige un email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1037",
+    "text": "Generate a supplier performance report and score all suppliers",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0072",
+    "text": "\u0634\u0648 \u0639\u0646\u062f\u0643\u0645 \u0645\u0646 appliances\u061f",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0702",
+    "text": "Invoice aging report",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1147",
+    "text": "Tell me a joke",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0608",
+    "text": "Show me unpaid B2B invoices",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0636",
+    "text": "Show me invoices due this month",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0723",
+    "text": "Has invoice INV-2025-022 been paid?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0254",
+    "text": "Quel est le statut de la commande PO-2025-0008?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0837",
+    "text": "Which invoices are in active dunning?",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0573",
+    "text": "When does the container with Ariel 2kg arrive?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0962",
+    "text": "Cherche un nouveau fournisseur de dairy et r\u00e9dige un email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1009",
+    "text": "Cherche un nouveau fournisseur de food items et r\u00e9dige un email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0960",
+    "text": "Review overdue invoices and start dunning sequences for all",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0983",
+    "text": "Create a purchase order for Nescafe 200g and notify the supplier",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0036",
+    "text": "I'm looking for Nescafe 200g",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0428",
+    "text": "What's the stock level for Samsung TV 55in?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0660",
+    "text": "Total unpaid amount from INV-2025-021",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0091",
+    "text": "\u0623\u0631\u064a\u062f appliances",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0945",
+    "text": "Audit our inventory and flag products below reorder threshold",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0836",
+    "text": "\u0627\u0628\u0639\u062b \u062a\u0630\u0643\u064a\u0631 \u0641\u0648\u0631\u064a \u0644\u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-002",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1005",
+    "text": "Check all shipments arriving this week and prepare receiving forms",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0946",
+    "text": "Cherche un nouveau fournisseur de dairy et r\u00e9dige un email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0978",
+    "text": "Find low stock items and draft reorder requests for all",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0503",
+    "text": "\u0648\u064a\u0646 \u0627\u0644\u0634\u062d\u0646\u0629 \u062a\u0628\u0639\u062a Ariel 2kg\u061f",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0501",
+    "text": "Track my container for Nescafe 200g",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0059",
+    "text": "List all available electronics",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0446",
+    "text": "Is LG refrigerator in stock?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0541",
+    "text": "Has the shipment for PO-2025-0009 left port?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0365",
+    "text": "Check availability of Tide detergent",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0379",
+    "text": "What's the stock level for Bosch washing machine?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1133",
+    "text": "What time is it?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0343",
+    "text": "What's the stock level for Baraka water 500ml?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0613",
+    "text": "What's the balance on invoice INV-2025-001?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1178",
+    "text": "Hello",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0570",
+    "text": "Is the LG refrigerator delivery on schedule?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1155",
+    "text": "Tell me a joke",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0596",
+    "text": "\u0627\u0645\u062a\u0649 \u0628\u062a\u0648\u0635\u0644 \u0628\u0636\u0627\u0639\u0629 food items\u061f",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0521",
+    "text": "\u0627\u0645\u062a\u0649 \u0628\u062a\u0648\u0635\u0644 \u0628\u0636\u0627\u0639\u0629 dairy\u061f",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0552",
+    "text": "What's the ETA for my personal care delivery?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0777",
+    "text": "Which invoices are in active dunning?",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1086",
+    "text": "\u0627\u062d\u0643\u064a\u0644\u064a \u0646\u0643\u062a\u0629",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0414",
+    "text": "Check availability of Dove soap",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0356",
+    "text": "Combien d'unit\u00e9s de Bosch washing machine ai-je?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0107",
+    "text": "Search catalog for Ariel 2kg",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0813",
+    "text": "Pause collections for INV-2025-017",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0444",
+    "text": "Combien d'unit\u00e9s de Bosch washing machine ai-je?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1112",
+    "text": "\u0645\u0631\u062d\u0628\u0627",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0247",
+    "text": "Show me PO PO-2025-0003",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0770",
+    "text": "Manually trigger Track 3 for invoice INV-2025-015",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0682",
+    "text": "List all outstanding invoices",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0858",
+    "text": "Which invoices are in active dunning?",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0971",
+    "text": "Find me a new frozen food supplier and draft an outreach email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0123",
+    "text": "List all available personal care",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1054",
+    "text": "Thanks",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1121",
+    "text": "Never mind",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0543",
+    "text": "What's the ETA for my electronics delivery?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0439",
+    "text": "What's the stock level for Ariel 2kg?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0273",
+    "text": "how many did I order in PO-2025-0021?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0155",
+    "text": "\u0648\u064a\u0646 \u0637\u0644\u0628\u064a\u062a\u064a PO-2025-0007\u061f",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0925",
+    "text": "\u0627\u0628\u062d\u062b \u0639\u0646 \u0645\u0648\u0631\u062f \u062c\u062f\u064a\u062f \u0644electronics \u0648\u062d\u0636\u0631 \u0631\u0633\u0627\u0644\u0629 \u062a\u0648\u0627\u0635\u0644",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0935",
+    "text": "Review overdue invoices and start dunning sequences for all",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0932",
+    "text": "Audit our inventory and flag products below reorder threshold",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1002",
+    "text": "Generate a supplier performance report and score all suppliers",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0448",
+    "text": "What's the stock level for Samsung TV 55in?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0950",
+    "text": "Generate a supplier performance report and score all suppliers",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0883",
+    "text": "Pause collections for INV-2025-020",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0970",
+    "text": "\u0627\u0628\u062d\u062b \u0639\u0646 \u0645\u0648\u0631\u062f \u062c\u062f\u064a\u062f \u0644beverages \u0648\u062d\u0636\u0631 \u0631\u0633\u0627\u0644\u0629 \u062a\u0648\u0627\u0635\u0644",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0634",
+    "text": "Show me unpaid B2B invoices",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0791",
+    "text": "Manually trigger Track 3 for invoice INV-2025-014",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0803",
+    "text": "Manually trigger Track 3 for invoice INV-2025-009",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0659",
+    "text": "Total unpaid amount from INV-2025-012",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0066",
+    "text": "\u0623\u0631\u064a\u062f dairy",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0695",
+    "text": "\u0634\u0648 \u0627\u0644\u0641\u0648\u0627\u062a\u064a\u0631 \u0627\u0644\u0644\u064a \u0645\u0648 \u0645\u062f\u0641\u0648\u0639\u0629\u061f",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0701",
+    "text": "List all outstanding invoices",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0179",
+    "text": "Where is my order PO-2025-0009?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0824",
+    "text": "Escalate dunning for INV-2025-005",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0821",
+    "text": "Manually trigger Track 3 for invoice INV-2025-002",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0827",
+    "text": "\u0648\u0642\u0641 \u0627\u0644\u062a\u062d\u0635\u064a\u0644 \u0639\u0644\u0649 \u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-015",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1109",
+    "text": "Who won the World Cup?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0977",
+    "text": "Analyze our top suppliers and recommend which to reorder from",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0246",
+    "text": "Where is my order PO-2025-0022?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0941",
+    "text": "Create a purchase order for Nescafe 200g and notify the supplier",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1081",
+    "text": "Quel temps fait-il?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0614",
+    "text": "Invoice aging report",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0835",
+    "text": "Pause collections for INV-2025-009",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0531",
+    "text": "\u0648\u064a\u0646 \u0627\u0644\u0634\u062d\u0646\u0629 \u062a\u0628\u0639\u062a Tide detergent\u061f",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0250",
+    "text": "Where is my order PO-2025-0001?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0233",
+    "text": "\u0648\u064a\u0646 \u0637\u0644\u0628\u064a\u062a\u064a PO-2025-0021\u061f",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1177",
+    "text": "Hello",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0459",
+    "text": "O\u00f9 est mon exp\u00e9dition de Bosch washing machine?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0917",
+    "text": "Audit our inventory and flag products below reorder threshold",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0604",
+    "text": "\u0634\u0648 \u0631\u0635\u064a\u062f \u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-001\u061f",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0341",
+    "text": "Is Bosch washing machine in stock?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1151",
+    "text": "Tell me a joke",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0833",
+    "text": "Cancel the dunning sequence for INV-2025-008",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0779",
+    "text": "Manually trigger Track 3 for invoice INV-2025-014",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0187",
+    "text": "Is PO-2025-0004 confirmed?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0686",
+    "text": "\u0634\u0648 \u0627\u0644\u0641\u0648\u0627\u062a\u064a\u0631 \u0627\u0644\u0644\u064a \u0645\u0648 \u0645\u062f\u0641\u0648\u0639\u0629\u061f",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0731",
+    "text": "Total unpaid amount from INV-2025-001",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0441",
+    "text": "\u0647\u0644 \u064a\u0648\u062c\u062f Dove soap \u0641\u064a \u0627\u0644\u0645\u062e\u0632\u0646\u061f",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0074",
+    "text": "What food items do you carry?",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0584",
+    "text": "O\u00f9 est mon exp\u00e9dition de Heinz ketchup 500ml?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0558",
+    "text": "What's the ETA for my electronics delivery?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0241",
+    "text": "Show me PO PO-2025-0015",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0480",
+    "text": "O\u00f9 est mon exp\u00e9dition de Tide detergent?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0393",
+    "text": "Check availability of Dove soap",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0364",
+    "text": "Current quantity of Bosch washing machine",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0330",
+    "text": "Check availability of Dove soap",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0351",
+    "text": "Check availability of Dove soap",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0159",
+    "text": "Has order PO-2025-0015 shipped?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0234",
+    "text": "Update on purchase order PO-2025-0007",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1137",
+    "text": "Never mind",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0240",
+    "text": "Is PO-2025-0021 confirmed?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0754",
+    "text": "Send an immediate reminder for INV-2025-011",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0765",
+    "text": "\u0648\u0642\u0641 \u0627\u0644\u062a\u062d\u0635\u064a\u0644 \u0639\u0644\u0649 \u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-019",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0411",
+    "text": "Inventory count for Heinz ketchup 500ml",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0417",
+    "text": "Is Heinz ketchup 500ml in stock?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0896",
+    "text": "Pause collections for INV-2025-006",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0979",
+    "text": "Create a purchase order for Maggi noodles and notify the supplier",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0523",
+    "text": "Shipment update for PO-2025-0008",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0775",
+    "text": "Manually trigger Track 3 for invoice INV-2025-013",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0392",
+    "text": "Inventory count for Samsung TV 55in",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0387",
+    "text": "Current quantity of LG refrigerator",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0878",
+    "text": "Escalate dunning for INV-2025-021",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0893",
+    "text": "Escalate dunning for INV-2025-022",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0984",
+    "text": "Cherche un nouveau fournisseur de dairy et r\u00e9dige un email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0926",
+    "text": "Cherche un nouveau fournisseur de appliances et r\u00e9dige un email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1020",
+    "text": "Cherche un nouveau fournisseur de food items et r\u00e9dige un email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1061",
+    "text": "\u0645\u0631\u062d\u0628\u0627",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0366",
+    "text": "\u0647\u0644 \u064a\u0648\u062c\u062f Heinz ketchup 500ml \u0641\u064a \u0627\u0644\u0645\u062e\u0632\u0646\u061f",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0102",
+    "text": "I'm looking for LG refrigerator",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0951",
+    "text": "\u0627\u0628\u062d\u062b \u0639\u0646 \u0645\u0648\u0631\u062f \u062c\u062f\u064a\u062f \u0644food items \u0648\u062d\u0636\u0631 \u0631\u0633\u0627\u0644\u0629 \u062a\u0648\u0627\u0635\u0644",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0877",
+    "text": "Manually trigger Track 3 for invoice INV-2025-003",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0629",
+    "text": "List all outstanding invoices",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0741",
+    "text": "Total unpaid amount from INV-2025-018",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0599",
+    "text": "Shipment update for PO-2025-0004",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0229",
+    "text": "\u0634\u0648 \u0635\u0627\u0631 \u0628\u0627\u0644\u0623\u0648\u0631\u062f\u0631 PO-2025-0016\u061f",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0871",
+    "text": "Pause collections for INV-2025-024",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0354",
+    "text": "Combien d'unit\u00e9s de Dove soap ai-je?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1111",
+    "text": "Who won the World Cup?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0598",
+    "text": "\u0627\u0645\u062a\u0649 \u0628\u062a\u0648\u0635\u0644 \u0628\u0636\u0627\u0639\u0629 cleaning products\u061f",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1176",
+    "text": "\u0634\u0643\u0631\u0627\u064b",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0797",
+    "text": "Stop dunning on invoice INV-2025-014",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0747",
+    "text": "List all outstanding invoices",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0361",
+    "text": "What's the stock level for Samsung TV 55in?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1130",
+    "text": "Quel temps fait-il?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0201",
+    "text": "Show me PO PO-2025-0007",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0219",
+    "text": "Track order PO-2025-0003",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0815",
+    "text": "Send an immediate reminder for INV-2025-015",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0028",
+    "text": "Je cherche Ariel 2kg",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0197",
+    "text": "Update on purchase order PO-2025-0015",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0055",
+    "text": "Avez-vous des food items?",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0516",
+    "text": "Has the shipment for PO-2025-0019 left port?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0715",
+    "text": "Invoice aging report",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0943",
+    "text": "Audit our inventory and flag products below reorder threshold",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0134",
+    "text": "\u0623\u0631\u064a\u062f personal care",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0052",
+    "text": "I'm looking for Bosch washing machine",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0696",
+    "text": "\u0634\u0648 \u0627\u0644\u0641\u0648\u0627\u062a\u064a\u0631 \u0627\u0644\u0644\u064a \u0645\u0648 \u0645\u062f\u0641\u0648\u0639\u0629\u061f",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0763",
+    "text": "Cancel the dunning sequence for INV-2025-001",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1088",
+    "text": "Quel temps fait-il?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0073",
+    "text": "Avez-vous des appliances?",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1125",
+    "text": "\u0645\u0631\u062d\u0628\u0627",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1127",
+    "text": "Never mind",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0291",
+    "text": "\u0648\u064a\u0646 \u0637\u0644\u0628\u064a\u062a\u064a PO-2025-0019\u061f",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0145",
+    "text": "List all available food items",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0278",
+    "text": "how many did I order in PO-2025-0017?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0690",
+    "text": "What's the balance on invoice INV-2025-012?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0661",
+    "text": "Has invoice INV-2025-003 been paid?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0212",
+    "text": "how many did I order in PO-2025-0011?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0105",
+    "text": "Je cherche Heinz ketchup 500ml",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0527",
+    "text": "O\u00f9 est mon exp\u00e9dition de Dove soap?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0949",
+    "text": "Find me a new dairy supplier and draft an outreach email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0118",
+    "text": "What electronics do you carry?",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0995",
+    "text": "Find low stock items and draft reorder requests for all",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0162",
+    "text": "how many did I order in PO-2025-0024?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0733",
+    "text": "\u0634\u0648 \u0627\u0644\u0641\u0648\u0627\u062a\u064a\u0631 \u0627\u0644\u0644\u064a \u0645\u0648 \u0645\u062f\u0641\u0648\u0639\u0629\u061f",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0280",
+    "text": "how many did I order in PO-2025-0015?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0668",
+    "text": "\u0634\u0648 \u0631\u0635\u064a\u062f \u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-017\u061f",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0452",
+    "text": "Is the Samsung TV 55in delivery on schedule?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1010",
+    "text": "Check all shipments arriving this week and prepare receiving forms",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1033",
+    "text": "Review overdue invoices and start dunning sequences for all",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0294",
+    "text": "Update on purchase order PO-2025-0001",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0954",
+    "text": "Review overdue invoices and start dunning sequences for all",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0206",
+    "text": "Quel est le statut de la commande PO-2025-0016?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0329",
+    "text": "how many do I have of Nescafe 200g?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0933",
+    "text": "Review overdue invoices and start dunning sequences for all",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0880",
+    "text": "Stop dunning on invoice INV-2025-010",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1200",
+    "text": "OK",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1126",
+    "text": "Write me a poem",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0622",
+    "text": "\u0634\u0648 \u0627\u0644\u0641\u0648\u0627\u062a\u064a\u0631 \u0627\u0644\u0644\u064a \u0645\u0648 \u0645\u062f\u0641\u0648\u0639\u0629\u061f",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0106",
+    "text": "\u0634\u0648 \u0639\u0646\u062f\u0643\u0645 \u0645\u0646 electronics\u061f",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0048",
+    "text": "\u0623\u0631\u064a\u062f food items",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1129",
+    "text": "Who won the World Cup?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0762",
+    "text": "Which invoices are in active dunning?",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0698",
+    "text": "Which invoices are overdue?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0046",
+    "text": "Find me personal care items",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0319",
+    "text": "Check availability of Dove soap",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0005",
+    "text": "Avez-vous des cleaning products?",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0119",
+    "text": "Search catalog for Tide detergent",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0535",
+    "text": "\u0648\u064a\u0646 \u0627\u0644\u0634\u062d\u0646\u0629 \u062a\u0628\u0639\u062a Tide detergent\u061f",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0891",
+    "text": "\u0627\u0628\u0639\u062b \u062a\u0630\u0643\u064a\u0631 \u0641\u0648\u0631\u064a \u0644\u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-009",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0471",
+    "text": "\u0627\u0645\u062a\u0649 \u0628\u062a\u0648\u0635\u0644 \u0628\u0636\u0627\u0639\u0629 electronics\u061f",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0894",
+    "text": "Send an immediate reminder for INV-2025-022",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0211",
+    "text": "Update on purchase order PO-2025-0005",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0136",
+    "text": "Do you have Samsung TV 55in?",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1163",
+    "text": "What's the weather today?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1170",
+    "text": "OK",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1154",
+    "text": "Tell me a joke",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0336",
+    "text": "What's my current inventory of Bosch washing machine?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0318",
+    "text": "Is Ariel 2kg in stock?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0826",
+    "text": "Which invoices are in active dunning?",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0697",
+    "text": "Total unpaid amount from INV-2025-017",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1098",
+    "text": "Who won the World Cup?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0886",
+    "text": "\u0627\u0628\u0639\u062b \u062a\u0630\u0643\u064a\u0631 \u0641\u0648\u0631\u064a \u0644\u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-006",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0158",
+    "text": "Where is my order PO-2025-0016?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0863",
+    "text": "Pause collections for INV-2025-017",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0495",
+    "text": "Shipment update for PO-2025-0019",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0851",
+    "text": "Cancel the dunning sequence for INV-2025-006",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0649",
+    "text": "Has invoice INV-2025-011 been paid?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1180",
+    "text": "Hello",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0095",
+    "text": "\u0623\u0631\u064a\u062f dairy",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0655",
+    "text": "Which invoices are overdue?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0039",
+    "text": "Je cherche LG refrigerator",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0384",
+    "text": "What's the stock level for Ariel 2kg?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0115",
+    "text": "I'm looking for Ariel 2kg",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0789",
+    "text": "Cancel the dunning sequence for INV-2025-008",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0739",
+    "text": "Quelles factures sont en retard?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0872",
+    "text": "Which invoices are in active dunning?",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0222",
+    "text": "Quel est le statut de la commande PO-2025-0020?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0310",
+    "text": "Inventory count for Dove soap",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0866",
+    "text": "Stop dunning on invoice INV-2025-004",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0381",
+    "text": "How many units of Dove soap do I have?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0778",
+    "text": "Pause collections for INV-2025-002",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0683",
+    "text": "Has invoice INV-2025-023 been paid?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0089",
+    "text": "I'm looking for Maggi noodles",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0693",
+    "text": "\u0634\u0648 \u0631\u0635\u064a\u062f \u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-023\u061f",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0279",
+    "text": "\u0634\u0648 \u0635\u0627\u0631 \u0628\u0627\u0644\u0623\u0648\u0631\u062f\u0631 PO-2025-0021\u061f",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0033",
+    "text": "Search catalog for Tide detergent",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0323",
+    "text": "Combien d'unit\u00e9s de Heinz ketchup 500ml ai-je?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1025",
+    "text": "Cherche un nouveau fournisseur de frozen food et r\u00e9dige un email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0120",
+    "text": "Find me food items items",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0192",
+    "text": "Is PO-2025-0016 confirmed?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0399",
+    "text": "What's the stock level for Tide detergent?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0585",
+    "text": "What's the ETA for my cleaning products delivery?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1173",
+    "text": "\u0645\u0631\u062d\u0628\u0627",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0548",
+    "text": "Is the Samsung TV 55in delivery on schedule?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0385",
+    "text": "Current quantity of Baraka water 500ml",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0348",
+    "text": "How many units of LG refrigerator do I have?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0032",
+    "text": "Show me all beverages products",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0288",
+    "text": "Update on purchase order PO-2025-0012",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0153",
+    "text": "Update on purchase order PO-2025-0015",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0939",
+    "text": "Cherche un nouveau fournisseur de appliances et r\u00e9dige un email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0687",
+    "text": "\u0634\u0648 \u0631\u0635\u064a\u062f \u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-003\u061f",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0746",
+    "text": "\u0634\u0648 \u0627\u0644\u0641\u0648\u0627\u062a\u064a\u0631 \u0627\u0644\u0644\u064a \u0645\u0648 \u0645\u062f\u0641\u0648\u0639\u0629\u061f",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1142",
+    "text": "Tell me a joke",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0214",
+    "text": "Has order PO-2025-0008 shipped?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0020",
+    "text": "Show me all cleaning products products",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0549",
+    "text": "Shipment update for PO-2025-0001",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0569",
+    "text": "Shipment update for PO-2025-0006",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1073",
+    "text": "Never mind",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0579",
+    "text": "\u0627\u0645\u062a\u0649 \u0628\u062a\u0648\u0635\u0644 \u0628\u0636\u0627\u0639\u0629 personal care\u061f",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0831",
+    "text": "Manually trigger Track 3 for invoice INV-2025-009",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0905",
+    "text": "Check all shipments arriving this week and prepare receiving forms",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0058",
+    "text": "Find me appliances items",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0664",
+    "text": "Quelles factures sont en retard?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1082",
+    "text": "Quel temps fait-il?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0812",
+    "text": "\u0627\u0628\u0639\u062b \u062a\u0630\u0643\u064a\u0631 \u0641\u0648\u0631\u064a \u0644\u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-017",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0912",
+    "text": "Find low stock items and draft reorder requests for all",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0472",
+    "text": "What's the ETA for my beverages delivery?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0160",
+    "text": "Where is my order PO-2025-0013?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0494",
+    "text": "Has the shipment for PO-2025-0017 left port?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0140",
+    "text": "\u0634\u0648 \u0639\u0646\u062f\u0643\u0645 \u0645\u0646 personal care\u061f",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0726",
+    "text": "Show me invoices due this month",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1001",
+    "text": "\u0627\u0628\u062d\u062b \u0639\u0646 \u0645\u0648\u0631\u062f \u062c\u062f\u064a\u062f \u0644appliances \u0648\u062d\u0636\u0631 \u0631\u0633\u0627\u0644\u0629 \u062a\u0648\u0627\u0635\u0644",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0491",
+    "text": "Track my container for Dove soap",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1135",
+    "text": "What's the weather today?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0339",
+    "text": "Inventory count for LG refrigerator",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0674",
+    "text": "Show me unpaid B2B invoices",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1045",
+    "text": "Find me a new electronics supplier and draft an outreach email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0030",
+    "text": "Search catalog for Ariel 2kg",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0963",
+    "text": "Analyze our top suppliers and recommend which to reorder from",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0583",
+    "text": "O\u00f9 est mon exp\u00e9dition de Ariel 2kg?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0895",
+    "text": "\u0627\u0628\u0639\u062b \u062a\u0630\u0643\u064a\u0631 \u0641\u0648\u0631\u064a \u0644\u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-021",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0350",
+    "text": "Check availability of Bosch washing machine",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0967",
+    "text": "Cherche un nouveau fournisseur de cleaning products et r\u00e9dige un email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0832",
+    "text": "\u0648\u0642\u0641 \u0627\u0644\u062a\u062d\u0635\u064a\u0644 \u0639\u0644\u0649 \u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-023",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0767",
+    "text": "Manually trigger Track 3 for invoice INV-2025-006",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1192",
+    "text": "Quel temps fait-il?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0718",
+    "text": "\u0634\u0648 \u0631\u0635\u064a\u062f \u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-009\u061f",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0519",
+    "text": "Where is my Bosch washing machine shipment?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0308",
+    "text": "How many units of Samsung TV 55in do I have?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0801",
+    "text": "Stop dunning on invoice INV-2025-014",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0720",
+    "text": "Show me unpaid B2B invoices",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0261",
+    "text": "Where is my order PO-2025-0022?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0289",
+    "text": "Is PO-2025-0005 confirmed?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0846",
+    "text": "Escalate dunning for INV-2025-010",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0656",
+    "text": "Which invoices are overdue?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0012",
+    "text": "Avez-vous des dairy?",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0218",
+    "text": "Where is my order PO-2025-0001?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0998",
+    "text": "Check all shipments arriving this week and prepare receiving forms",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1051",
+    "text": "\u0634\u0643\u0631\u0627\u064b",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0359",
+    "text": "What's my current inventory of Dove soap?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0342",
+    "text": "\u0647\u0644 \u064a\u0648\u062c\u062f Bosch washing machine \u0641\u064a \u0627\u0644\u0645\u062e\u0632\u0646\u061f",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1113",
+    "text": "OK",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0708",
+    "text": "List all outstanding invoices",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0425",
+    "text": "Is Dove soap in stock?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0631",
+    "text": "Show me unpaid B2B invoices",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0760",
+    "text": "\u0627\u0628\u0639\u062b \u062a\u0630\u0643\u064a\u0631 \u0641\u0648\u0631\u064a \u0644\u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-023",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1164",
+    "text": "\u0634\u0648 \u0627\u0644\u0637\u0642\u0633 \u0627\u0644\u064a\u0648\u0645\u061f",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0641",
+    "text": "List all outstanding invoices",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0477",
+    "text": "Track my container for Nescafe 200g",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0025",
+    "text": "\u0623\u0631\u064a\u062f frozen food",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1019",
+    "text": "\u0627\u0628\u062d\u062b \u0639\u0646 \u0645\u0648\u0631\u062f \u062c\u062f\u064a\u062f \u0644food items \u0648\u062d\u0636\u0631 \u0631\u0633\u0627\u0644\u0629 \u062a\u0648\u0627\u0635\u0644",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0002",
+    "text": "I'm looking for Maggi noodles",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0199",
+    "text": "how many did I order in PO-2025-0014?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1057",
+    "text": "What time is it?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0239",
+    "text": "Is PO-2025-0021 confirmed?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1068",
+    "text": "Tell me a joke",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0861",
+    "text": "Pause collections for INV-2025-007",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1152",
+    "text": "Thanks",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1016",
+    "text": "Generate a supplier performance report and score all suppliers",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0648",
+    "text": "Show me unpaid B2B invoices",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0533",
+    "text": "Has the shipment for PO-2025-0018 left port?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0509",
+    "text": "Shipment update for PO-2025-0008",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0577",
+    "text": "\u0648\u064a\u0646 \u0627\u0644\u0634\u062d\u0646\u0629 \u062a\u0628\u0639\u062a Bosch washing machine\u061f",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0630",
+    "text": "Quelles factures sont en retard?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0133",
+    "text": "What beverages do you carry?",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0363",
+    "text": "What's the stock level for Maggi noodles?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0639",
+    "text": "List all outstanding invoices",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0589",
+    "text": "\u0627\u0645\u062a\u0649 \u0628\u062a\u0648\u0635\u0644 \u0628\u0636\u0627\u0639\u0629 appliances\u061f",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0539",
+    "text": "Where is my Tide detergent shipment?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0266",
+    "text": "Track order PO-2025-0006",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0325",
+    "text": "Inventory count for Tide detergent",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0624",
+    "text": "\u0634\u0648 \u0631\u0635\u064a\u062f \u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-013\u061f",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0719",
+    "text": "List all outstanding invoices",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0295",
+    "text": "Track order PO-2025-0003",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0966",
+    "text": "Review overdue invoices and start dunning sequences for all",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0496",
+    "text": "Where is my Bosch washing machine shipment?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0823",
+    "text": "Send an immediate reminder for INV-2025-014",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0542",
+    "text": "O\u00f9 est mon exp\u00e9dition de Samsung TV 55in?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0645",
+    "text": "Total unpaid amount from INV-2025-005",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0914",
+    "text": "Generate a supplier performance report and score all suppliers",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0743",
+    "text": "Quelles factures sont en retard?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0060",
+    "text": "Find me cleaning products items",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0820",
+    "text": "\u0648\u0642\u0641 \u0627\u0644\u062a\u062d\u0635\u064a\u0644 \u0639\u0644\u0649 \u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-024",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1138",
+    "text": "What's the weather today?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0215",
+    "text": "What's the status of order PO-2025-0023?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0911",
+    "text": "Cherche un nouveau fournisseur de appliances et r\u00e9dige un email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0854",
+    "text": "Stop dunning on invoice INV-2025-012",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0540",
+    "text": "Has the shipment for PO-2025-0013 left port?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0338",
+    "text": "Current quantity of Baraka water 500ml",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1046",
+    "text": "Find low stock items and draft reorder requests for all",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0712",
+    "text": "List all outstanding invoices",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0125",
+    "text": "I'm looking for LG refrigerator",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0969",
+    "text": "Audit our inventory and flag products below reorder threshold",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0483",
+    "text": "Has the shipment for PO-2025-0014 left port?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0300",
+    "text": "Track order PO-2025-0022",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0067",
+    "text": "Search catalog for Dove soap",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1165",
+    "text": "\u0645\u0631\u062d\u0628\u0627",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0927",
+    "text": "Audit our inventory and flag products below reorder threshold",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0070",
+    "text": "I'm looking for Bosch washing machine",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0389",
+    "text": "Current quantity of LG refrigerator",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0378",
+    "text": "Check availability of Nescafe 200g",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0331",
+    "text": "How many units of Samsung TV 55in do I have?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1191",
+    "text": "Hello",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0096",
+    "text": "Avez-vous des frozen food?",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0037",
+    "text": "Do you have Samsung TV 55in?",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0369",
+    "text": "How many units of Heinz ketchup 500ml do I have?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0593",
+    "text": "Where is my Samsung TV 55in shipment?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0467",
+    "text": "O\u00f9 est mon exp\u00e9dition de Maggi noodles?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1107",
+    "text": "Hello",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0576",
+    "text": "Shipment update for PO-2025-0001",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0587",
+    "text": "\u0627\u0645\u062a\u0649 \u0628\u062a\u0648\u0635\u0644 \u0628\u0636\u0627\u0639\u0629 beverages\u061f",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0610",
+    "text": "Total unpaid amount from INV-2025-008",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1134",
+    "text": "\u0634\u0643\u0631\u0627\u064b",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0841",
+    "text": "Cancel the dunning sequence for INV-2025-011",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0677",
+    "text": "Which invoices are overdue?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0626",
+    "text": "Total unpaid amount from INV-2025-010",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0292",
+    "text": "\u0634\u0648 \u0635\u0627\u0631 \u0628\u0627\u0644\u0623\u0648\u0631\u062f\u0631 PO-2025-0020\u061f",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1174",
+    "text": "What's the weather today?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0166",
+    "text": "Quel est le statut de la commande PO-2025-0004?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0183",
+    "text": "Update on purchase order PO-2025-0003",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0427",
+    "text": "What's my current inventory of Dove soap?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0904",
+    "text": "Generate a supplier performance report and score all suppliers",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0759",
+    "text": "\u0648\u0642\u0641 \u0627\u0644\u062a\u062d\u0635\u064a\u0644 \u0639\u0644\u0649 \u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-006",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1100",
+    "text": "Who won the World Cup?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0340",
+    "text": "What's my current inventory of Tide detergent?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0306",
+    "text": "How many units of Nescafe 200g do I have?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0618",
+    "text": "Has invoice INV-2025-013 been paid?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0592",
+    "text": "Has the shipment for PO-2025-0022 left port?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1067",
+    "text": "Tell me a joke",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0952",
+    "text": "Audit our inventory and flag products below reorder threshold",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0807",
+    "text": "Send an immediate reminder for INV-2025-012",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1063",
+    "text": "Tell me a joke",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0358",
+    "text": "How many units of LG refrigerator do I have?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0669",
+    "text": "Invoice aging report",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0057",
+    "text": "Show me all frozen food products",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0152",
+    "text": "Is PO-2025-0008 confirmed?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0989",
+    "text": "Find me a new cleaning products supplier and draft an outreach email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0887",
+    "text": "Manually trigger Track 3 for invoice INV-2025-004",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0213",
+    "text": "how many did I order in PO-2025-0011?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1023",
+    "text": "Find me a new food items supplier and draft an outreach email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0644",
+    "text": "Show me unpaid B2B invoices",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0635",
+    "text": "\u0634\u0648 \u0627\u0644\u0641\u0648\u0627\u062a\u064a\u0631 \u0627\u0644\u0644\u064a \u0645\u0648 \u0645\u062f\u0641\u0648\u0639\u0629\u061f",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0285",
+    "text": "Where is my order PO-2025-0018?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0561",
+    "text": "When does the container with Tide detergent arrive?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0251",
+    "text": "how many did I order in PO-2025-0021?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0007",
+    "text": "Je cherche Tide detergent",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0615",
+    "text": "\u0634\u0648 \u0631\u0635\u064a\u062f \u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-009\u061f",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0616",
+    "text": "Show me unpaid B2B invoices",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0973",
+    "text": "\u0627\u0628\u062d\u062b \u0639\u0646 \u0645\u0648\u0631\u062f \u062c\u062f\u064a\u062f \u0644frozen food \u0648\u062d\u0636\u0631 \u0631\u0633\u0627\u0644\u0629 \u062a\u0648\u0627\u0635\u0644",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1188",
+    "text": "What time is it?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0420",
+    "text": "What's the stock level for Maggi noodles?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0849",
+    "text": "Pause collections for INV-2025-021",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0488",
+    "text": "Is the Nescafe 200g delivery on schedule?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1156",
+    "text": "Who won the World Cup?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0603",
+    "text": "Show me invoices due this month",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0223",
+    "text": "Has order PO-2025-0024 shipped?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0244",
+    "text": "how many did I order in PO-2025-0006?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0506",
+    "text": "\u0627\u0645\u062a\u0649 \u0628\u062a\u0648\u0635\u0644 \u0628\u0636\u0627\u0639\u0629 beverages\u061f",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0923",
+    "text": "Generate a supplier performance report and score all suppliers",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0006",
+    "text": "List all available frozen food",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0557",
+    "text": "Shipment update for PO-2025-0021",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0511",
+    "text": "When does the container with Nescafe 200g arrive?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0510",
+    "text": "O\u00f9 est mon exp\u00e9dition de Dove soap?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0470",
+    "text": "Shipment update for PO-2025-0002",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0013",
+    "text": "List all available cleaning products",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0260",
+    "text": "\u0648\u064a\u0646 \u0637\u0644\u0628\u064a\u062a\u064a PO-2025-0009\u061f",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0889",
+    "text": "Arr\u00eater les relances pour INV-2025-020",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0638",
+    "text": "Has invoice INV-2025-004 been paid?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0004",
+    "text": "Show me all food items products",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0942",
+    "text": "Find me a new appliances supplier and draft an outreach email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1105",
+    "text": "\u0645\u0631\u062d\u0628\u0627",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0121",
+    "text": "I'm looking for Tide detergent",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0186",
+    "text": "Where is my order PO-2025-0010?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0642",
+    "text": "Show me invoices due this month",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0296",
+    "text": "Show me PO PO-2025-0024",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0457",
+    "text": "Where is my Baraka water 500ml shipment?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1047",
+    "text": "Generate a supplier performance report and score all suppliers",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0748",
+    "text": "Which invoices are overdue?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0317",
+    "text": "\u0647\u0644 \u064a\u0648\u062c\u062f Tide detergent \u0641\u064a \u0627\u0644\u0645\u062e\u0632\u0646\u061f",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0316",
+    "text": "\u0647\u0644 \u064a\u0648\u062c\u062f Heinz ketchup 500ml \u0641\u064a \u0627\u0644\u0645\u062e\u0632\u0646\u061f",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0430",
+    "text": "Check availability of Baraka water 500ml",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0053",
+    "text": "What electronics do you carry?",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1015",
+    "text": "Find me a new food items supplier and draft an outreach email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0788",
+    "text": "\u0627\u0628\u0639\u062b \u062a\u0630\u0643\u064a\u0631 \u0641\u0648\u0631\u064a \u0644\u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-002",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1143",
+    "text": "Tell me a joke",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0149",
+    "text": "\u0634\u0648 \u0639\u0646\u062f\u0643\u0645 \u0645\u0646 frozen food\u061f",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0167",
+    "text": "Update on purchase order PO-2025-0006",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0154",
+    "text": "Is PO-2025-0001 confirmed?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0676",
+    "text": "Show me invoices due this month",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0580",
+    "text": "What's the ETA for my beverages delivery?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0344",
+    "text": "Check availability of Maggi noodles",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1166",
+    "text": "\u0634\u0648 \u0627\u0644\u0637\u0642\u0633 \u0627\u0644\u064a\u0648\u0645\u061f",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0787",
+    "text": "Cancel the dunning sequence for INV-2025-012",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1071",
+    "text": "OK",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1036",
+    "text": "Audit our inventory and flag products below reorder threshold",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0564",
+    "text": "Is the LG refrigerator delivery on schedule?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0388",
+    "text": "\u0643\u0645 \u0642\u0637\u0639\u0629 \u0639\u0646\u062f\u064a \u0645\u0646 Samsung TV 55in\u061f",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0164",
+    "text": "Update on purchase order PO-2025-0024",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0999",
+    "text": "Find low stock items and draft reorder requests for all",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1099",
+    "text": "Thanks",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0811",
+    "text": "Which invoices are in active dunning?",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1013",
+    "text": "Audit our inventory and flag products below reorder threshold",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0394",
+    "text": "How many units of Heinz ketchup 500ml do I have?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0725",
+    "text": "What's the balance on invoice INV-2025-013?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0537",
+    "text": "\u0648\u064a\u0646 \u0627\u0644\u0634\u062d\u0646\u0629 \u062a\u0628\u0639\u062a Maggi noodles\u061f",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0088",
+    "text": "List all available frozen food",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0372",
+    "text": "How many units of LG refrigerator do I have?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0650",
+    "text": "Invoice aging report",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0461",
+    "text": "Track my container for Bosch washing machine",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0724",
+    "text": "Has invoice INV-2025-011 been paid?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0117",
+    "text": "List all available frozen food",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0094",
+    "text": "Je cherche Tide detergent",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1055",
+    "text": "Hello",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0751",
+    "text": "\u0648\u0642\u0641 \u0627\u0644\u062a\u062d\u0635\u064a\u0644 \u0639\u0644\u0649 \u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-007",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0736",
+    "text": "What's the balance on invoice INV-2025-009?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0955",
+    "text": "Analyze our top suppliers and recommend which to reorder from",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0816",
+    "text": "Stop dunning on invoice INV-2025-012",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0729",
+    "text": "What's the balance on invoice INV-2025-008?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0665",
+    "text": "Show me unpaid B2B invoices",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0709",
+    "text": "\u0634\u0648 \u0631\u0635\u064a\u062f \u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-012\u061f",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0853",
+    "text": "\u0627\u0628\u0639\u062b \u062a\u0630\u0643\u064a\u0631 \u0641\u0648\u0631\u064a \u0644\u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-013",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0257",
+    "text": "Where is my order PO-2025-0009?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0865",
+    "text": "Stop dunning on invoice INV-2025-020",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1043",
+    "text": "\u0627\u0628\u062d\u062b \u0639\u0646 \u0645\u0648\u0631\u062f \u062c\u062f\u064a\u062f \u0644cleaning products \u0648\u062d\u0636\u0631 \u0631\u0633\u0627\u0644\u0629 \u062a\u0648\u0627\u0635\u0644",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0207",
+    "text": "Update on purchase order PO-2025-0014",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0964",
+    "text": "Generate a supplier performance report and score all suppliers",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0605",
+    "text": "Quelles factures sont en retard?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0465",
+    "text": "What's the ETA for my cleaning products delivery?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1159",
+    "text": "\u0634\u0648 \u0627\u0644\u0637\u0642\u0633 \u0627\u0644\u064a\u0648\u0645\u061f",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0026",
+    "text": "What electronics do you carry?",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1050",
+    "text": "Cherche un nouveau fournisseur de personal care et r\u00e9dige un email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0332",
+    "text": "What's my current inventory of Bosch washing machine?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1007",
+    "text": "Review overdue invoices and start dunning sequences for all",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0403",
+    "text": "how many do I have of Bosch washing machine?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1024",
+    "text": "Create a purchase order for Heinz ketchup 500ml and notify the supplier",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0560",
+    "text": "Has the shipment for PO-2025-0009 left port?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0713",
+    "text": "Has invoice INV-2025-017 been paid?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1084",
+    "text": "Quel temps fait-il?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1077",
+    "text": "Quel temps fait-il?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1181",
+    "text": "\u0634\u0648 \u0627\u0644\u0637\u0642\u0633 \u0627\u0644\u064a\u0648\u0645\u061f",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0116",
+    "text": "Search catalog for Bosch washing machine",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0513",
+    "text": "Where is my Samsung TV 55in shipment?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0740",
+    "text": "Has invoice INV-2025-007 been paid?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0093",
+    "text": "\u0639\u0646\u062f\u0643\u0645 Nescafe 200g\u061f",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1131",
+    "text": "Thanks",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0662",
+    "text": "Show me unpaid B2B invoices",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0850",
+    "text": "Pause collections for INV-2025-015",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0475",
+    "text": "Has the shipment for PO-2025-0006 left port?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0146",
+    "text": "Search catalog for Heinz ketchup 500ml",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1193",
+    "text": "\u0634\u0648 \u0627\u0644\u0637\u0642\u0633 \u0627\u0644\u064a\u0648\u0645\u061f",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0707",
+    "text": "List all outstanding invoices",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0056",
+    "text": "\u0623\u0631\u064a\u062f electronics",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0981",
+    "text": "\u0627\u0628\u062d\u062b \u0639\u0646 \u0645\u0648\u0631\u062f \u062c\u062f\u064a\u062f \u0644appliances \u0648\u062d\u0636\u0631 \u0631\u0633\u0627\u0644\u0629 \u062a\u0648\u0627\u0635\u0644",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0302",
+    "text": "Combien d'unit\u00e9s de LG refrigerator ai-je?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0433",
+    "text": "What's my current inventory of LG refrigerator?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0171",
+    "text": "Update on purchase order PO-2025-0015",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0473",
+    "text": "O\u00f9 est mon exp\u00e9dition de Samsung TV 55in?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0293",
+    "text": "Update on purchase order PO-2025-0009",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1144",
+    "text": "\u0634\u0648 \u0627\u0644\u0637\u0642\u0633 \u0627\u0644\u064a\u0648\u0645\u061f",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1053",
+    "text": "Tell me a joke",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0312",
+    "text": "\u0643\u0645 \u0642\u0637\u0639\u0629 \u0639\u0646\u062f\u064a \u0645\u0646 Heinz ketchup 500ml\u061f",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1153",
+    "text": "\u0645\u0631\u062d\u0628\u0627",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0451",
+    "text": "Is the Heinz ketchup 500ml delivery on schedule?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1132",
+    "text": "Who won the World Cup?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0195",
+    "text": "\u0634\u0648 \u0635\u0627\u0631 \u0628\u0627\u0644\u0623\u0648\u0631\u062f\u0631 PO-2025-0022\u061f",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0051",
+    "text": "List all available food items",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0646",
+    "text": "\u0634\u0648 \u0627\u0644\u0641\u0648\u0627\u062a\u064a\u0631 \u0627\u0644\u0644\u064a \u0645\u0648 \u0645\u062f\u0641\u0648\u0639\u0629\u061f",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1011",
+    "text": "Cherche un nouveau fournisseur de personal care et r\u00e9dige un email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0529",
+    "text": "Is the Heinz ketchup 500ml delivery on schedule?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0959",
+    "text": "Find me a new food items supplier and draft an outreach email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0572",
+    "text": "\u0627\u0645\u062a\u0649 \u0628\u062a\u0648\u0635\u0644 \u0628\u0636\u0627\u0639\u0629 frozen food\u061f",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0041",
+    "text": "Search catalog for Dove soap",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1115",
+    "text": "Quel temps fait-il?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1158",
+    "text": "Quel temps fait-il?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0551",
+    "text": "\u0627\u0645\u062a\u0649 \u0628\u062a\u0648\u0635\u0644 \u0628\u0636\u0627\u0639\u0629 food items\u061f",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0532",
+    "text": "When does the container with Samsung TV 55in arrive?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0252",
+    "text": "Show me PO PO-2025-0021",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0044",
+    "text": "Show me all cleaning products products",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0899",
+    "text": "\u0627\u0628\u0639\u062b \u062a\u0630\u0643\u064a\u0631 \u0641\u0648\u0631\u064a \u0644\u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-015",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0847",
+    "text": "\u0627\u0628\u0639\u062b \u062a\u0630\u0643\u064a\u0631 \u0641\u0648\u0631\u064a \u0644\u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-007",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0468",
+    "text": "Shipment update for PO-2025-0004",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0463",
+    "text": "\u0648\u064a\u0646 \u0627\u0644\u0634\u062d\u0646\u0629 \u062a\u0628\u0639\u062a Bosch washing machine\u061f",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1169",
+    "text": "Tell me a joke",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0534",
+    "text": "Track my container for LG refrigerator",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1085",
+    "text": "Tell me a joke",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1065",
+    "text": "Quel temps fait-il?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0722",
+    "text": "\u0634\u0648 \u0627\u0644\u0641\u0648\u0627\u062a\u064a\u0631 \u0627\u0644\u0644\u064a \u0645\u0648 \u0645\u062f\u0641\u0648\u0639\u0629\u061f",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0897",
+    "text": "Manually trigger Track 3 for invoice INV-2025-011",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1139",
+    "text": "Quel temps fait-il?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1167",
+    "text": "Hello",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0550",
+    "text": "Shipment update for PO-2025-0001",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0609",
+    "text": "Has invoice INV-2025-011 been paid?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0586",
+    "text": "Is the LG refrigerator delivery on schedule?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0944",
+    "text": "Audit our inventory and flag products below reorder threshold",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0986",
+    "text": "Review overdue invoices and start dunning sequences for all",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0404",
+    "text": "Inventory count for Baraka water 500ml",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0321",
+    "text": "Check availability of Baraka water 500ml",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1087",
+    "text": "Who won the World Cup?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0390",
+    "text": "What's my current inventory of LG refrigerator?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0845",
+    "text": "Stop dunning on invoice INV-2025-007",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0753",
+    "text": "Stop dunning on invoice INV-2025-020",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0623",
+    "text": "What's the balance on invoice INV-2025-013?",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0043",
+    "text": "Show me all personal care products",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0795",
+    "text": "Stop dunning on invoice INV-2025-015",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1032",
+    "text": "Analyze our top suppliers and recommend which to reorder from",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0438",
+    "text": "How many units of Heinz ketchup 500ml do I have?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0253",
+    "text": "Where is my order PO-2025-0002?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0909",
+    "text": "Review overdue invoices and start dunning sequences for all",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0469",
+    "text": "Is the Maggi noodles delivery on schedule?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0936",
+    "text": "\u0627\u0628\u062d\u062b \u0639\u0646 \u0645\u0648\u0631\u062f \u062c\u062f\u064a\u062f \u0644personal care \u0648\u062d\u0636\u0631 \u0631\u0633\u0627\u0644\u0629 \u062a\u0648\u0627\u0635\u0644",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0333",
+    "text": "Combien d'unit\u00e9s de Samsung TV 55in ai-je?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1021",
+    "text": "Audit our inventory and flag products below reorder threshold",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0502",
+    "text": "Has the shipment for PO-2025-0002 left port?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1006",
+    "text": "Check all shipments arriving this week and prepare receiving forms",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0888",
+    "text": "\u0627\u0628\u0639\u062b \u062a\u0630\u0643\u064a\u0631 \u0641\u0648\u0631\u064a \u0644\u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-022",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0450",
+    "text": "Inventory count for Nescafe 200g",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0182",
+    "text": "Is PO-2025-0002 confirmed?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0068",
+    "text": "What electronics do you carry?",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0210",
+    "text": "\u0634\u0648 \u0635\u0627\u0631 \u0628\u0627\u0644\u0623\u0648\u0631\u062f\u0631 PO-2025-0001\u061f",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0776",
+    "text": "Pause collections for INV-2025-020",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0208",
+    "text": "Quel est le statut de la commande PO-2025-0018?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0688",
+    "text": "\u0634\u0648 \u0631\u0635\u064a\u062f \u0641\u0627\u062a\u0648\u0631\u0629 INV-2025-020\u061f",
+    "intent": "invoice_query",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0761",
+    "text": "Escalate dunning for INV-2025-022",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1117",
+    "text": "Hello",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0423",
+    "text": "What's my current inventory of Nescafe 200g?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-1189",
+    "text": "What time is it?",
+    "intent": "out_of_scope",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0948",
+    "text": "Generate a supplier performance report and score all suppliers",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0016",
+    "text": "\u0639\u0646\u062f\u0643\u0645 Maggi noodles\u061f",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-1044",
+    "text": "Cherche un nouveau fournisseur de appliances et r\u00e9dige un email",
+    "intent": "complex_task",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0419",
+    "text": "How many units of Ariel 2kg do I have?",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0034",
+    "text": "What cleaning products do you carry?",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0232",
+    "text": "Show me PO PO-2025-0003",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0198",
+    "text": "\u0648\u064a\u0646 \u0637\u0644\u0628\u064a\u062a\u064a PO-2025-0004\u061f",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "arabic"
+  },
+  {
+    "id": "it-0168",
+    "text": "What's the status of order PO-2025-0009?",
+    "intent": "order_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0141",
+    "text": "Find me beverages items",
+    "intent": "product_search",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0486",
+    "text": "Where is my Tide detergent shipment?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0504",
+    "text": "Where is my Tide detergent shipment?",
+    "intent": "shipment_status",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0397",
+    "text": "Inventory count for Tide detergent",
+    "intent": "stock_check",
+    "source": "synthetic",
+    "language": "english"
+  },
+  {
+    "id": "it-0873",
+    "text": "Arr\u00eater les relances pour INV-2025-017",
+    "intent": "dunning_action",
+    "source": "synthetic",
+    "language": "english"
+  }
+]
