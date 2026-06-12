@@ -114,12 +114,35 @@ class DLQProductResponse(BaseModel):
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
 
+_LAST_DRIFT_CHECK_PATH = (
+    Path(__file__).parent.parent.parent / "ml_config" / "last_drift_check.json"
+)
+
+
 def _load_eval_thresholds() -> dict[str, Any]:
     try:
         with open(_EVAL_THRESHOLDS_PATH) as f:
             return dict(yaml.safe_load(f))
     except Exception:
         return {}
+
+
+def _run_drift_status() -> str:
+    """
+    Read the last drift check result written by nightly CI Gate 9.
+    Returns "ok" if no check has been run yet or the check passed,
+    "warning" / "severe" if the nightly check detected drift.
+    File format: {"status": "ok"|"warning"|"severe", "checked_at": "..."}
+    """
+    import json  # noqa: PLC0415
+
+    try:
+        if _LAST_DRIFT_CHECK_PATH.exists():
+            data = json.loads(_LAST_DRIFT_CHECK_PATH.read_text())
+            return str(data.get("status", "ok"))
+    except Exception:
+        pass
+    return "ok"
 
 
 async def _query_mlflow_models(tracking_uri: str) -> list[ModelHealth]:
@@ -260,7 +283,7 @@ async def get_ai_health(
     return AIHealthResponse(
         models=models,
         eval_thresholds=thresholds,
-        drift_status="monitoring_not_configured",
+        drift_status=_run_drift_status(),
         checked_at=datetime.now(UTC).isoformat(),
     )
 

@@ -239,7 +239,7 @@ class TestAIHealth:
         assert resp.status_code == 200
         data = resp.json()
         assert "eval_thresholds" in data
-        assert data["drift_status"] == "monitoring_not_configured"
+        assert data["drift_status"] in ("ok", "warning", "severe")
         assert "checked_at" in data
         assert data["models"][0]["name"] == "tone_classifier"
 

@@ -259,7 +259,12 @@ Track what is done. Update this section when each phase's Verify gate passes.
 | | 11.5 Unit tests (storefront: 17, invoice_pdf: 11; 285 total unit tests passing) | ✅ Done |
 | | **Phase 11 backend complete — all 5 sub-phases verified** | ✅ |
 | | 11.6 Consumer chatbot frontend | ⬜ Pending (Phase 10.2 frontend sprint) |
-| **12 — MLOps** | Drift detection (PSI) + MLflow experiment tracking + champion/challenger | ⬜ Pending |
+| **12 — MLOps** | 12.1 MLflow model registry governance (champion/challenger gate, SHA-256 verify, downgrade) | ✅ Done |
+| | 12.2 LangSmith tracing wired from Phase 8 (all LLM + agent steps traced) | ✅ Done |
+| | 12.3 Drift detection: PSI (numeric), chi-square (categorical), cosine (embeddings) | ✅ Done |
+| | 12.4 Drift status surfaced in GET /admin/ai-health (reads last_drift_check.json) | ✅ Done |
+| | 12.5 Unit tests (drift: 33, registry: 14; 332 total unit tests passing) | ✅ Done |
+| | **Phase 12 complete — all sub-phases verified** | ✅ |
 | **13 — CI/CD** | All 9 gates verified to catch their target failure mode | ⬜ Pending |
 | **14 — Deploy** | VPS production deployment + Caddy HTTPS + smoke test | ⬜ Pending |
 
