@@ -1,19 +1,131 @@
-﻿{
-    "name":  "WF-01: Tenant Provisioning",
-    "description":  "New tenant signup → provision DB schema, RLS policies, MinIO bucket, Vault path, seed default settings",
-    "active":  false,
-    "nodes":  [
-
-              ],
-    "connections":  {
-
-                    },
-    "settings":  {
-                     "executionOrder":  "v1"
-                 },
-    "tags":  [
-                 "mawrid",
-                 "onboarding",
-                 "wf-01"
-             ]
+{
+  "name": "WF-01: Tenant Provisioning",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wf01-tenant-provisioning",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000001",
+      "name": "Webhook — Tenant Signup",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "wf01-tenant-provisioning"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://backend:8000/api/v1/auth/tenants/{{ $json.body.tenant_id }}/provision",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.BACKEND_JWT }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "tenant_id", "value": "={{ $json.body.tenant_id }}" },
+            { "name": "email", "value": "={{ $json.body.email }}" }
+          ]
+        },
+        "options": { "timeout": 30000 }
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000002",
+      "name": "HTTP — Provision Tenant",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond-01",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "provisioned",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000003",
+      "name": "IF — Provisioned?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.sendgrid.com/v3/mail/send",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.SENDGRID_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"personalizations\": [{\"to\": [{\"email\": \"{{ $('Webhook — Tenant Signup').item.json.body.email }}\"}]}],\n  \"from\": {\"email\": \"noreply@mawrid.ai\", \"name\": \"Mawrid Platform\"},\n  \"subject\": \"Welcome to Mawrid — Your account is ready\",\n  \"content\": [{\"type\": \"text/plain\", \"value\": \"Your Mawrid workspace has been provisioned. Log in at https://app.mawrid.ai\"}]\n}",
+        "options": { "timeout": 15000 }
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000004",
+      "name": "HTTP — Send Welcome Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 220]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"ok\", \"detail\": \"tenant provisioned\" }"
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000005",
+      "name": "Respond — OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 220]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": 500,
+        "responseBody": "={ \"status\": \"error\", \"detail\": \"provisioning failed\" }"
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000006",
+      "name": "Respond — Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 380]
+    }
+  ],
+  "connections": {
+    "Webhook — Tenant Signup": {
+      "main": [[{ "node": "HTTP — Provision Tenant", "type": "main", "index": 0 }]]
+    },
+    "HTTP — Provision Tenant": {
+      "main": [[{ "node": "IF — Provisioned?", "type": "main", "index": 0 }]]
+    },
+    "IF — Provisioned?": {
+      "main": [
+        [{ "node": "HTTP — Send Welcome Email", "type": "main", "index": 0 }],
+        [{ "node": "Respond — Error", "type": "main", "index": 0 }]
+      ]
+    },
+    "HTTP — Send Welcome Email": {
+      "main": [[{ "node": "Respond — OK", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "tags": ["mawrid", "onboarding", "wf-01"]
 }

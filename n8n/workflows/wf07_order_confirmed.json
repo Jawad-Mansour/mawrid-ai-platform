@@ -1,19 +1,223 @@
-﻿{
-    "name":  "WF-07: Order Confirmed",
-    "description":  "Consumer order placed and confirmed → generate invoice → trigger B2C dunning sequence",
-    "active":  false,
-    "nodes":  [
-
-              ],
-    "connections":  {
-
-                    },
-    "settings":  {
-                     "executionOrder":  "v1"
-                 },
-    "tags":  [
-                 "mawrid",
-                 "storefront",
-                 "wf-07"
-             ]
+{
+  "name": "WF-07: Order Confirmed",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wf07-order-confirmed",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "b0007-0001-4000-8000-000000000001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:8000/api/v1/webhooks/n8n/order_confirmed",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.BACKEND_JWT }}"
+            },
+            {
+              "name": "X-N8N-Service-Token",
+              "value": "={{ $env.N8N_SERVICE_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "b0007-0002-4000-8000-000000000002",
+      "name": "Notify Backend Order Confirmed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-01",
+              "leftValue": "={{ $response.statusCode }}",
+              "rightValue": 202,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "b0007-0003-4000-8000-000000000003",
+      "name": "IF Accepted",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=http://backend:8000/api/v1/invoices/{{ $('Webhook').item.json.body.invoice_id }}/pdf-url",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.BACKEND_JWT }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "b0007-0004-4000-8000-000000000004",
+      "name": "Get Invoice PDF URL",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 220]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"error\", \"message\": \"Order confirmation failed\" }",
+        "options": {
+          "responseCode": 502
+        }
+      },
+      "id": "b0007-0005-4000-8000-000000000005",
+      "name": "Respond Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 380]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.sendgrid.com/v3/mail/send",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SENDGRID_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"personalizations\": [{ \"to\": [{ \"email\": \"{{ $('Webhook').item.json.body.customer_email }}\" }] }], \"from\": { \"email\": \"no-reply@mawrid.ai\", \"name\": \"Mawrid\" }, \"subject\": \"Your Order {{ $('Webhook').item.json.body.order_id }} — Invoice\", \"content\": [{ \"type\": \"text/html\", \"value\": \"<p>Dear customer,</p><p>Thank you for your order. You can download your invoice here: <a href='{{ $json.pdf_url }}'>Download Invoice</a></p><p>Order ID: {{ $('Webhook').item.json.body.order_id }}</p>\" }] }",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "b0007-0006-4000-8000-000000000006",
+      "name": "Email Invoice to Consumer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 220]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"ok\", \"order_id\": \"{{ $('Webhook').item.json.body.order_id }}\" }",
+        "options": {}
+      },
+      "id": "b0007-0007-4000-8000-000000000007",
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1340, 220]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Notify Backend Order Confirmed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Backend Order Confirmed": {
+      "main": [
+        [
+          {
+            "node": "IF Accepted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Accepted": {
+      "main": [
+        [
+          {
+            "node": "Get Invoice PDF URL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Invoice PDF URL": {
+      "main": [
+        [
+          {
+            "node": "Email Invoice to Consumer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Invoice to Consumer": {
+      "main": [
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["mawrid", "storefront", "invoice", "wf-07"]
 }

@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     environment: str = "development"
     allowed_origins: list[str] = []
     searxng_base_url: str = "http://searxng:8080"
+    n8n_base_url: str = "http://n8n:5678"
+    n8n_service_token: str = "dev-n8n-service-token"
 
 
 @lru_cache

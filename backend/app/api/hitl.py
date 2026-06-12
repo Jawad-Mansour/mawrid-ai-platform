@@ -14,7 +14,7 @@ from __future__ import annotations
 from typing import Any
 
 import structlog
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, status
 from pydantic import BaseModel
 
 from app.api.deps import CurrentUser, SessionDep
@@ -104,6 +104,7 @@ async def get_hitl_action(
 )
 async def approve_hitl_action(
     action_id: str,
+    background_tasks: BackgroundTasks,
     current_user: CurrentUser,
     session: SessionDep,
 ) -> dict[str, str]:
@@ -136,6 +137,21 @@ async def approve_hitl_action(
         action_type=action.action_type,
         user_id=current_user.user_id,
     )
+
+    # Notify n8n when a PO is approved so WF-04 can create the shipment record
+    if action.action_type == "purchase_order_send":
+        from app.infra.n8n.client import fire_event  # noqa: PLC0415
+
+        background_tasks.add_task(
+            fire_event,
+            "wf04-po-approved",
+            {
+                "tenant_id": current_user.tenant_id,
+                "action_id": action_id,
+                "payload": action.payload,
+            },
+        )
+
     return {"action_id": action_id, "status": result.status}
 
 

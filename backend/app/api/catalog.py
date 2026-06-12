@@ -20,7 +20,7 @@ import uuid
 from typing import Any
 
 import structlog
-from fastapi import APIRouter, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, UploadFile, status
 from pydantic import BaseModel
 
 from app.api.deps import CurrentUser, SessionDep
@@ -95,6 +95,7 @@ class ReviewQueueItemResponse(BaseModel):
 )
 async def upload_supplier_document(
     file: UploadFile,
+    background_tasks: BackgroundTasks,
     current_user: CurrentUser,
     session: SessionDep,
 ) -> DocumentUploadResponse:
@@ -190,6 +191,16 @@ async def upload_supplier_document(
         rows=rows_extracted,
         tenant_id=tenant_id,
     )
+
+    # Notify n8n WF-02 (best-effort background task — never raises)
+    from app.infra.n8n.client import fire_event  # noqa: PLC0415
+
+    background_tasks.add_task(
+        fire_event,
+        "wf02-document-uploaded",
+        {"tenant_id": tenant_id, "document_id": document_id, "row_count": rows_extracted},
+    )
+
     return DocumentUploadResponse(
         document_id=document_id,
         status="completed",

@@ -1,19 +1,148 @@
-﻿{
-    "name":  "WF-03: Enrichment Complete",
-    "description":  "Enrichment job finished → update product status → notify importer → ready for ordering",
-    "active":  false,
-    "nodes":  [
-
-              ],
-    "connections":  {
-
-                    },
-    "settings":  {
-                     "executionOrder":  "v1"
-                 },
-    "tags":  [
-                 "mawrid",
-                 "enrichment",
-                 "wf-03"
-             ]
+{
+  "name": "WF-03: Enrichment Complete",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wf03-enrichment-complete",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "b0003-0001-4000-8000-000000000001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:8000/api/v1/webhooks/n8n/enrichment_done",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.BACKEND_JWT }}"
+            },
+            {
+              "name": "X-N8N-Service-Token",
+              "value": "={{ $env.N8N_SERVICE_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"tenant_id\": \"{{ $json.body.tenant_id }}\", \"document_id\": \"{{ $json.body.document_id }}\", \"product_count\": \"{{ $json.body.product_count }}\", \"status\": \"enriched\" }",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "b0003-0002-4000-8000-000000000002",
+      "name": "Notify Backend Enrichment Done",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-01",
+              "leftValue": "={{ $response.statusCode }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "b0003-0003-4000-8000-000000000003",
+      "name": "IF OK",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"ok\" }",
+        "options": {}
+      },
+      "id": "b0003-0004-4000-8000-000000000004",
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 220]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"error\", \"message\": \"Backend notification failed\" }",
+        "options": {
+          "responseCode": 502
+        }
+      },
+      "id": "b0003-0005-4000-8000-000000000005",
+      "name": "Respond Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 380]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Notify Backend Enrichment Done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Backend Enrichment Done": {
+      "main": [
+        [
+          {
+            "node": "IF OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF OK": {
+      "main": [
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["mawrid", "catalog", "wf-03"]
 }

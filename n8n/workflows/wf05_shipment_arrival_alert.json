@@ -1,19 +1,82 @@
-﻿{
-    "name":  "WF-05: Shipment Arrival Alert",
-    "description":  "Daily check: shipments arriving within 3 days → notification in admin panel under Upcoming Arrivals",
-    "active":  false,
-    "nodes":  [
-
-              ],
-    "connections":  {
-
-                    },
-    "settings":  {
-                     "executionOrder":  "v1"
-                 },
-    "tags":  [
-                 "mawrid",
-                 "procurement",
-                 "wf-05"
-             ]
+{
+  "name": "WF-05: Shipment Arrival Alert",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * *"
+            }
+          ]
+        }
+      },
+      "id": "b0005-0001-4000-8000-000000000001",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://backend:8000/api/v1/procurement/shipments?status=in_transit",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.BACKEND_JWT }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "b0005-0002-4000-8000-000000000002",
+      "name": "Get In-Transit Shipments",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {},
+      "id": "b0005-0003-4000-8000-000000000003",
+      "name": "Log Shipments Found",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [680, 300]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get In-Transit Shipments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get In-Transit Shipments": {
+      "main": [
+        [
+          {
+            "node": "Log Shipments Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["mawrid", "procurement", "scheduled", "wf-05"]
 }

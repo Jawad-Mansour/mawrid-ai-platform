@@ -1,19 +1,144 @@
-﻿{
-    "name":  "WF-04: PO Approved",
-    "description":  "HITL purchase_order_send approved → send PO email to supplier → update order status to sent",
-    "active":  false,
-    "nodes":  [
-
-              ],
-    "connections":  {
-
-                    },
-    "settings":  {
-                     "executionOrder":  "v1"
-                 },
-    "tags":  [
-                 "mawrid",
-                 "procurement",
-                 "wf-04"
-             ]
+{
+  "name": "WF-04: PO Approved",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wf04-po-approved",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "b0004-0001-4000-8000-000000000001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:8000/api/v1/procurement/shipments",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.BACKEND_JWT }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"po_reference\": \"{{ $json.body.payload.po_reference }}\", \"supplier_id\": \"{{ $json.body.payload.supplier_id }}\", \"carrier\": \"TBD\", \"expected_arrival_date\": \"{{ $json.body.payload.expected_delivery_date }}\" }",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "b0004-0002-4000-8000-000000000002",
+      "name": "Create Shipment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-01",
+              "leftValue": "={{ $response.statusCode }}",
+              "rightValue": 201,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "b0004-0003-4000-8000-000000000003",
+      "name": "IF Created",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"ok\", \"shipment_id\": \"{{ $json.id }}\" }",
+        "options": {}
+      },
+      "id": "b0004-0004-4000-8000-000000000004",
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 220]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"error\", \"message\": \"Shipment creation failed\" }",
+        "options": {
+          "responseCode": 502
+        }
+      },
+      "id": "b0004-0005-4000-8000-000000000005",
+      "name": "Respond Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 380]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Create Shipment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Shipment": {
+      "main": [
+        [
+          {
+            "node": "IF Created",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Created": {
+      "main": [
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["mawrid", "procurement", "hitl", "wf-04"]
 }

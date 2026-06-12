@@ -1,20 +1,144 @@
-﻿{
-    "name":  "WF-15: Dunning Track 2 — Dispute Filed",
-    "description":  "Importer files supplier dispute → Communication Agent → HITL dunning_disputes_on_demand → formal complaint email in supplier language",
-    "active":  false,
-    "nodes":  [
-
-              ],
-    "connections":  {
-
-                    },
-    "settings":  {
-                     "executionOrder":  "v1"
-                 },
-    "tags":  [
-                 "mawrid",
-                 "dunning",
-                 "disputes",
-                 "wf-15"
-             ]
+{
+  "name": "WF-15: B2B Dispute Filed",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wf15-dispute-filed",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "b0015-0001-4000-8000-000000000001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:8000/api/v1/dunning/disputes",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.BACKEND_JWT }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"invoice_id\": \"{{ $json.body.invoice_id }}\", \"supplier_id\": \"{{ $json.body.supplier_id }}\", \"po_reference\": \"{{ $json.body.po_reference }}\", \"shipment_id\": \"{{ $json.body.shipment_id }}\", \"dispute_type\": \"{{ $json.body.dispute_type }}\", \"products_affected_json\": \"{{ JSON.stringify($json.body.products_affected) }}\", \"damage_description\": \"{{ $json.body.damage_description }}\", \"resolution_requested\": \"{{ $json.body.resolution_requested }}\" }",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "b0015-0002-4000-8000-000000000002",
+      "name": "Create Dispute",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-01",
+              "leftValue": "={{ $response.statusCode }}",
+              "rightValue": 202,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "b0015-0003-4000-8000-000000000003",
+      "name": "IF Accepted",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"ok\", \"message\": \"Dispute HITL action created\" }",
+        "options": {}
+      },
+      "id": "b0015-0004-4000-8000-000000000004",
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 220]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"error\", \"message\": \"Dispute creation failed\" }",
+        "options": {
+          "responseCode": 502
+        }
+      },
+      "id": "b0015-0005-4000-8000-000000000005",
+      "name": "Respond Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 380]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Create Dispute",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Dispute": {
+      "main": [
+        [
+          {
+            "node": "IF Accepted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Accepted": {
+      "main": [
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["mawrid", "dunning", "dispute", "hitl", "wf-15"]
 }

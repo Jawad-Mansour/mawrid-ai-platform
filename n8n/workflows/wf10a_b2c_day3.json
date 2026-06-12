@@ -1,20 +1,138 @@
-﻿{
-    "name":  "WF-10a: Dunning Track 4 — B2C Day 3",
-    "description":  "B2C Day 3 from invoice_date: gentle reminder + payment link → Communication Agent → HITL dunning_b2c_day3 → email + SMS",
-    "active":  false,
-    "nodes":  [
-
-              ],
-    "connections":  {
-
-                    },
-    "settings":  {
-                     "executionOrder":  "v1"
-                 },
-    "tags":  [
-                 "mawrid",
-                 "dunning",
-                 "b2c",
-                 "wf-10a"
-             ]
+{
+  "name": "WF-10a: B2C Collections Day 3",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "10 7 * * *"
+            }
+          ]
+        }
+      },
+      "id": "b010a-0001-4000-8000-000000000001",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:8000/api/v1/dunning/trigger/track4",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.BACKEND_JWT }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"today\": \"{{ $now.toISO() }}\" }",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "b010a-0002-4000-8000-000000000002",
+      "name": "Trigger B2C Track4",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-01",
+              "leftValue": "={{ $response.statusCode }}",
+              "rightValue": 202,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "b010a-0003-4000-8000-000000000003",
+      "name": "IF Accepted",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {},
+      "id": "b010a-0004-4000-8000-000000000004",
+      "name": "Success",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [900, 220]
+    },
+    {
+      "parameters": {},
+      "id": "b010a-0005-4000-8000-000000000005",
+      "name": "Fail",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [900, 380]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Trigger B2C Track4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger B2C Track4": {
+      "main": [
+        [
+          {
+            "node": "IF Accepted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Accepted": {
+      "main": [
+        [
+          {
+            "node": "Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["mawrid", "dunning", "b2c", "scheduled", "wf-10a"]
 }
