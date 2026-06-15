@@ -163,7 +163,9 @@ def _get_analyzer() -> Any:
         try:
             _analyzer = _build_analyzer_with_spacy()
             logger.info("presidio_nlp_full_mode_en_fr")
-        except Exception:
+        except (Exception, SystemExit):
+            # spaCy raises SystemExit (not Exception) when a model isn't installed,
+            # so catch both to guarantee the pattern-only fallback always engages.
             _analyzer = _build_analyzer_pattern_only()
             logger.warning(
                 "presidio_pattern_only_mode "
