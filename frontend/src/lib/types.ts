@@ -1,38 +1,128 @@
-// Feature: All features (cross-cutting)
-// Layer:   Lib / Types
-// Purpose: Shared TypeScript type definitions mirroring backend Pydantic models.
-//          Single source of truth for frontend API types — generated from
-//          OpenAPI schema in CI Gate 6.
+// Feature: All features — shared API types (mirror backend response models)
 
 export type OperationalMode = "hybrid" | "wholesale_only" | "retail_only";
 
-export type HITLActionType =
-  | "purchase_order_send" | "dispute_letter" | "supplier_outreach"
-  | "supplier_match_review" | "customer_match_review"
-  | "dunning_payables_advance" | "dunning_disputes_on_demand"
-  | "dunning_receivables_day7" | "dunning_receivables_day14" | "dunning_receivables_day21"
-  | "dunning_b2c_day3" | "dunning_b2c_day7" | "dunning_b2c_day14"
-  | "fulfillment_notification";
-
-export type HITLStatus = "pending" | "approved" | "rejected" | "editing" | "executed" | "expired";
-
-export interface HITLAction {
-  action_id: string;
+export interface MeResponse {
+  user_id: string;
   tenant_id: string;
-  action_type: HITLActionType;
-  status: HITLStatus;
-  payload: Record<string, unknown>;
-  created_at: string;
-  expires_at: string | null;
+  email: string;
+  role: string;
+  operational_mode: OperationalMode;
+}
+
+export interface TokenResponse {
+  access_token: string;
+  token_type: string;
+}
+
+export interface DashboardSummary {
+  published_products: number;
+  enriched_products: number;
+  pending_enrichment: number;
+  failed_enrichment: number;
+  low_stock_count: number;
+  active_shipments: number;
+  total_invoices: number;
+  overdue_invoices: number;
+  outstanding_receivables: number;
+  pending_hitl_count: number;
+  consumer_orders_pending: number;
+  generated_at: string;
+}
+
+export interface ModelHealth {
+  name: string;
+  status: string;
+  latest_version: string | null;
+  stage: string | null;
+}
+export interface AIHealthResponse {
+  models: ModelHealth[];
+  eval_thresholds: Record<string, any>;
+  drift_status: string;
+  checked_at: string;
+}
+
+export interface WorkflowStatus {
+  workflow_id: string;
+  name: string;
+  active: boolean;
+  last_execution_status: string | null;
+  last_execution_at: string | null;
+}
+export interface N8nStatusResponse {
+  status: string;
+  workflows: WorkflowStatus[];
 }
 
 export interface Product {
   product_id: string;
   product_name: string;
   sku: string | null;
-  enrichment_status: "pending" | "processing" | "enriched" | "failed" | "dlq";
-  inventory_status: "in_stock" | "low_stock" | "out_of_stock";
-  storefront_status: "draft" | "published" | "archived";
-  qty_in_stock: number;
-  storefront_qty: number;
+  barcode: string | null;
+  description: string | null;
+  specifications: Record<string, any> | null;
+  enrichment_status: string;
+  enrichment_source: string | null;
+  enrichment_confidence: string | null;
+  inventory_status?: string | null;
+  storefront_status: string;
+  qty_in_stock?: number;
+  storefront_qty?: number;
+  retail_price?: number | null;
+  currency?: string | null;
+  image_url?: string | null;
+}
+
+export interface HITLAction {
+  action_id: string;
+  action_type: string;
+  status: string;
+  payload: Record<string, any>;
+  created_at: string;
+  expires_at: string | null;
+}
+
+export interface DunningSequence {
+  sequence_id: string;
+  invoice_id: string;
+  track: string;
+  status: string;
+  current_step: string | null;
+  created_at: string;
+}
+
+export interface Supplier {
+  supplier_id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  language: string | null;
+  currency: string | null;
+  score?: number | null;
+}
+
+export interface OrderDraft {
+  order_id: string;
+  supplier_id: string;
+  status: string;
+  line_items: Array<Record<string, any>>;
+  notes: string | null;
+  desired_delivery_date: string | null;
+  created_at?: string;
+}
+
+export interface ChatSource {
+  chunk_id: string;
+  product_id: string;
+  chunk_text: string;
+  score: number;
+}
+export interface ChatResponse {
+  answer: string;
+  sources: ChatSource[];
+  session_id: string | null;
+  intent: string | null;
+  route: string | null;
+  tier_used: number | null;
 }

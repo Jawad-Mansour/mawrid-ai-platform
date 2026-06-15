@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  border-color: rgba(212, 163, 115, 0.14);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 600px at 75% -10%, rgba(157, 78, 221, 0.10), transparent),
+    radial-gradient(900px 520px at 5% 110%, rgba(212, 163, 115, 0.08), transparent),
+    #0f1419;
+  color: #ece7df;
+  font-family: "Sora", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(212, 163, 115, 0.18); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(212, 163, 115, 0.32); }
+
+@layer components {
+  .glass {
+    @apply border bg-bg-card shadow-glass;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+  .card {
+    @apply glass rounded-2xl;
+  }
+  .metric-num {
+    @apply font-mono text-3xl font-700 tracking-tight text-ink;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-500;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-600 transition-all disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-gold {
+    @apply btn bg-gold text-bg shadow-glow hover:bg-gold-soft;
+  }
+  .btn-ghost {
+    @apply btn border bg-white/[0.02] text-ink hover:bg-white/[0.06];
+  }
+  .btn-danger {
+    @apply btn border border-danger/40 bg-danger/10 text-danger hover:bg-danger/20;
+  }
+  .btn-emerald {
+    @apply btn bg-emerald text-white hover:bg-emerald-soft;
+  }
+  .input {
+    @apply w-full rounded-xl border bg-black/20 px-3.5 py-2.5 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-gold/50 focus:ring-2 focus:ring-gold/20;
+  }
+  .label {
+    @apply mb-1.5 block text-xs font-600 uppercase tracking-wider text-ink-soft;
+  }
+  .table-row {
+    @apply border-b border-line/60 transition-colors hover:bg-white/[0.03];
+  }
+}
+
+.font-400 { font-weight: 400; }
+.font-500 { font-weight: 500; }
+.font-600 { font-weight: 600; }
+.font-700 { font-weight: 700; }
+.font-800 { font-weight: 800; }

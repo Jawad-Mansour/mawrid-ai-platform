@@ -125,6 +125,8 @@ services:
       # Must be a SendGrid-verified sender (Single Sender Verification) or sends are rejected.
       SENDGRID_FROM_EMAIL: mansourmohamadeljawad113@gmail.com
       SENDGRID_FROM_NAME: Mawrid Platform
+      # CORS: allow the Vite dev server (host :3000 / :5173) to call the API
+      ALLOWED_ORIGINS: '["http://localhost:3000","http://localhost:5173","http://127.0.0.1:3000"]'
     ports:
       - "8000:8000"
     volumes:
