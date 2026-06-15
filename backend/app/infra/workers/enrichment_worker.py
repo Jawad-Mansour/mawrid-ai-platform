@@ -16,7 +16,8 @@ from __future__ import annotations
 import os
 
 import structlog
-from arq.connections import RedisSettings
+from arq.connections import ArqRedis, RedisSettings
+from arq.jobs import Job
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -96,6 +97,36 @@ async def enrich_product(
 
     logger.info("enrich_job_complete", product_id=product_id)
     return {"status": "success"}
+
+
+# ── Idempotent enqueue ────────────────────────────────────────────────────────
+
+
+async def enqueue_enrichment(
+    redis: ArqRedis,
+    *,
+    tenant_id: str,
+    product_hash: str,
+    product_id: str | None = None,
+    raw_text: str | None = None,
+) -> Job:
+    """
+    Enqueue an enrichment job keyed on product_hash. ARQ dedups on _job_id, so
+    submitting the same product_hash twice returns a handle to the SAME job
+    (no duplicate enrichment). The worker is also idempotent at the DB level
+    (skips already-enriched products). raw_text is accepted for call-site
+    convenience; the worker loads the product from the DB by product_id.
+    """
+    job_id = f"enrich:{tenant_id}:{product_hash}"
+    job = await redis.enqueue_job(
+        "enrich_product",
+        tenant_id=tenant_id,
+        product_id=product_id or product_hash,
+        _job_id=job_id,
+    )
+    # enqueue_job returns None if a job with this _job_id is already queued —
+    # return a handle to the existing job so callers always get a stable id.
+    return job if job is not None else Job(job_id, redis)
 
 
 # ── Lifecycle hooks ───────────────────────────────────────────────────────────

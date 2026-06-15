@@ -52,6 +52,19 @@ async def search_chunks(
     """
     scope_filter = _scope_filter(scope)
 
+    # Build the chunk_type filter conditionally. A bare ":param IS NULL" makes
+    # asyncpg unable to infer the parameter's type (AmbiguousParameterError), so
+    # we only add the clause when a concrete chunk_type is requested.
+    params: dict[str, object] = {
+        "tenant_id": tenant_id,
+        "query_vec": "[" + ",".join(str(v) for v in query_embedding) + "]",
+        "top_k": top_k,
+    }
+    chunk_type_filter = ""
+    if chunk_type and chunk_type != "any":
+        chunk_type_filter = "AND pc.chunk_type = :chunk_type"
+        params["chunk_type"] = chunk_type
+
     # pgvector cosine distance operator: <=>
     sql = text(
         f"""
@@ -67,22 +80,13 @@ async def search_chunks(
         JOIN products p ON pc.product_id = p.product_id
         WHERE pc.tenant_id = :tenant_id
           AND p.tenant_id = :tenant_id
-          AND (:chunk_type IS NULL OR pc.chunk_type = :chunk_type)
+          {chunk_type_filter}
           {scope_filter}
         ORDER BY pc.embedding <=> CAST(:query_vec AS vector)
         LIMIT :top_k
         """
     )
-    query_vec_str = "[" + ",".join(str(v) for v in query_embedding) + "]"
-    result = await session.execute(
-        sql,
-        {
-            "tenant_id": tenant_id,
-            "query_vec": query_vec_str,
-            "chunk_type": chunk_type if chunk_type != "any" else None,
-            "top_k": top_k,
-        },
-    )
+    result = await session.execute(sql, params)
     rows = result.fetchall()
     return [
         VectorHit(

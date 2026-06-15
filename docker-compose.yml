@@ -13,7 +13,9 @@ services:
       POSTGRES_DB: mawrid
       POSTGRES_HOST_AUTH_METHOD: trust
     ports:
-      - "5432:5432"
+      # Host port 5433 (container 5432) avoids clashing with a native Postgres on 5432.
+      # Containers still talk to each other via the internal "postgres:5432".
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init-postgres.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -78,7 +80,7 @@ services:
 
   # ── MLflow (experiment tracking) ──────────────────────────────────────────
   mlflow:
-    image: ghcr.io/mlflow/mlflow:v2.17.0
+    image: ghcr.io/mlflow/mlflow:v3.13.0
     entrypoint: ["/bin/sh", "-c"]
     command: ["pip install psycopg2-binary boto3 -q && mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri postgresql://mawrid:password@postgres:5432/mlflow --default-artifact-root s3://mlflow/"]
     environment:
@@ -121,7 +123,7 @@ services:
       VAULT_ADDR: http://vault:8200
       VAULT_TOKEN: root
       # Must be a SendGrid-verified sender (Single Sender Verification) or sends are rejected.
-      SENDGRID_FROM_EMAIL: mansourmohamadeljawad313@gmail.com
+      SENDGRID_FROM_EMAIL: mansourmohamadeljawad113@gmail.com
       SENDGRID_FROM_NAME: Mawrid Platform
     ports:
       - "8000:8000"
@@ -134,7 +136,9 @@ services:
         condition: service_healthy
       vault:
         condition: service_healthy
-    command: /opt/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    # --reload disabled: on this 7.7 GB host the reloader's second process
+    # re-imports torch/transformers and OOMs. Re-enable on a larger machine.
+    command: /opt/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
 
   # ── ARQ Worker (enrichment job queue) ─────────────────────────────────────
   worker:

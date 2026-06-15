@@ -11,11 +11,12 @@ HITL:     None — repository only.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Any
 
 from sqlalchemy import select, update
 
+from app.infra.db.coerce import to_date
 from app.infra.db.models.order import GoodsReceived, Shipment
 from app.infra.db.repos.base_repo import TenantRepository
 
@@ -27,7 +28,7 @@ class ShipmentRepository(TenantRepository):
         po_id: str,
         carrier: str | None = None,
         tracking_number: str | None = None,
-        expected_arrival_date: str | None = None,
+        expected_arrival_date: str | date | None = None,
     ) -> Shipment:
         shipment = Shipment(
             shipment_id=shipment_id,
@@ -35,7 +36,7 @@ class ShipmentRepository(TenantRepository):
             po_id=po_id,
             carrier=carrier,
             tracking_number=tracking_number,
-            expected_arrival_date=expected_arrival_date,
+            expected_arrival_date=to_date(expected_arrival_date),
             status="pending_shipment",
         )
         self._session.add(shipment)
@@ -82,7 +83,7 @@ class ShipmentRepository(TenantRepository):
         )
 
     async def update_arrival_date(
-        self, shipment_id: str, expected_arrival_date: str
+        self, shipment_id: str, expected_arrival_date: str | date
     ) -> None:
         await self._session.execute(
             update(Shipment)
@@ -90,7 +91,7 @@ class ShipmentRepository(TenantRepository):
                 self._tenant_filter(Shipment),
                 Shipment.shipment_id == shipment_id,
             )
-            .values(expected_arrival_date=expected_arrival_date)
+            .values(expected_arrival_date=to_date(expected_arrival_date))
         )
 
     async def get_receiving(self, shipment_id: str) -> GoodsReceived | None:

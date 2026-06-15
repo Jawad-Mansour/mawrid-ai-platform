@@ -19,16 +19,23 @@ from typing import Any
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
+from sqlalchemy.pool import NullPool
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture
 async def db_engine() -> AsyncGenerator[AsyncEngine, None]:
-    """Async SQLAlchemy engine pointed at the test database."""
+    """
+    Async SQLAlchemy engine pointed at the test database. Function-scoped with
+    NullPool: each test gets its own engine on its own event loop. This avoids
+    the Windows ProactorEventLoop "Event loop is closed" teardown error that a
+    session-scoped pooled engine triggers when its connections outlive the
+    per-test loop created by pytest-asyncio.
+    """
     url = os.environ.get(
         "DATABASE_URL",
         "postgresql+asyncpg://mawrid:password@localhost:5432/mawrid_test",
     )
-    engine = create_async_engine(url, echo=False)
+    engine = create_async_engine(url, echo=False, poolclass=NullPool)
     yield engine
     await engine.dispose()
 
@@ -41,9 +48,9 @@ async def db_session(db_engine: AsyncEngine) -> AsyncGenerator[AsyncSession, Non
         await session.rollback()
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture
 async def redis_client() -> AsyncGenerator[Any, None]:
-    """Real Redis client for integration tests."""
+    """Real Redis client for integration tests (function-scoped — see db_engine note)."""
     import redis.asyncio as aioredis
 
     url = os.environ.get("REDIS_URL", "redis://localhost:6379/1")

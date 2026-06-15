@@ -68,8 +68,11 @@ dependencies = [
 
     # Sentence Transformers (Cross-Encoder reranking)
     "sentence-transformers>=3.3.1",
-    # Explicit so [tool.uv.sources] can redirect to the CPU-only wheel
+    # Explicit so [tool.uv.sources] can redirect to the CPU-only wheel.
+    # torchvision is pulled in by docling — it MUST come from the same CPU index
+    # as torch, or its compiled ops (torchvision::nms) fail to register.
     "torch>=2.0.0",
+    "torchvision>=0.22.0",
 
     # Document parsing (Phase 2 enrichment pipeline)
     # docling: PDF/table/text parsing. Cap docling-ibm-models below 3.0 to avoid
@@ -155,3 +158,4 @@ explicit = true
 
 [tool.uv.sources]
 torch = [{ index = "pytorch-cpu" }]
+torchvision = [{ index = "pytorch-cpu" }]

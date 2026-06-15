@@ -28,8 +28,14 @@ FROM base AS deps
 COPY pyproject.toml uv.lock .python-version ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
-RUN /opt/venv/bin/python -m spacy download en_core_web_sm && \
-    /opt/venv/bin/python -m spacy download fr_core_news_sm
+# spaCy models enable Presidio PERSON/LOCATION PII detection. Non-fatal: if the
+# download fails (transient network), the build still succeeds and Presidio runs
+# in pattern-only mode (phone/email/CC/IBAN still redacted). Retry locally with:
+#   docker compose exec backend python -m spacy download en_core_web_sm
+RUN /opt/venv/bin/python -m spacy download en_core_web_sm \
+    || echo "WARN: en_core_web_sm download failed — Presidio pattern-only mode"; \
+    /opt/venv/bin/python -m spacy download fr_core_news_sm \
+    || echo "WARN: fr_core_news_sm download failed — Presidio pattern-only mode"
 
 # ── Development stage (used by docker-compose.yml) ───────────────────────────
 FROM deps AS development

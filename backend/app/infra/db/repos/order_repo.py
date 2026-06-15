@@ -11,10 +11,12 @@ HITL:     None — repository only.
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Any
 
 from sqlalchemy import select, update
 
+from app.infra.db.coerce import to_date
 from app.infra.db.models.order import OrderDraft, PurchaseOrder
 from app.infra.db.repos.base_repo import TenantRepository
 
@@ -26,7 +28,7 @@ class OrderRepository(TenantRepository):
         supplier_id: str,
         line_items: list[dict[str, Any]],
         notes: str | None = None,
-        desired_delivery_date: str | None = None,
+        desired_delivery_date: str | date | None = None,
     ) -> OrderDraft:
         draft = OrderDraft(
             order_id=order_id,
@@ -35,7 +37,7 @@ class OrderRepository(TenantRepository):
             status="draft",
             line_items=line_items,
             notes=notes,
-            desired_delivery_date=desired_delivery_date,
+            desired_delivery_date=to_date(desired_delivery_date),
         )
         self._session.add(draft)
         await self._session.flush()
@@ -67,7 +69,7 @@ class OrderRepository(TenantRepository):
         order_id: str,
         line_items: list[dict[str, Any]] | None = None,
         notes: str | None = None,
-        desired_delivery_date: str | None = None,
+        desired_delivery_date: str | date | None = None,
     ) -> None:
         values: dict[str, Any] = {}
         if line_items is not None:
@@ -75,7 +77,7 @@ class OrderRepository(TenantRepository):
         if notes is not None:
             values["notes"] = notes
         if desired_delivery_date is not None:
-            values["desired_delivery_date"] = desired_delivery_date
+            values["desired_delivery_date"] = to_date(desired_delivery_date)
         if values:
             await self._session.execute(
                 update(OrderDraft)
@@ -107,7 +109,7 @@ class OrderRepository(TenantRepository):
         hitl_action_id: str,
         currency: str = "USD",
         total_amount: float | None = None,
-        requested_delivery_date: str | None = None,
+        requested_delivery_date: str | date | None = None,
     ) -> PurchaseOrder:
         po = PurchaseOrder(
             po_id=po_id,
@@ -121,7 +123,7 @@ class OrderRepository(TenantRepository):
             hitl_action_id=hitl_action_id,
             currency=currency,
             total_amount=total_amount,
-            requested_delivery_date=requested_delivery_date,
+            requested_delivery_date=to_date(requested_delivery_date),
         )
         self._session.add(po)
         await self._session.flush()
