@@ -31,16 +31,25 @@ async def send_email(
     to: str,
     subject: str,
     body: str,
-    from_email: str = "noreply@mawrid.app",
-    from_name: str = "Mawrid Platform",
+    from_email: str | None = None,
+    from_name: str | None = None,
     html_body: str | None = None,
     attachment_bytes: bytes | None = None,
     attachment_filename: str | None = None,
     attachment_mime: str = "application/pdf",
 ) -> None:
-    """Send an email via SendGrid REST API. Raises on non-2xx status."""
+    """
+    Send an email via SendGrid REST API. Raises on non-2xx status.
+    The from-address defaults to the configured verified sender
+    (SENDGRID_FROM_EMAIL) — SendGrid rejects unverified senders.
+    """
+    from app.core.config import get_settings  # noqa: PLC0415
+
     secrets = get_secrets()
+    settings = get_settings()
     api_key = secrets.sendgrid_api_key
+    from_email = from_email or settings.sendgrid_from_email
+    from_name = from_name or settings.sendgrid_from_name
 
     content: list[dict[str, str]] = [{"type": "text/plain", "value": body}]
     if html_body:

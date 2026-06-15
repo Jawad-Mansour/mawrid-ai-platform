@@ -120,6 +120,9 @@ services:
       REDIS_URL: redis://redis:6379/0
       VAULT_ADDR: http://vault:8200
       VAULT_TOKEN: root
+      # Must be a SendGrid-verified sender (Single Sender Verification) or sends are rejected.
+      SENDGRID_FROM_EMAIL: mansourmohamadeljawad313@gmail.com
+      SENDGRID_FROM_NAME: Mawrid Platform
     ports:
       - "8000:8000"
     volumes:

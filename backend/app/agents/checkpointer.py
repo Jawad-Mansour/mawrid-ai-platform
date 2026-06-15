@@ -15,6 +15,9 @@ from __future__ import annotations
 
 import logging
 import re
+from collections.abc import AsyncIterator
+from contextlib import AsyncExitStack, asynccontextmanager
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -42,32 +45,51 @@ def get_tenant_from_thread(thread_id: str) -> str:
     return parts[0]
 
 
-async def create_checkpointer() -> object:
+@asynccontextmanager
+async def checkpointer_scope() -> AsyncIterator[Any]:
     """
-    Create and return an AsyncRedisSaver instance.
-    Caller is responsible for using it as an async context manager.
+    Yield a ready-to-use LangGraph checkpointer for the duration of an agent run.
+
+    AsyncRedisSaver.from_conn_string is itself an async context manager (it opens
+    and closes the Redis connection), so it MUST be entered with `async with` and
+    the saver used only inside that scope. This helper owns that lifecycle and
+    falls back to an in-memory saver if Redis is unavailable.
 
     Usage:
-        async with await create_checkpointer() as checkpointer:
-            graph = supervisor_graph.compile(checkpointer=checkpointer)
-            result = await graph.ainvoke(state, config={"configurable": {"thread_id": tid}})
+        async with checkpointer_scope() as checkpointer:
+            result = await run_agent(state, checkpointer=checkpointer)
     """
     from app.core.config import get_settings  # noqa: PLC0415
 
     settings = get_settings()
 
-    try:
-        from langgraph.checkpoint.redis.aio import AsyncRedisSaver  # noqa: PLC0415
+    # AsyncExitStack owns the Redis connection lifecycle. The try/except wraps
+    # ONLY creation + setup so the single `yield` always runs exactly once —
+    # exceptions raised inside the caller's `async with` body propagate normally
+    # and unwind the stack (closing Redis) without a double-yield.
+    async with AsyncExitStack() as stack:
+        saver: Any
+        try:
+            from langgraph.checkpoint.redis.aio import AsyncRedisSaver  # noqa: PLC0415
 
-        checkpointer = AsyncRedisSaver.from_conn_string(
-            str(settings.redis_url),
-            ttl={"default": CHECKPOINT_TTL_SECONDS},
-        )
-        logger.info("langgraph_checkpointer_created", extra={"ttl": CHECKPOINT_TTL_SECONDS})
-        return checkpointer
-    except Exception as exc:
-        logger.error("langgraph_checkpointer_failed", extra={"error": str(exc)})
-        # Fall back to in-memory checkpointer (no persistence, but agents still work)
-        from langgraph.checkpoint.memory import MemorySaver  # noqa: PLC0415
-        logger.warning("langgraph_using_memory_checkpointer — state will not persist across restarts")
-        return MemorySaver()
+            saver = await stack.enter_async_context(
+                AsyncRedisSaver.from_conn_string(
+                    str(settings.redis_url),
+                    ttl={"default": CHECKPOINT_TTL_SECONDS},
+                )
+            )
+            await saver.asetup()
+            logger.info(
+                "langgraph_checkpointer_created", extra={"ttl": CHECKPOINT_TTL_SECONDS}
+            )
+        except Exception as exc:
+            logger.error("langgraph_checkpointer_failed", extra={"error": str(exc)})
+            from langgraph.checkpoint.memory import MemorySaver  # noqa: PLC0415
+
+            logger.warning(
+                "langgraph_using_memory_checkpointer — state will not persist "
+                "across restarts"
+            )
+            saver = MemorySaver()
+
+        yield saver

@@ -16,9 +16,10 @@ from typing import Any
 
 import jwt
 from fastapi import APIRouter, Cookie, HTTPException, Response, status
-from pydantic import BaseModel, EmailStr
+from pydantic import EmailStr
 
 from app.api.deps import CurrentUser, SessionDep
+from app.api.schemas import StrictModel
 from app.core.auth import services as auth_svc
 from app.core.auth.models import OperationalMode
 from app.infra.db.repos.tenant_repo import TenantRepo, UserRepo
@@ -27,19 +28,19 @@ from app.infra.secrets.vault import get_secrets
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-class SignupRequest(BaseModel):
+class SignupRequest(StrictModel):
     company_name: str
     email: EmailStr
     password: str
     mode: OperationalMode = OperationalMode.HYBRID
 
 
-class LoginRequest(BaseModel):
+class LoginRequest(StrictModel):
     email: EmailStr
     password: str
 
 
-class TokenResponse(BaseModel):
+class TokenResponse(StrictModel):
     access_token: str
     token_type: str = "bearer"
 

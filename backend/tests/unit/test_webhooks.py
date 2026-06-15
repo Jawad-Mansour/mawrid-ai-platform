@@ -288,6 +288,7 @@ class TestStripeWebhook:
         mock_invoice.order_id = None  # skip consumer-order qty-decrement path
         mock_repo = MagicMock()
         mock_repo.get_by_id = AsyncMock(return_value=mock_invoice)
+        mock_repo.get_by_id_for_update = AsyncMock(return_value=mock_invoice)
         mock_repo.mark_paid = AsyncMock()
 
         with (

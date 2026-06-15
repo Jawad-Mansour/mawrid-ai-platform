@@ -27,6 +27,7 @@ class VaultSecrets:
     jwt_public_key: str
     sendgrid_api_key: str
     stripe_secret_key: str
+    stripe_webhook_secret: str
     langsmith_api_key: str
     icecat_api_key: str
     minio_access_key: str
@@ -68,6 +69,7 @@ def load_secrets(settings: Settings) -> VaultSecrets:
         jwt_public_key = _read_kv(client, "mawrid/jwt", "public_key")
         sendgrid_api_key = _read_kv(client, "mawrid/sendgrid", "api_key")
         stripe_secret_key = _read_kv(client, "mawrid/stripe", "secret_key")
+        stripe_webhook_secret = _read_kv(client, "mawrid/stripe", "webhook_secret")
         langsmith_api_key = _read_kv(client, "mawrid/langsmith", "api_key")
         icecat_api_key = _read_kv(client, "mawrid/icecat", "api_key")
         minio_access_key = _read_kv(client, "mawrid/minio", "access_key")
@@ -82,6 +84,7 @@ def load_secrets(settings: Settings) -> VaultSecrets:
         jwt_public_key=jwt_public_key,
         sendgrid_api_key=sendgrid_api_key,
         stripe_secret_key=stripe_secret_key,
+        stripe_webhook_secret=stripe_webhook_secret,
         langsmith_api_key=langsmith_api_key,
         icecat_api_key=icecat_api_key,
         minio_access_key=minio_access_key,

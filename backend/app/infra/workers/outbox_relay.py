@@ -16,17 +16,20 @@ from __future__ import annotations
 
 import asyncio
 from datetime import UTC, datetime
+from uuid import uuid4
 
 import structlog
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy import update as sqla_update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.infra.db.models.outbox import OutboxEvent
 from app.infra.db.models.product import Product
+from app.infra.db.models.product_chunks import ProductChunk
 from app.infra.db.repos.outbox_repo import OutboxRepository
 from app.infra.db.repos.product_repo import ProductRepository
 from app.infra.vector.embedder import embed
+from app.rag.chunker import build_chunks
 
 logger = structlog.get_logger(__name__)
 
@@ -41,6 +44,75 @@ def _build_embed_text(product: Product) -> str:
         for key, value in product.specifications.items():
             parts.append(f"{key}: {value}")
     return " | ".join(parts)
+
+
+async def index_product(session: AsyncSession, product: Product) -> None:
+    """
+    Index a product for RAG retrieval:
+      1. Write the document-level embedding to products.embedding (broad recall).
+      2. Rebuild parent/child chunk rows in product_chunks (precise retrieval).
+    Idempotent: existing chunks for the product are deleted before re-insert, so
+    re-processing the same outbox event produces no duplicates.
+    """
+    full_text = _build_embed_text(product)
+
+    # 1. Document-level embedding (used for broad similarity; kept for parity).
+    doc_vector = await embed(full_text)
+    await session.execute(
+        sqla_update(Product)
+        .where(Product.product_id == product.product_id)
+        .values(embedding=doc_vector)
+    )
+
+    # 2. Parent/child chunks — clear then rebuild for idempotency.
+    await session.execute(
+        delete(ProductChunk).where(ProductChunk.product_id == product.product_id)
+    )
+
+    specs = build_chunks(full_text)
+    parent_id_by_index: dict[int, str] = {}
+
+    # Insert parents first so children can reference their chunk_id.
+    for spec in specs:
+        if spec.chunk_type != "parent":
+            continue
+        chunk_id = uuid4().hex
+        parent_id_by_index[spec.chunk_index] = chunk_id
+        vector = await embed(spec.chunk_text)
+        session.add(
+            ProductChunk(
+                chunk_id=chunk_id,
+                tenant_id=product.tenant_id,
+                product_id=product.product_id,
+                chunk_type="parent",
+                parent_chunk_id=None,
+                chunk_index=spec.chunk_index,
+                chunk_text=spec.chunk_text,
+                embedding=vector,
+            )
+        )
+
+    for spec in specs:
+        if spec.chunk_type != "child":
+            continue
+        vector = await embed(spec.chunk_text)
+        parent_chunk_id = (
+            parent_id_by_index.get(spec.parent_index)
+            if spec.parent_index is not None
+            else None
+        )
+        session.add(
+            ProductChunk(
+                chunk_id=uuid4().hex,
+                tenant_id=product.tenant_id,
+                product_id=product.product_id,
+                chunk_type="child",
+                parent_chunk_id=parent_chunk_id,
+                chunk_index=spec.chunk_index,
+                chunk_text=spec.chunk_text,
+                embedding=vector,
+            )
+        )
 
 
 async def process_pending_events(session: AsyncSession, tenant_id: str) -> int:
@@ -61,12 +133,7 @@ async def process_pending_events(session: AsyncSession, tenant_id: str) -> int:
                 if product_id:
                     product = await product_repo.get_by_id(product_id)
                     if product is not None:
-                        vector = await embed(_build_embed_text(product))
-                        await session.execute(
-                            sqla_update(Product)
-                            .where(Product.product_id == product_id)
-                            .values(embedding=vector)
-                        )
+                        await index_product(session, product)
 
             await outbox_repo.mark_processed(event.event_id)
             await session.flush()
@@ -122,12 +189,7 @@ async def run_relay(
                                 )
                                 product = prod_result.scalar_one_or_none()
                                 if product is not None:
-                                    vector = await embed(_build_embed_text(product))
-                                    await session.execute(
-                                        sqla_update(Product)
-                                        .where(Product.product_id == product_id)
-                                        .values(embedding=vector)
-                                    )
+                                    await index_product(session, product)
 
                         await session.execute(
                             sqla_update(OutboxEvent)

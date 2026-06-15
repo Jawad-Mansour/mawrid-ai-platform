@@ -21,9 +21,9 @@ from typing import Any
 
 import structlog
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel
 
 from app.api.deps import CurrentUser, SessionDep
+from app.api.schemas import StrictModel
 from app.infra.db.models.dunning import Invoice
 from app.infra.db.repos.invoice_repo import InvoiceRepository
 
@@ -35,7 +35,7 @@ router = APIRouter(prefix="/invoices", tags=["invoices"])
 # ── Schemas ────────────────────────────────────────────────────────────────────
 
 
-class InvoiceCreate(BaseModel):
+class InvoiceCreate(StrictModel):
     invoice_id: str
     direction: str  # payable | receivable
     invoice_type: str  # b2b | b2c
@@ -53,7 +53,7 @@ class InvoiceCreate(BaseModel):
     pdf_key: str | None = None
 
 
-class InvoiceResponse(BaseModel):
+class InvoiceResponse(StrictModel):
     invoice_id: str
     direction: str
     invoice_type: str
@@ -70,7 +70,7 @@ class InvoiceResponse(BaseModel):
     created_at: str
 
 
-class AgingResponse(BaseModel):
+class AgingResponse(StrictModel):
     as_of_date: str
     buckets: dict[str, float]
 

@@ -45,15 +45,8 @@ jobs:
       - uses: astral-sh/setup-uv@v4
       - name: Install dependencies
         run: uv sync --frozen --dev
-      - name: Intent classifier F1 check
-        run: |
-          uv run python -m app.ml.intent.trainer --eval-only \
-            --dataset backend/tests/evals/eval_dataset/intent_test_set.json \
-            --threshold 0.85
-      - name: Tone classifier F1 check
-        run: |
-          uv run python -m app.ml.tone.trainer --eval-only \
-            --threshold 0.85
+      - name: Intent classifier F1 check (Gate 8)
+        run: uv run pytest backend/tests/evals/test_intent_classifier.py -v --tb=short
 
   gate9-drift:
     name: "Gate 9: Drift Detection (PSI)"

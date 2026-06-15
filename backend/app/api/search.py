@@ -13,22 +13,22 @@ HITL:     None — search is read-only.
 from __future__ import annotations
 
 from fastapi import APIRouter, Query
-from pydantic import BaseModel
 
 from app.api.deps import CurrentUser, SessionDep
+from app.api.schemas import StrictModel
 from app.guardrails.nemo_guard import get_default_guard
 from app.rag.pipeline import run_rag
 
 router = APIRouter(prefix="/search", tags=["search"])
 
 
-class ProductSearchResult(BaseModel):
+class ProductSearchResult(StrictModel):
     product_id: str
     chunk_text: str
     score: float
 
 
-class SearchResponse(BaseModel):
+class SearchResponse(StrictModel):
     query: str
     results: list[ProductSearchResult]
     answer: str | None = None

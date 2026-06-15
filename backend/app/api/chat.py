@@ -24,9 +24,9 @@ import logging
 import uuid
 
 from fastapi import APIRouter
-from pydantic import BaseModel
 
 from app.api.deps import CurrentUser, SessionDep
+from app.api.schemas import StrictModel
 from app.guardrails import get_default_guard
 from app.rag.pipeline import RAGResult, run_rag
 
@@ -35,19 +35,19 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 
-class ChatRequest(BaseModel):
+class ChatRequest(StrictModel):
     query: str
     session_id: str | None = None
 
 
-class ChunkSource(BaseModel):
+class ChunkSource(StrictModel):
     chunk_id: str
     product_id: str
     chunk_text: str
     score: float
 
 
-class ChatResponse(BaseModel):
+class ChatResponse(StrictModel):
     answer: str
     sources: list[ChunkSource]
     session_id: str | None
@@ -268,11 +268,10 @@ async def _handle_agent_task(
     try:
         from langchain_core.messages import HumanMessage  # noqa: PLC0415
 
-        from app.agents.checkpointer import create_checkpointer, make_thread_id  # noqa: PLC0415
+        from app.agents.checkpointer import checkpointer_scope, make_thread_id  # noqa: PLC0415
         from app.agents.supervisor import AgentState, run_agent  # noqa: PLC0415
 
         thread_id = make_thread_id(tenant_id, user_id, session_id)
-        checkpointer = await create_checkpointer()
 
         initial_state = AgentState(
             messages=[HumanMessage(content=query)],
@@ -291,7 +290,8 @@ async def _handle_agent_task(
             error=None,
         )
 
-        result_state = await run_agent(initial_state, checkpointer=checkpointer)
+        async with checkpointer_scope() as checkpointer:
+            result_state = await run_agent(initial_state, checkpointer=checkpointer)
         answer = result_state.get("specialist_result") or "Task completed."
         hitl_ids = result_state.get("hitl_action_ids", [])
         if hitl_ids:

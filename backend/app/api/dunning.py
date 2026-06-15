@@ -17,9 +17,9 @@ from typing import Any
 
 import structlog
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel
 
 from app.api.deps import CurrentUser, SessionDep, require_mode
+from app.api.schemas import StrictModel
 from app.infra.db.repos.dunning_repo import DunningRepository
 
 logger = structlog.get_logger(__name__)
@@ -30,7 +30,7 @@ router = APIRouter(prefix="/dunning", tags=["dunning"])
 # ── Request / response schemas ─────────────────────────────────────────────────
 
 
-class DisputeRequest(BaseModel):
+class DisputeRequest(StrictModel):
     invoice_id: str
     supplier_id: str
     po_reference: str
@@ -41,7 +41,7 @@ class DisputeRequest(BaseModel):
     resolution_requested: str  # replacement | credit_note | refund
 
 
-class DunningSequenceResponse(BaseModel):
+class DunningSequenceResponse(StrictModel):
     sequence_id: str
     invoice_id: str
     track: str
@@ -50,7 +50,7 @@ class DunningSequenceResponse(BaseModel):
     stopped_at: str | None
 
 
-class TriggerResponse(BaseModel):
+class TriggerResponse(StrictModel):
     actions_created: int
     action_ids: list[str]
 

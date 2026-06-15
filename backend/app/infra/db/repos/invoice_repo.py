@@ -33,6 +33,23 @@ class InvoiceRepository(TenantRepository):
         )
         return result.scalar_one_or_none()
 
+    async def get_by_id_for_update(self, invoice_id: str) -> Invoice | None:
+        """
+        Row-locking read (SELECT ... FOR UPDATE). Used by the Stripe webhook so
+        concurrent deliveries of the same payment event serialize on the invoice
+        row — the paid_at check-and-set is then atomic, preventing double
+        fulfilment (double stock decrement) under at-least-once webhook delivery.
+        """
+        result = await self._session.execute(
+            select(Invoice)
+            .where(
+                self._tenant_filter(Invoice),
+                Invoice.invoice_id == invoice_id,
+            )
+            .with_for_update()
+        )
+        return result.scalar_one_or_none()
+
     async def create(self, invoice: Invoice) -> Invoice:
         self._session.add(invoice)
         await self._session.flush()

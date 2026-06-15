@@ -18,9 +18,9 @@ from datetime import UTC, datetime, timedelta
 import jwt
 from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import Response
-from pydantic import BaseModel
 
 from app.api.deps import CurrentUser, SessionDep
+from app.api.schemas import StrictModel
 from app.infra.db.repos.tenant_repo import TenantRepo
 from app.infra.secrets.vault import get_secrets
 from app.rag.pipeline import run_rag
@@ -207,20 +207,20 @@ _WIDGET_JS = """\
 # ── Response models ────────────────────────────────────────────────────────────
 
 
-class WidgetTokenResponse(BaseModel):
+class WidgetTokenResponse(StrictModel):
     token: str
     expires_in: int  # seconds
 
 
-class WidgetSettingsRequest(BaseModel):
+class WidgetSettingsRequest(StrictModel):
     allowed_origins: str  # comma-separated, e.g. "https://shop.example.com"
 
 
-class WidgetChatRequest(BaseModel):
+class WidgetChatRequest(StrictModel):
     query: str
 
 
-class WidgetChatResponse(BaseModel):
+class WidgetChatResponse(StrictModel):
     answer: str
     query: str
 

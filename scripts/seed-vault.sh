@@ -17,6 +17,7 @@ SENDGRID_KEY="${2:-SG.placeholder}"
 STRIPE_KEY="${3:-sk_test_placeholder}"
 LANGSMITH_KEY="${4:-ls__placeholder}"
 ICECAT_KEY="${5:-icecat-placeholder}"
+STRIPE_WEBHOOK_SECRET="${6:-whsec_placeholder}"
 
 echo "==> Seeding Vault at ${VAULT_ADDR}"
 
@@ -61,8 +62,9 @@ vault_put "mawrid/openai" "{\"api_key\": \"${OPENAI_KEY}\"}"
 # SendGrid
 vault_put "mawrid/sendgrid" "{\"api_key\": \"${SENDGRID_KEY}\"}"
 
-# Stripe
-vault_put "mawrid/stripe" "{\"secret_key\": \"${STRIPE_KEY}\"}"
+# Stripe (secret_key for API calls; webhook_secret for HMAC signature verification)
+vault_put "mawrid/stripe" \
+  "{\"secret_key\": \"${STRIPE_KEY}\", \"webhook_secret\": \"${STRIPE_WEBHOOK_SECRET}\"}"
 
 # LangSmith
 vault_put "mawrid/langsmith" "{\"api_key\": \"${LANGSMITH_KEY}\"}"
@@ -75,4 +77,5 @@ vault_put "mawrid/minio" "{\"access_key\": \"minioadmin\", \"secret_key\": \"min
 
 echo ""
 echo "==> Vault seeded successfully."
-echo "    Pass your real keys as arguments: bash scripts/seed-vault.sh sk-real-openai-key SG.key sk_key ls__key icecat-key"
+echo "    Pass your real keys as arguments:"
+echo "    bash scripts/seed-vault.sh <openai> <sendgrid> <stripe_secret> <langsmith> <icecat> <stripe_webhook_secret>"

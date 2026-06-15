@@ -20,9 +20,9 @@ from typing import Any
 
 import structlog
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel
 
 from app.api.deps import CurrentUser, SessionDep
+from app.api.schemas import StrictModel
 from app.core.suppliers.models import DeliveryEventInput, SupplierMatchResult
 from app.core.suppliers.services import (
     discover_suppliers,
@@ -41,7 +41,7 @@ router = APIRouter(prefix="/suppliers", tags=["suppliers"])
 # ── Schemas ────────────────────────────────────────────────────────────────────
 
 
-class SupplierCreate(BaseModel):
+class SupplierCreate(StrictModel):
     name: str
     email: str | None = None
     phone: str | None = None
@@ -49,7 +49,7 @@ class SupplierCreate(BaseModel):
     currency: str = "USD"
 
 
-class SupplierUpdate(BaseModel):
+class SupplierUpdate(StrictModel):
     name: str | None = None
     email: str | None = None
     phone: str | None = None
@@ -57,17 +57,17 @@ class SupplierUpdate(BaseModel):
     currency: str | None = None
 
 
-class SupplierMatchRequest(BaseModel):
+class SupplierMatchRequest(StrictModel):
     name: str
     embedding: list[float] | None = None
 
 
-class DiscoverRequest(BaseModel):
+class DiscoverRequest(StrictModel):
     product_name: str
     category: str
 
 
-class SupplierResponse(BaseModel):
+class SupplierResponse(StrictModel):
     supplier_id: str
     name: str
     email: str | None
@@ -77,7 +77,7 @@ class SupplierResponse(BaseModel):
     score: float | None
 
 
-class ScoreResponse(BaseModel):
+class ScoreResponse(StrictModel):
     supplier_id: str
     score: float
     method: str

@@ -21,9 +21,9 @@ from typing import Any
 
 import structlog
 from fastapi import APIRouter, Header, HTTPException, Request, status
-from pydantic import BaseModel
 
 from app.api.deps import SessionDep
+from app.api.schemas import StrictModel
 from app.core.config import get_settings
 
 logger = structlog.get_logger(__name__)
@@ -78,7 +78,7 @@ def _verify_stripe_signature(payload: bytes, sig_header: str, secret: str) -> No
 # ── Request/response schemas ──────────────────────────────────────────────────
 
 
-class PaymentConfirmedRequest(BaseModel):
+class PaymentConfirmedRequest(StrictModel):
     tenant_id: str
     invoice_id: str
     amount_paid: float
@@ -86,14 +86,14 @@ class PaymentConfirmedRequest(BaseModel):
     payment_reference: str
 
 
-class EnrichmentDoneRequest(BaseModel):
+class EnrichmentDoneRequest(StrictModel):
     tenant_id: str
     document_id: str
     product_count: int
     status: str = "enriched"
 
 
-class StockThresholdRequest(BaseModel):
+class StockThresholdRequest(StrictModel):
     tenant_id: str
     product_id: str
     product_name: str
@@ -101,7 +101,7 @@ class StockThresholdRequest(BaseModel):
     reorder_threshold: int
 
 
-class OrderConfirmedRequest(BaseModel):
+class OrderConfirmedRequest(StrictModel):
     tenant_id: str
     order_id: str
     invoice_id: str
@@ -110,7 +110,7 @@ class OrderConfirmedRequest(BaseModel):
     currency: str = "USD"
 
 
-class WebhookResponse(BaseModel):
+class WebhookResponse(StrictModel):
     status: str
     detail: str
 
@@ -140,13 +140,20 @@ async def stripe_payment_webhook(
     from app.infra.secrets.vault import get_secrets  # noqa: PLC0415
 
     try:
-        secrets = get_secrets()
-        stripe_secret: str = getattr(secrets, "stripe_webhook_secret", "dev-stripe-secret")
+        stripe_secret: str = get_secrets().stripe_webhook_secret
     except Exception:
         stripe_secret = "dev-stripe-secret"
 
+    # Signature is mandatory outside dev/test — never accept an unsigned money event
+    # in production (an unsigned POST could otherwise mark invoices paid).
+    settings = get_settings()
     if stripe_signature:
         _verify_stripe_signature(payload, stripe_signature, stripe_secret)
+    elif settings.environment not in ("development", "test"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Missing Stripe-Signature header.",
+        )
 
     import json  # noqa: PLC0415
 
@@ -175,7 +182,9 @@ async def stripe_payment_webhook(
     from app.infra.db.repos.invoice_repo import InvoiceRepository  # noqa: PLC0415
 
     invoice_repo = InvoiceRepository(session, tenant_id)
-    invoice = await invoice_repo.get_by_id(invoice_id)
+    # Row-lock the invoice so concurrent deliveries of the same event can't both
+    # pass the paid_at check and double-fulfil (idempotent under retries/races).
+    invoice = await invoice_repo.get_by_id_for_update(invoice_id)
     if invoice is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invoice not found.")
 

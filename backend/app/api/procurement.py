@@ -20,10 +20,10 @@ from typing import Any
 import structlog
 import yaml
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel
 from sqlalchemy import update
 
 from app.api.deps import CurrentUser, SessionDep
+from app.api.schemas import StrictModel
 from app.infra.db.models.product import Product
 from app.infra.db.repos.hitl_repo import HITLRepository
 from app.infra.db.repos.order_repo import OrderRepository
@@ -97,7 +97,7 @@ async def _draft_po_text(
 # ── Order Drafts ───────────────────────────────────────────────────────────────
 
 
-class DraftLineItem(BaseModel):
+class DraftLineItem(StrictModel):
     product_id: str
     product_name: str
     quantity: int
@@ -105,14 +105,14 @@ class DraftLineItem(BaseModel):
     currency: str = "USD"
 
 
-class CreateDraftRequest(BaseModel):
+class CreateDraftRequest(StrictModel):
     supplier_id: str
     line_items: list[DraftLineItem]
     notes: str | None = None
     desired_delivery_date: str | None = None
 
 
-class OrderDraftResponse(BaseModel):
+class OrderDraftResponse(StrictModel):
     order_id: str
     supplier_id: str
     status: str
@@ -122,7 +122,7 @@ class OrderDraftResponse(BaseModel):
     created_at: str
 
 
-class UpdateDraftRequest(BaseModel):
+class UpdateDraftRequest(StrictModel):
     line_items: list[DraftLineItem] | None = None
     notes: str | None = None
     desired_delivery_date: str | None = None
@@ -384,7 +384,7 @@ async def place_order(
 # ── Purchase Orders ────────────────────────────────────────────────────────────
 
 
-class PurchaseOrderResponse(BaseModel):
+class PurchaseOrderResponse(StrictModel):
     po_id: str
     order_draft_id: str
     supplier_id: str
@@ -424,14 +424,14 @@ async def list_purchase_orders(
 # ── Shipments ──────────────────────────────────────────────────────────────────
 
 
-class CreateShipmentRequest(BaseModel):
+class CreateShipmentRequest(StrictModel):
     po_id: str
     carrier: str | None = None
     tracking_number: str | None = None
     expected_arrival_date: str | None = None
 
 
-class ShipmentResponse(BaseModel):
+class ShipmentResponse(StrictModel):
     shipment_id: str
     po_id: str
     carrier: str | None
@@ -498,7 +498,7 @@ async def list_shipments(
     ]
 
 
-class UpdateShipmentStatusRequest(BaseModel):
+class UpdateShipmentStatusRequest(StrictModel):
     status: str
     expected_arrival_date: str | None = None
 
@@ -534,18 +534,18 @@ async def update_shipment_status(
 # ── Goods Received ─────────────────────────────────────────────────────────────
 
 
-class ReceivedItemInput(BaseModel):
+class ReceivedItemInput(StrictModel):
     product_id: str
     qty_received: int
     qty_damaged: int = 0
 
 
-class ReceiveGoodsRequest(BaseModel):
+class ReceiveGoodsRequest(StrictModel):
     items: list[ReceivedItemInput]
     notes: str | None = None
 
 
-class ReceiveGoodsResponse(BaseModel):
+class ReceiveGoodsResponse(StrictModel):
     receiving_id: str
     shipment_id: str
     status: str
@@ -664,12 +664,12 @@ async def receive_goods(
 # ── Storefront Publishing ──────────────────────────────────────────────────────
 
 
-class PublishProductRequest(BaseModel):
+class PublishProductRequest(StrictModel):
     retail_price: float
     storefront_qty: int
 
 
-class PublishProductResponse(BaseModel):
+class PublishProductResponse(StrictModel):
     product_id: str
     storefront_status: str
     retail_price: float
@@ -753,13 +753,13 @@ async def unpublish_product(
 # ── Supplier Dispute (Track 2) ─────────────────────────────────────────────────
 
 
-class FileDisputeRequest(BaseModel):
+class FileDisputeRequest(StrictModel):
     damaged_items: list[dict[str, Any]]
     damage_description: str
     po_reference: str | None = None
 
 
-class FileDisputeResponse(BaseModel):
+class FileDisputeResponse(StrictModel):
     hitl_action_id: str
     action_type: str
     status: str

@@ -15,9 +15,9 @@ from typing import Any
 
 import structlog
 from fastapi import APIRouter, BackgroundTasks, HTTPException, status
-from pydantic import BaseModel
 
 from app.api.deps import CurrentUser, SessionDep
+from app.api.schemas import StrictModel
 from app.infra.db.repos.hitl_repo import HITLRepository
 from app.infra.email.sender import EmailSender
 
@@ -29,7 +29,7 @@ router = APIRouter(prefix="/hitl", tags=["hitl"])
 # ── Response schemas ───────────────────────────────────────────────────────────
 
 
-class HITLActionResponse(BaseModel):
+class HITLActionResponse(StrictModel):
     action_id: str
     action_type: str
     status: str
@@ -38,7 +38,7 @@ class HITLActionResponse(BaseModel):
     expires_at: str | None
 
 
-class EditPayloadRequest(BaseModel):
+class EditPayloadRequest(StrictModel):
     payload: dict[str, Any]
 
 

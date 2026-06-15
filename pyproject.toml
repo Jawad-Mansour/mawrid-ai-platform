@@ -44,10 +44,13 @@ dependencies = [
     "tenacity>=9.0.0",
 
     # LangChain / LangGraph
-    "langchain>=0.3.7",
-    "langchain-openai>=0.2.10",
-    "langgraph>=0.2.55",
-    "langgraph-checkpoint-redis>=0.0.4",
+    # Pin to the resolved major lines (locked at langgraph 1.2.x /
+    # checkpoint-redis 0.4.x) — cap below the next breaking major so `uv lock`
+    # never silently floats the agent stack to an incompatible release.
+    "langchain>=1.3.4,<2.0",
+    "langchain-openai>=1.2.2,<2.0",
+    "langgraph>=1.2.4,<2.0",
+    "langgraph-checkpoint-redis>=0.4.1,<0.5",
 
     # NeMo Guardrails
     "nemoguardrails>=0.10.1",
@@ -139,6 +142,9 @@ ignore = ["E501"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["backend/tests"]
+markers = [
+    "integration: requires real Postgres + Redis + MinIO (Gate 4/5; not run on push)",
+]
 
 # CPU-only PyTorch — no CUDA packages in Docker (saves ~3 GB per build).
 # sentence-transformers Cross-Encoder reranking runs fine on CPU.

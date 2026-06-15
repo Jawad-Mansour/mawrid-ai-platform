@@ -21,9 +21,9 @@ from typing import Any
 
 import structlog
 from fastapi import APIRouter, BackgroundTasks, HTTPException, UploadFile, status
-from pydantic import BaseModel
 
 from app.api.deps import CurrentUser, SessionDep
+from app.api.schemas import StrictModel
 from app.core.catalog.extractor import extract_rows
 from app.core.catalog.hash import compute_product_hash
 from app.core.catalog.parser import detect_mime_type, parse_document
@@ -42,7 +42,7 @@ router = APIRouter(prefix="/catalog", tags=["catalog"])
 # ── Response schemas ───────────────────────────────────────────────────────────
 
 
-class DocumentUploadResponse(BaseModel):
+class DocumentUploadResponse(StrictModel):
     document_id: str
     status: str
     filename: str
@@ -50,7 +50,7 @@ class DocumentUploadResponse(BaseModel):
     already_existed: bool
 
 
-class DocumentStatusResponse(BaseModel):
+class DocumentStatusResponse(StrictModel):
     document_id: str
     status: str
     filename: str
@@ -60,13 +60,13 @@ class DocumentStatusResponse(BaseModel):
     completed_at: str | None
 
 
-class EnrichResponse(BaseModel):
+class EnrichResponse(StrictModel):
     document_id: str
     jobs_submitted: int
     failed_rows: int
 
 
-class ProductSummary(BaseModel):
+class ProductSummary(StrictModel):
     product_id: str
     product_name: str
     sku: str | None
@@ -76,7 +76,7 @@ class ProductSummary(BaseModel):
     enrichment_source: str | None
 
 
-class ReviewQueueItemResponse(BaseModel):
+class ReviewQueueItemResponse(StrictModel):
     id: str
     document_id: str
     raw_row: dict[str, Any]

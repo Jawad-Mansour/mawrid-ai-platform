@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     n8n_service_token: str = "dev-n8n-service-token"
     n8n_api_key: str = ""
     mlflow_tracking_uri: str = "http://localhost:5000"
+    # SendGrid sender identity — MUST be a verified sender in your SendGrid account,
+    # otherwise SendGrid rejects the send. Set SENDGRID_FROM_EMAIL to your verified address.
+    sendgrid_from_email: str = "noreply@mawrid.app"
+    sendgrid_from_name: str = "Mawrid Platform"
 
 
 @lru_cache

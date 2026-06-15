@@ -18,9 +18,9 @@
         reverse_proxy backend:8000
     }
 
-    # All other routes → frontend
+    # All other routes → frontend (prod frontend is the nginx image on :80)
     handle {
-        reverse_proxy frontend:3000
+        reverse_proxy frontend:80
     }
 
     # Security headers

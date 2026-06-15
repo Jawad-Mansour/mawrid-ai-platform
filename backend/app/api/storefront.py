@@ -26,10 +26,11 @@ from typing import Annotated, Any
 
 import structlog
 from fastapi import APIRouter, Depends, Header, HTTPException, status
-from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import SessionDep
+from app.api.schemas import StrictModel
+from app.core.storefront.services import calculate_order_total, evaluate_cart_line
 from app.infra.db.repos.consumer_order_repo import ConsumerOrderRepository
 from app.infra.db.repos.invoice_repo import InvoiceRepository
 from app.infra.db.repos.product_repo import ProductRepository
@@ -82,7 +83,7 @@ def _get_gateway(payment_method: str) -> Any:
     if payment_method == "stripe":
         from app.infra.payments.stripe import StripeGateway  # noqa: PLC0415
 
-        return StripeGateway(api_key=getattr(secrets, "stripe_api_key", ""))
+        return StripeGateway(api_key=secrets.stripe_secret_key)
     if payment_method == "omt":
         from app.infra.payments.omt import OMTGateway  # noqa: PLC0415
 
@@ -106,7 +107,7 @@ def _get_gateway(payment_method: str) -> Any:
 # ── Response schemas ───────────────────────────────────────────────────────────
 
 
-class StorefrontProductResponse(BaseModel):
+class StorefrontProductResponse(StrictModel):
     product_id: str
     product_name: str
     description: str | None
@@ -121,22 +122,22 @@ class StorefrontProductDetail(StorefrontProductResponse):
     enrichment_source: str | None
 
 
-class CartItem(BaseModel):
+class CartItem(StrictModel):
     product_id: str
     qty: int
 
 
-class CartValidationRequest(BaseModel):
+class CartValidationRequest(StrictModel):
     items: list[CartItem]
 
 
-class CartValidationResponse(BaseModel):
+class CartValidationResponse(StrictModel):
     valid: bool
     items: list[dict[str, Any]]
     errors: list[str]
 
 
-class CheckoutRequest(BaseModel):
+class CheckoutRequest(StrictModel):
     items: list[CartItem]
     consumer_name: str
     consumer_email: str
@@ -147,7 +148,7 @@ class CheckoutRequest(BaseModel):
     language: str = "en"
 
 
-class CheckoutResponse(BaseModel):
+class CheckoutResponse(StrictModel):
     order_id: str
     invoice_id: str
     total_amount: float
@@ -156,7 +157,7 @@ class CheckoutResponse(BaseModel):
     payment_details: dict[str, Any]
 
 
-class OrderStatusResponse(BaseModel):
+class OrderStatusResponse(StrictModel):
     order_id: str
     status: str
     total_amount: float
@@ -260,28 +261,22 @@ async def validate_cart(
 
     for cart_item in body.items:
         product = await repo.get_by_id(cart_item.product_id)
-        if product is None or product.storefront_status != "published":
-            errors.append(f"Product {cart_item.product_id} is not available.")
-            items.append({"product_id": cart_item.product_id, "status": "unavailable"})
-        elif product.storefront_qty < cart_item.qty:
-            errors.append(
-                f"Only {product.storefront_qty} unit(s) of '{product.product_name}' available; "
-                f"requested {cart_item.qty}."
-            )
-            items.append({
-                "product_id": cart_item.product_id,
-                "status": "insufficient_qty",
-                "available": product.storefront_qty,
-                "requested": cart_item.qty,
-            })
-        else:
-            items.append({
-                "product_id": cart_item.product_id,
-                "product_name": product.product_name,
-                "status": "ok",
-                "unit_price": float(product.retail_price) if product.retail_price else 0.0,
-                "qty": cart_item.qty,
-            })
+        published = product is not None and product.storefront_status == "published"
+        result = evaluate_cart_line(
+            cart_item.product_id,
+            exists_and_published=published,
+            product_name=product.product_name if product is not None else "",
+            available_qty=product.storefront_qty if product is not None else 0,
+            requested_qty=cart_item.qty,
+            unit_price=(
+                float(product.retail_price)
+                if product is not None and product.retail_price
+                else 0.0
+            ),
+        )
+        items.append(result.item)
+        if result.error:
+            errors.append(result.error)
 
     return CartValidationResponse(valid=len(errors) == 0, items=items, errors=errors)
 
@@ -353,7 +348,7 @@ async def checkout(
             "unit_price": float(product.retail_price) if product.retail_price else 0.0,
         })
 
-    total = round(sum(v["unit_price"] * v["qty"] for v in validated), 2)
+    total = calculate_order_total([(v["unit_price"], v["qty"]) for v in validated])
     order_id = uuid.uuid4().hex
     invoice_id = uuid.uuid4().hex
     today = date.today()

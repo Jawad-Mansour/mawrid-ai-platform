@@ -1,0 +1,2 @@
+# Runtime ML artifacts (trained pkl/onnx) are gitignored and produced by the trainers.
+# This file keeps the directory present on fresh clones/CI so model loaders find the path.

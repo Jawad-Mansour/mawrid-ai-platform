@@ -24,9 +24,9 @@ import yaml
 from arq import create_pool
 from arq.connections import RedisSettings
 from fastapi import APIRouter, BackgroundTasks, HTTPException, status
-from pydantic import BaseModel
 
 from app.api.deps import CurrentUser, SessionDep
+from app.api.schemas import StrictModel
 from app.core.config import get_settings
 from app.infra.db.repos.consumer_order_repo import ConsumerOrderRepository
 from app.infra.db.repos.hitl_repo import HITLRepository
@@ -47,7 +47,7 @@ _EVAL_THRESHOLDS_PATH = (
 # ── Response models ────────────────────────────────────────────────────────────
 
 
-class DashboardSummary(BaseModel):
+class DashboardSummary(StrictModel):
     published_products: int
     enriched_products: int
     pending_enrichment: int
@@ -62,21 +62,21 @@ class DashboardSummary(BaseModel):
     generated_at: str
 
 
-class ModelHealth(BaseModel):
+class ModelHealth(StrictModel):
     name: str
     status: str
     latest_version: str | None = None
     stage: str | None = None
 
 
-class AIHealthResponse(BaseModel):
+class AIHealthResponse(StrictModel):
     models: list[ModelHealth]
     eval_thresholds: dict[str, Any]
     drift_status: str
     checked_at: str
 
 
-class WorkflowStatus(BaseModel):
+class WorkflowStatus(StrictModel):
     workflow_id: str
     name: str
     active: bool
@@ -84,12 +84,12 @@ class WorkflowStatus(BaseModel):
     last_execution_at: str | None = None
 
 
-class N8nStatusResponse(BaseModel):
+class N8nStatusResponse(StrictModel):
     status: str
     workflows: list[WorkflowStatus]
 
 
-class ConsumerOrderResponse(BaseModel):
+class ConsumerOrderResponse(StrictModel):
     order_id: str
     customer_id: str
     status: str
@@ -98,14 +98,14 @@ class ConsumerOrderResponse(BaseModel):
     created_at: str
 
 
-class FulfillResponse(BaseModel):
+class FulfillResponse(StrictModel):
     hitl_action_id: str
     action_type: str
     status: str
     detail: str
 
 
-class DLQProductResponse(BaseModel):
+class DLQProductResponse(StrictModel):
     product_id: str
     product_name: str
     enrichment_status: str

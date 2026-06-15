@@ -15,10 +15,10 @@ from typing import Any
 
 import structlog
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel
 from sqlalchemy import update as sa_update
 
 from app.api.deps import CurrentUser, SessionDep
+from app.api.schemas import StrictModel
 from app.core.customers.models import CustomerMatchResult
 from app.core.customers.services import (
     match_or_create_customer,
@@ -36,7 +36,7 @@ router = APIRouter(prefix="/customers", tags=["customers"])
 # ── Schemas ────────────────────────────────────────────────────────────────────
 
 
-class CustomerCreate(BaseModel):
+class CustomerCreate(StrictModel):
     customer_id: str | None = None
     name: str
     customer_type: str
@@ -46,7 +46,7 @@ class CustomerCreate(BaseModel):
     segment: str = "Regular"
 
 
-class CustomerUpdate(BaseModel):
+class CustomerUpdate(StrictModel):
     name: str | None = None
     email: str | None = None
     phone: str | None = None
@@ -54,18 +54,18 @@ class CustomerUpdate(BaseModel):
     segment: str | None = None
 
 
-class CustomerMatchRequest(BaseModel):
+class CustomerMatchRequest(StrictModel):
     name: str
     customer_type: str
     email: str | None = None
     phone: str | None = None
 
 
-class PaymentOutcomeRequest(BaseModel):
+class PaymentOutcomeRequest(StrictModel):
     outcome: float  # 1.0 on time | 0.5 late | 0.0 after dunning
 
 
-class CustomerResponse(BaseModel):
+class CustomerResponse(StrictModel):
     customer_id: str
     name: str
     customer_type: str
