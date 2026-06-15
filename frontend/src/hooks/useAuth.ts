@@ -6,7 +6,7 @@
 
 import { useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiGet, apiPost, setToken } from "@/lib/api";
+import { apiGet, apiPost, setToken, getToken } from "@/lib/api";
 import { useAuthStore } from "@/stores/auth";
 import type { MeResponse, OperationalMode, TokenResponse } from "@/lib/types";
 
@@ -25,26 +25,24 @@ export function useAuth() {
     }
   }, [setUser]);
 
+  // login/signup resolve the session but do NOT navigate — the page shows a
+  // success animation first, then routes.
   const login = useCallback(
     async (email: string, password: string) => {
       const tok = await apiPost<TokenResponse>("/auth/login", { email, password });
       setToken(tok.access_token);
-      const me = await refreshMe();
-      navigate("/");
-      return me;
+      return refreshMe();
     },
-    [navigate, refreshMe],
+    [refreshMe],
   );
 
   const signup = useCallback(
-    async (company_name: string, email: string, password: string, _mode: OperationalMode) => {
-      const tok = await apiPost<TokenResponse>("/auth/signup", { company_name, email, password });
+    async (company_name: string, email: string, password: string, mode: OperationalMode) => {
+      const tok = await apiPost<TokenResponse>("/auth/signup", { company_name, email, password, mode });
       setToken(tok.access_token);
-      const me = await refreshMe();
-      navigate("/");
-      return me;
+      return refreshMe();
     },
-    [navigate, refreshMe],
+    [refreshMe],
   );
 
   const logout = useCallback(() => {
@@ -62,7 +60,7 @@ export function useBootstrapAuth() {
   useEffect(() => {
     let active = true;
     (async () => {
-      if (!sessionStorage.getItem("access_token")) {
+      if (!getToken()) {
         if (active) setReady(true);
         return;
       }

@@ -1,37 +1,56 @@
-// Feature: Onboarding — signup (Hybrid mode in capstone)
+// Feature: Onboarding — signup with password UX, validation & success animation
 import { useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { toast } from "sonner";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { AlertCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiErr } from "@/lib/api";
 import type { OperationalMode } from "@/lib/types";
 import { Spinner } from "@/components/ui";
+import { PasswordField, PasswordStrength, SuccessSplash, passwordValid } from "@/components/auth/AuthBits";
+import { AuthShell } from "./AuthShell";
 
 export function Signup() {
   const [params] = useSearchParams();
   const mode = (params.get("mode") as OperationalMode) || "hybrid";
   const { signup } = useAuth();
+  const navigate = useNavigate();
+
   const [company, setCompany] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [done, setDone] = useState(false);
+
+  const mismatch = confirm.length > 0 && confirm !== password;
+  const canSubmit = company.trim() && email.trim() && passwordValid(password) && password === confirm;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError("");
+    if (!passwordValid(password)) return setError("Password needs at least 8 characters and one special character.");
+    if (password !== confirm) return setError("Passwords don't match.");
     setBusy(true);
     try {
       await signup(company, email, password, mode);
-      toast.success("Workspace provisioned — welcome to Mawrid");
+      setDone(true);
+      setTimeout(() => navigate("/"), 1100);
     } catch (err) {
-      toast.error(apiErr(err, "Signup failed"));
-    } finally {
+      setError(apiErr(err, "Signup failed"));
       setBusy(false);
     }
   }
 
   return (
     <AuthShell title="Create your workspace" subtitle={`Operational mode: ${mode.replace("_", " ")}`}>
+      <SuccessSplash show={done} message="Workspace ready — welcome to Mawrid" />
       <form onSubmit={onSubmit} className="space-y-4">
+        {error && (
+          <div className="flex items-start gap-2 rounded-xl border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /> {error}
+          </div>
+        )}
         <div>
           <label className="label">Business name</label>
           <input className="input" value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Acme Imports" required />
@@ -42,9 +61,16 @@ export function Signup() {
         </div>
         <div>
           <label className="label">Password</label>
-          <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min 8 characters" required minLength={8} />
+          <PasswordField value={password} onChange={setPassword} placeholder="Create a strong password" required />
+          <PasswordStrength password={password} />
         </div>
-        <button className="btn-gold w-full" disabled={busy}>
+        <div>
+          <label className="label">Confirm password</label>
+          <PasswordField value={confirm} onChange={setConfirm} placeholder="Re-enter password" required />
+          {mismatch && <p className="mt-1 text-xs text-danger">Passwords don't match</p>}
+          {confirm.length > 0 && !mismatch && <p className="mt-1 text-xs text-emerald-soft">Passwords match ✓</p>}
+        </div>
+        <button className="btn-gold w-full" disabled={busy || !canSubmit}>
           {busy ? <Spinner className="h-4 w-4" /> : "Create workspace"}
         </button>
       </form>
@@ -52,29 +78,5 @@ export function Signup() {
         Already registered? <Link to="/login" className="font-600 text-gold-soft hover:underline">Sign in</Link>
       </p>
     </AuthShell>
-  );
-}
-
-export function AuthShell({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
-  return (
-    <div className="grid min-h-screen place-items-center bg-radial-fade px-6">
-      <div className="w-full max-w-md">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-gold to-grape shadow-glow">
-            <span className="text-xl font-800 text-bg">M</span>
-          </div>
-          <div>
-            <div className="text-xl font-800 text-ink">Mawrid</div>
-            <div className="text-xs uppercase tracking-widest text-ink-faint">AI Operations Platform</div>
-          </div>
-        </div>
-        <div className="card p-7">
-          <h1 className="text-2xl font-700 text-ink">{title}</h1>
-          {subtitle && <p className="mb-6 mt-1 text-sm capitalize text-ink-soft">{subtitle}</p>}
-          {!subtitle && <div className="mb-6" />}
-          {children}
-        </div>
-      </div>
-    </div>
   );
 }

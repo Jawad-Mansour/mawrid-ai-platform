@@ -9,7 +9,7 @@ import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
 } from "recharts";
 import { apiGet } from "@/lib/api";
-import { Card, SectionTitle, StatusBadge, Loading } from "@/components/ui";
+import { Card, SectionTitle, StatusBadge } from "@/components/ui";
 import { SupplierGlobe } from "@/components/SupplierGlobe";
 import type { DashboardSummary, AIHealthResponse, HITLAction, DunningSequence } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
@@ -47,7 +47,7 @@ export function Dashboard() {
   const hitl = useQuery({ queryKey: ["hitl-pending"], queryFn: () => apiGet<unknown>("/hitl/actions?status=pending") });
   const dunning = useQuery({ queryKey: ["dunning-seq"], queryFn: () => apiGet<unknown>("/dunning/sequences") });
 
-  if (summary.isLoading) return <Loading label="Loading command center…" />;
+  // Render immediately and fill in as each query resolves (no full-page block).
   const s = summary.data;
   const actions = asList<HITLAction>(hitl.data, "actions").filter((a) => a.status === "pending").slice(0, 5);
   const sequences = asList<DunningSequence>(dunning.data, "sequences").slice(0, 5);

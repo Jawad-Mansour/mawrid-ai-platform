@@ -101,6 +101,12 @@ async def signup(
     tenant_repo: TenantRepo,
     user_repo: UserRepo,
 ) -> tuple[TenantDomain, UserDomain]:
+    # Clean, user-facing duplicate check (email is globally unique) — avoids
+    # surfacing a raw DB UniqueViolation to the client.
+    existing = await user_repo.get_by_email(email)
+    if existing is not None:
+        raise ValueError("That email is already registered — try signing in instead.")
+
     tenant_id = str(uuid.uuid4())
     user_id = str(uuid.uuid4())
     password_hash = hash_password(password)

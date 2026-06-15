@@ -28,6 +28,14 @@ from app.infra.secrets.vault import get_secrets
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+def _cookie_secure() -> bool:
+    """Secure cookies require HTTPS. Dev runs over HTTP (localhost) — only mark
+    the refresh cookie Secure in production so it actually persists in dev."""
+    from app.core.config import get_settings
+
+    return get_settings().environment == "production"
+
+
 class SignupRequest(StrictModel):
     company_name: str
     email: EmailStr
@@ -72,7 +80,7 @@ async def signup(body: SignupRequest, response: Response, session: SessionDep) -
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=True,
+        secure=_cookie_secure(),
         samesite="lax",
         max_age=7 * 24 * 3600,
         path="/api/v1/auth/refresh",
@@ -101,7 +109,7 @@ async def login(body: LoginRequest, response: Response, session: SessionDep) -> 
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=True,
+        secure=_cookie_secure(),
         samesite="lax",
         max_age=7 * 24 * 3600,
         path="/api/v1/auth/refresh",
@@ -137,7 +145,7 @@ async def refresh_token(
         key="refresh_token",
         value=new_refresh,
         httponly=True,
-        secure=True,
+        secure=_cookie_secure(),
         samesite="lax",
         max_age=7 * 24 * 3600,
         path="/api/v1/auth/refresh",

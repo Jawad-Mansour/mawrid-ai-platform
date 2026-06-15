@@ -14,12 +14,14 @@ export const apiClient = axios.create({
   withCredentials: true,
 });
 
+// localStorage so the session survives a page refresh AND new tabs (the refresh
+// cookie renews it after the 15-min access-token expiry).
 export function setToken(token: string | null) {
-  if (token) sessionStorage.setItem("access_token", token);
-  else sessionStorage.removeItem("access_token");
+  if (token) localStorage.setItem("access_token", token);
+  else localStorage.removeItem("access_token");
 }
 export function getToken(): string | null {
-  return sessionStorage.getItem("access_token");
+  return localStorage.getItem("access_token");
 }
 
 apiClient.interceptors.request.use((config) => {
@@ -43,8 +45,10 @@ apiClient.interceptors.response.use(
         original.headers.Authorization = `Bearer ${data.access_token}`;
         return apiClient(original);
       } catch {
+        // Clear the token and let the route guard redirect — a hard
+        // window.location redirect during a background query is jarring and
+        // can interrupt other in-flight requests.
         setToken(null);
-        if (!window.location.pathname.startsWith("/login")) window.location.href = "/login";
       }
     }
     return Promise.reject(error);

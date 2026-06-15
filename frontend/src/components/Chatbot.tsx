@@ -1,5 +1,5 @@
 // Feature: AI Chatbot — floating RAG assistant (admin scope)
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MessageCircle, X, Send, Sparkles } from "lucide-react";
 import { apiPost, apiErr } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -21,6 +21,24 @@ export function Chatbot() {
   const [busy, setBusy] = useState(false);
   const sessionId = useRef(crypto.randomUUID());
   const listRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // Click outside the widget (or Escape) minimizes it.
+  useEffect(() => {
+    if (!open) return;
+    function onDown(e: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onEsc(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onEsc);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onEsc);
+    };
+  }, [open]);
 
   async function send() {
     const query = q.trim();
@@ -43,7 +61,7 @@ export function Chatbot() {
   }
 
   return (
-    <>
+    <div ref={rootRef}>
       <button
         onClick={() => setOpen((o) => !o)}
         className="fixed bottom-6 right-6 z-40 grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-grape to-gold shadow-glow transition-transform hover:scale-105"
@@ -91,6 +109,6 @@ export function Chatbot() {
           </form>
         </div>
       )}
-    </>
+    </div>
   );
 }
