@@ -37,11 +37,21 @@ async def list_tools() -> list[Tool]:
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "purpose": {"type": "string", "description": "Brief description of email purpose"},
+                    "purpose": {
+                        "type": "string",
+                        "description": "Brief description of email purpose",
+                    },
                     "recipient_name": {"type": "string"},
                     "language": {"type": "string", "default": "en"},
-                    "tone": {"type": "string", "enum": ["gentle", "neutral", "firm"], "default": "neutral"},
-                    "context": {"type": "string", "description": "Background information for the draft"},
+                    "tone": {
+                        "type": "string",
+                        "enum": ["gentle", "neutral", "firm"],
+                        "default": "neutral",
+                    },
+                    "context": {
+                        "type": "string",
+                        "description": "Background information for the draft",
+                    },
                 },
                 "required": ["purpose", "context"],
             },
@@ -71,7 +81,11 @@ async def list_tools() -> list[Tool]:
                     "invoice_id": {"type": "string"},
                     "amount": {"type": "number"},
                     "days_overdue": {"type": "integer"},
-                    "tone": {"type": "string", "enum": ["gentle", "neutral", "firm"], "default": "neutral"},
+                    "tone": {
+                        "type": "string",
+                        "enum": ["gentle", "neutral", "firm"],
+                        "default": "neutral",
+                    },
                     "language": {"type": "string", "default": "en"},
                 },
                 "required": ["customer_name", "invoice_id", "amount", "days_overdue"],

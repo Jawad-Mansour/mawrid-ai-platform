@@ -53,6 +53,7 @@ def _get_model() -> dict[str, Any] | None:
         return None
     try:
         import joblib  # noqa: PLC0415
+
         _bundle = joblib.load(MODEL_PATH)
         logger.info("tone_classifier_loaded: %s", MODEL_PATH)
     except Exception as exc:
@@ -122,13 +123,17 @@ def classify(
     try:
         scaler = bundle["scaler"]
         clf = bundle["clf"]
-        feat = np.array([[
-            float(days_overdue),
-            float(_SEGMENT_MAP.get(customer_segment, 1)),
-            overdue_amount,
-            payment_history_score,
-            float(previous_dunning_count),
-        ]])
+        feat = np.array(
+            [
+                [
+                    float(days_overdue),
+                    float(_SEGMENT_MAP.get(customer_segment, 1)),
+                    overdue_amount,
+                    payment_history_score,
+                    float(previous_dunning_count),
+                ]
+            ]
+        )
         feat_scaled = scaler.transform(feat)
         label_int: int = int(clf.predict(feat_scaled)[0])
         proba: np.ndarray = clf.predict_proba(feat_scaled)[0]

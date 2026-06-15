@@ -148,11 +148,9 @@ class SearxngClient:
                 results = payload.get("results", [])
                 if not isinstance(results, list):
                     return []
-                return [
-                    str(r["url"])
-                    for r in results
-                    if isinstance(r, dict) and r.get("url")
-                ][:_TOP_URLS]
+                return [str(r["url"]) for r in results if isinstance(r, dict) and r.get("url")][
+                    :_TOP_URLS
+                ]
         except Exception as exc:
             logger.warning("searxng_search_failed", query=query, error=str(exc))
             return []
@@ -326,9 +324,7 @@ class SequentialEnrichmentPipeline:
             logger.warning("icecat_client_error", product=inp.product_name, error=str(exc))
 
         if icecat_data is not None:
-            icecat_specs, image_url, spec_count, confidence = _parse_icecat(
-                icecat_data, matched_by
-            )
+            icecat_specs, image_url, spec_count, confidence = _parse_icecat(icecat_data, matched_by)
             specs.update(icecat_specs)
             source = "icecat"
             logger.info(
@@ -360,9 +356,7 @@ class SequentialEnrichmentPipeline:
                 source = "web"
 
         # ── Steps 4 & 5: GPT-4o spec fill + description ───────────────────────
-        merged_specs, description = await _gpt4o_enrich(
-            inp.product_name, specs, web_text
-        )
+        merged_specs, description = await _gpt4o_enrich(inp.product_name, specs, web_text)
 
         # If confidence is still partial but we got decent specs now, bump it
         if confidence == "partial" and len(merged_specs) >= 3:  # noqa: PLR2004

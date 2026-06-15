@@ -74,9 +74,7 @@ class ExtractionResult:
 
 
 def _build_user_message(batch: list[dict[str, object]], start_idx: int) -> str:
-    rows_with_index = [
-        {"row_index": start_idx + i, **row} for i, row in enumerate(batch)
-    ]
+    rows_with_index = [{"row_index": start_idx + i, **row} for i, row in enumerate(batch)]
     return json.dumps(rows_with_index, ensure_ascii=False)
 
 
@@ -99,8 +97,12 @@ def _parse_response(
 
     for item in items:
         row_idx: int = int(str(item.get("_row_index", start_idx)))
-        original_row: dict[str, object] = batch[row_idx - start_idx] if 0 <= row_idx - start_idx < len(batch) else {}
-        failure_reason: str | None = str(item["_failure_reason"]) if item.get("_failure_reason") else None
+        original_row: dict[str, object] = (
+            batch[row_idx - start_idx] if 0 <= row_idx - start_idx < len(batch) else {}
+        )
+        failure_reason: str | None = (
+            str(item["_failure_reason"]) if item.get("_failure_reason") else None
+        )
         product_name: str | None = str(item["product_name"]) if item.get("product_name") else None
 
         if not product_name or failure_reason:
@@ -110,9 +112,7 @@ def _parse_response(
 
         specs_raw = item.get("specifications", {})
         specs: dict[str, str] = (
-            {str(k): str(v) for k, v in specs_raw.items()}
-            if isinstance(specs_raw, dict)
-            else {}
+            {str(k): str(v) for k, v in specs_raw.items()} if isinstance(specs_raw, dict) else {}
         )
 
         price_raw = item.get("price")
@@ -163,9 +163,7 @@ async def extract_rows(rows: list[dict[str, object]]) -> ExtractionResult:
             result.failed_rows.extend(failed)
         except Exception as exc:
             logger.error("extractor_batch_failed", start=batch_start, error=str(exc))
-            result.failed_rows.extend(
-                (row, f"LLM call failed: {exc}") for row in batch
-            )
+            result.failed_rows.extend((row, f"LLM call failed: {exc}") for row in batch)
 
     logger.info(
         "extractor_complete",

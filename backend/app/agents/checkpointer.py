@@ -21,9 +21,7 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
-THREAD_ID_PATTERN = re.compile(
-    r"^[a-zA-Z0-9_\-]+:[a-zA-Z0-9_\-]+:[a-f0-9\-]{36}$"
-)
+THREAD_ID_PATTERN = re.compile(r"^[a-zA-Z0-9_\-]+:[a-zA-Z0-9_\-]+:[a-f0-9\-]{36}$")
 CHECKPOINT_TTL_SECONDS = 86_400  # 24 hours
 
 
@@ -79,16 +77,13 @@ async def checkpointer_scope() -> AsyncIterator[Any]:
                 )
             )
             await saver.asetup()
-            logger.info(
-                "langgraph_checkpointer_created", extra={"ttl": CHECKPOINT_TTL_SECONDS}
-            )
+            logger.info("langgraph_checkpointer_created", extra={"ttl": CHECKPOINT_TTL_SECONDS})
         except Exception as exc:
             logger.error("langgraph_checkpointer_failed", extra={"error": str(exc)})
             from langgraph.checkpoint.memory import MemorySaver  # noqa: PLC0415
 
             logger.warning(
-                "langgraph_using_memory_checkpointer — state will not persist "
-                "across restarts"
+                "langgraph_using_memory_checkpointer — state will not persist across restarts"
             )
             saver = MemorySaver()
 

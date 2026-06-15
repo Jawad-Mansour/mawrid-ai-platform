@@ -89,9 +89,7 @@ async def upload_document(
     content_type: str,
 ) -> str:
     """Upload bytes to MinIO. Returns object path (tenant_id/object_name)."""
-    return await asyncio.to_thread(
-        _upload_sync, tenant_id, object_name, data, content_type
-    )
+    return await asyncio.to_thread(_upload_sync, tenant_id, object_name, data, content_type)
 
 
 async def upload_image(
@@ -100,9 +98,7 @@ async def upload_image(
     data: bytes,
 ) -> str:
     """Upload image bytes to MinIO. Returns object path."""
-    return await asyncio.to_thread(
-        _upload_sync, tenant_id, object_name, data, "image/png"
-    )
+    return await asyncio.to_thread(_upload_sync, tenant_id, object_name, data, "image/png")
 
 
 async def get_presigned_url(
@@ -111,9 +107,7 @@ async def get_presigned_url(
     expires_seconds: int = 3600,
 ) -> str:
     """Generate a presigned GET URL valid for expires_seconds."""
-    return await asyncio.to_thread(
-        _presign_sync, tenant_id, object_name, expires_seconds
-    )
+    return await asyncio.to_thread(_presign_sync, tenant_id, object_name, expires_seconds)
 
 
 async def download_bytes(tenant_id: str, object_name: str) -> bytes:

@@ -36,21 +36,21 @@ class TestComputePsi:
     def test_stable_psi_below_warning_threshold(self) -> None:
         rng = np.random.default_rng(1)
         baseline = rng.normal(0, 1, 2000)
-        current = rng.normal(0.05, 1, 2000)   # tiny mean shift
+        current = rng.normal(0.05, 1, 2000)  # tiny mean shift
         psi = compute_psi(baseline, current)
         assert psi < 0.10
 
     def test_moderate_shift_above_stable_threshold(self) -> None:
         rng = np.random.default_rng(2)
         baseline = rng.normal(0, 1, 2000)
-        current = rng.normal(0.4, 1, 2000)    # 0.4-sigma mean shift → above 0.10
+        current = rng.normal(0.4, 1, 2000)  # 0.4-sigma mean shift → above 0.10
         psi = compute_psi(baseline, current)
         assert psi >= 0.10
 
     def test_severe_shift_above_threshold(self) -> None:
         rng = np.random.default_rng(3)
         baseline = rng.normal(0, 1, 2000)
-        current = rng.normal(4.0, 1, 2000)    # 4-sigma shift → clearly drifted
+        current = rng.normal(4.0, 1, 2000)  # 4-sigma shift → clearly drifted
         psi = compute_psi(baseline, current)
         assert psi >= 0.20
 
@@ -85,13 +85,13 @@ class TestComputeChiSquare:
 
     def test_heavily_shifted_distribution_low_p_value(self) -> None:
         baseline = {"cat": 300, "dog": 300, "fish": 300}
-        current = {"cat": 500, "dog": 50, "fish": 50}   # massive shift
+        current = {"cat": 500, "dog": 50, "fish": 50}  # massive shift
         stat, pval = compute_chi_square(baseline, current)
         assert pval < 0.01
 
     def test_missing_key_in_current_counts_as_zero(self) -> None:
         baseline = {"a": 100, "b": 100, "c": 100}
-        current = {"a": 100, "b": 100}           # "c" missing → treated as 0
+        current = {"a": 100, "b": 100}  # "c" missing → treated as 0
         stat, pval = compute_chi_square(baseline, current)
         assert stat >= 0.0
 
@@ -172,17 +172,13 @@ class TestCheckIntentClassifierDrift:
         proba = rng.dirichlet(np.ones(8), size=100)
         baseline_counts = {f"cls_{i}": 100 for i in range(8)}
         drifted_counts = {f"cls_{i}": (500 if i == 0 else 10) for i in range(8)}
-        results = check_intent_classifier_drift(
-            proba, proba, baseline_counts, drifted_counts
-        )
+        results = check_intent_classifier_drift(proba, proba, baseline_counts, drifted_counts)
         chi_sq_results = [r for r in results if r.metric_type == "chi_square"]
         assert len(chi_sq_results) == 1
         assert chi_sq_results[0].status in ("warning", "severe")
 
     def test_empty_arrays_produce_no_psi_results(self) -> None:
-        results = check_intent_classifier_drift(
-            np.empty((0, 8)), np.empty((0, 8))
-        )
+        results = check_intent_classifier_drift(np.empty((0, 8)), np.empty((0, 8)))
         assert results == []
 
 

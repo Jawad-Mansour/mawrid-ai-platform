@@ -12,6 +12,18 @@ HITL:     None.
 
 from __future__ import annotations
 
+from unittest.mock import patch
+
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def _rules_only():
+    """Exercise the deterministic priority rules only — pin the ML model off so a
+    locally-trained tone_classifier.pkl can't change rule-boundary outcomes."""
+    with patch("app.ml.tone.classifier._get_model", return_value=None):
+        yield
+
 
 class TestPriorityRule1:
     """P1: days_overdue <= 7 → gentle (overrides everything)."""

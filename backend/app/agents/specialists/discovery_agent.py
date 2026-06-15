@@ -25,8 +25,16 @@ from langchain_core.messages import AIMessage
 logger = logging.getLogger(__name__)
 
 _CATEGORY_KEYWORDS = [
-    "appliance", "electronics", "food", "beverage", "cleaning", "dairy",
-    "personal care", "frozen", "clothing", "pharmaceutical",
+    "appliance",
+    "electronics",
+    "food",
+    "beverage",
+    "cleaning",
+    "dairy",
+    "personal care",
+    "frozen",
+    "clothing",
+    "pharmaceutical",
 ]
 
 
@@ -37,7 +45,9 @@ def _parse_discovery_params(task: str) -> tuple[str, str]:
 
     # Use the full task as product_name if we can't parse a specific product
     # Remove common filler words
-    product_name = re.sub(r"\b(find|search|discover|new|supplier|for|a|an|the)\b", "", task_lower).strip()
+    product_name = re.sub(
+        r"\b(find|search|discover|new|supplier|for|a|an|the)\b", "", task_lower
+    ).strip()
     product_name = product_name[:80] or task[:80]  # cap length
 
     return product_name, category
@@ -94,8 +104,7 @@ async def run(state: AgentState) -> AgentState:
     except Exception as exc:
         logger.warning("discovery_specialist_failed", extra={"error": str(exc)})
         result = (
-            f"Discovery error for {category!r}: {exc!s}. "
-            "Manual search: POST /suppliers/discover"
+            f"Discovery error for {category!r}: {exc!s}. Manual search: POST /suppliers/discover"
         )
         new_action_ids = state.get("hitl_action_ids", [])
 

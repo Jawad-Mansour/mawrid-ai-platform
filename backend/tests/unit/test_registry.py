@@ -38,7 +38,7 @@ class TestComputeSha256:
         assert compute_sha256(f) == expected
 
     def test_large_file_chunked(self, tmp_path: Path) -> None:
-        content = b"x" * 200_000   # larger than 64 KiB chunk size
+        content = b"x" * 200_000  # larger than 64 KiB chunk size
         expected = hashlib.sha256(content).hexdigest()
         f = tmp_path / "large.pkl"
         f.write_bytes(content)
@@ -95,18 +95,12 @@ class TestChampionChallengerGate:
     def test_lower_is_better_better_mae_passes(self) -> None:
         new = {"test_mae": 3.5}
         champion = {"test_mae": 4.0}
-        assert (
-            champion_challenger_gate(new, champion, "test_mae", higher_is_better=False)
-            is True
-        )
+        assert champion_challenger_gate(new, champion, "test_mae", higher_is_better=False) is True
 
     def test_lower_is_better_worse_mae_rejected(self) -> None:
         new = {"test_mae": 5.0}
         champion = {"test_mae": 4.0}
-        assert (
-            champion_challenger_gate(new, champion, "test_mae", higher_is_better=False)
-            is False
-        )
+        assert champion_challenger_gate(new, champion, "test_mae", higher_is_better=False) is False
 
     def test_missing_new_metric_rejected(self) -> None:
         assert champion_challenger_gate({}, {"weighted_f1": 0.88}, "weighted_f1") is False

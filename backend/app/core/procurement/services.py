@@ -60,9 +60,7 @@ def compute_order_total(line_items: list[dict[str, Any]]) -> float:
     return total
 
 
-def detect_discrepancy(
-    line_items: list[dict[str, Any]], received: list[ReceiveItem]
-) -> bool:
+def detect_discrepancy(line_items: list[dict[str, Any]], received: list[ReceiveItem]) -> bool:
     """Returns True if any product was received more than 5% short."""
     received_map = {r.product_id: r.qty_received for r in received}
     for item in line_items:
@@ -76,10 +74,7 @@ def detect_discrepancy(
 
 def stock_delta(received: list[ReceiveItem]) -> dict[str, int]:
     """Returns {product_id: net_qty_to_add} where net = received - damaged."""
-    return {
-        r.product_id: max(0, r.qty_received - r.qty_damaged)
-        for r in received
-    }
+    return {r.product_id: max(0, r.qty_received - r.qty_damaged) for r in received}
 
 
 # ── Unit-testable service functions ──────────────────────────────────────────

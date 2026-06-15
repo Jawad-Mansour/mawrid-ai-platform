@@ -30,9 +30,7 @@ class Customer(TenantMixin, Base):
     # ISO 639-1 language code — used for dunning message drafting
     language: Mapped[str] = mapped_column(Text, nullable=False, server_default="en")
     # Running count of dunning messages sent — resets on payment; used by tone classifier
-    previous_dunning_count: Mapped[int] = mapped_column(
-        Integer, nullable=False, server_default="0"
-    )
+    previous_dunning_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
 
     __table_args__ = (
         UniqueConstraint("tenant_id", "email", name="uq_customer_email_per_tenant"),

@@ -37,16 +37,16 @@ _THRESHOLDS_PATH = (
 @dataclass
 class DriftResult:
     model_name: str
-    metric_type: str          # "psi" | "chi_square" | "cosine"
+    metric_type: str  # "psi" | "chi_square" | "cosine"
     metric_value: float
-    status: str               # "ok" | "warning" | "severe"
+    status: str  # "ok" | "warning" | "severe"
     details: str = ""
 
 
 @dataclass
 class DriftReport:
     results: list[DriftResult] = field(default_factory=list)
-    overall_status: str = "ok"   # "ok" | "warning" | "severe"
+    overall_status: str = "ok"  # "ok" | "warning" | "severe"
     checked_models: list[str] = field(default_factory=list)
 
 
@@ -125,9 +125,7 @@ def compute_cosine_drift(
     norm_c = float(np.linalg.norm(current_centroid))
     if norm_b < 1e-10 or norm_c < 1e-10:
         return 0.0
-    cosine_similarity = float(
-        np.dot(baseline_centroid, current_centroid) / (norm_b * norm_c)
-    )
+    cosine_similarity = float(np.dot(baseline_centroid, current_centroid) / (norm_b * norm_c))
     return 1.0 - cosine_similarity
 
 
@@ -174,24 +172,28 @@ def check_intent_classifier_drift(
         n_classes = baseline_proba.shape[1]
         for col in range(n_classes):
             psi = compute_psi(baseline_proba[:, col], current_proba[:, col])
-            results.append(DriftResult(
-                model_name="intent_classifier",
-                metric_type="psi",
-                metric_value=round(psi, 4),
-                status=_psi_status(psi, thresholds),
-                details=f"class_{col}_confidence_psi={psi:.4f}",
-            ))
+            results.append(
+                DriftResult(
+                    model_name="intent_classifier",
+                    metric_type="psi",
+                    metric_value=round(psi, 4),
+                    status=_psi_status(psi, thresholds),
+                    details=f"class_{col}_confidence_psi={psi:.4f}",
+                )
+            )
 
     if baseline_label_counts and current_label_counts:
         stat, pval = compute_chi_square(baseline_label_counts, current_label_counts)
         status = "severe" if pval < 0.01 else ("warning" if pval < 0.05 else "ok")
-        results.append(DriftResult(
-            model_name="intent_classifier",
-            metric_type="chi_square",
-            metric_value=round(stat, 4),
-            status=status,
-            details=f"label_distribution chi2={stat:.4f} p={pval:.4f}",
-        ))
+        results.append(
+            DriftResult(
+                model_name="intent_classifier",
+                metric_type="chi_square",
+                metric_value=round(stat, 4),
+                status=status,
+                details=f"label_distribution chi2={stat:.4f} p={pval:.4f}",
+            )
+        )
 
     return results
 
@@ -212,13 +214,15 @@ def check_tone_classifier_drift(
         n_classes = baseline_proba.shape[1]
         for col in range(n_classes):
             psi = compute_psi(baseline_proba[:, col], current_proba[:, col])
-            results.append(DriftResult(
-                model_name="tone_classifier",
-                metric_type="psi",
-                metric_value=round(psi, 4),
-                status=_psi_status(psi, thresholds),
-                details=f"class_{col}_confidence_psi={psi:.4f}",
-            ))
+            results.append(
+                DriftResult(
+                    model_name="tone_classifier",
+                    metric_type="psi",
+                    metric_value=round(psi, 4),
+                    status=_psi_status(psi, thresholds),
+                    details=f"class_{col}_confidence_psi={psi:.4f}",
+                )
+            )
 
     return results
 
@@ -326,7 +330,9 @@ if __name__ == "__main__":  # pragma: no cover
     import sys
 
     parser = argparse.ArgumentParser(description="Mawrid nightly drift monitor — Gate 9")
-    parser.add_argument("--config", help="Path to drift_thresholds.yaml (unused; thresholds auto-loaded)")
+    parser.add_argument(
+        "--config", help="Path to drift_thresholds.yaml (unused; thresholds auto-loaded)"
+    )
     parser.add_argument("--output", help="Output JSON path", default=None)
     args = parser.parse_args()
 

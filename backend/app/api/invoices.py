@@ -311,9 +311,9 @@ async def generate_invoice_pdf(
         consumer_name=invoice.contact_name or "Valued Customer",
         consumer_email=invoice.contact_email or "",
         consumer_address="",
-        items=line_items if line_items else [
-            InvoiceLineItem("Order items", 1, float(invoice.amount_due))
-        ],
+        items=line_items
+        if line_items
+        else [InvoiceLineItem("Order items", 1, float(invoice.amount_due))],
     )
 
     pdf_bytes = generate_invoice_pdf(inv_data)

@@ -90,7 +90,9 @@ async def match_or_create_customer(
     if email:
         existing = await repo.get_by_email(email)
         if existing:
-            logger.info("customer_match_email", tenant_id=tenant_id, customer_id=existing.customer_id)
+            logger.info(
+                "customer_match_email", tenant_id=tenant_id, customer_id=existing.customer_id
+            )
             return CustomerMatchResult(
                 match_type="email",
                 customer_id=existing.customer_id,
@@ -101,7 +103,9 @@ async def match_or_create_customer(
     if phone:
         existing = await repo.get_by_phone(phone)
         if existing:
-            logger.info("customer_match_phone", tenant_id=tenant_id, customer_id=existing.customer_id)
+            logger.info(
+                "customer_match_phone", tenant_id=tenant_id, customer_id=existing.customer_id
+            )
             return CustomerMatchResult(
                 match_type="phone",
                 customer_id=existing.customer_id,
@@ -128,9 +132,7 @@ async def match_or_create_customer(
 
     if best_score >= 0.3 and best_id:
         action_id = str(uuid.uuid4())
-        candidate_name = next(
-            (c.name for c in all_customers if c.customer_id == best_id), ""
-        )
+        candidate_name = next((c.name for c in all_customers if c.customer_id == best_id), "")
         await hitl_repo.create(
             action_id=action_id,
             action_type="customer_match_review",

@@ -131,8 +131,7 @@ async def trigger_track1(
         # HITL action
         action_id = uuid.uuid4().hex
         subject = (
-            f"Payment Reminder — Invoice {invoice.invoice_id} "
-            f"(Due: {invoice.due_date.isoformat()})"
+            f"Payment Reminder — Invoice {invoice.invoice_id} (Due: {invoice.due_date.isoformat()})"
         )
         await hitl_repo.create(
             action_id=action_id,
@@ -354,10 +353,7 @@ async def trigger_track3(
             continue
 
         action_id = uuid.uuid4().hex
-        subject = (
-            f"Payment Reminder ({step.replace('day', 'Day ')}) — "
-            f"Invoice {invoice.invoice_id}"
-        )
+        subject = f"Payment Reminder ({step.replace('day', 'Day ')}) — Invoice {invoice.invoice_id}"
         await hitl_repo.create(
             action_id=action_id,
             action_type=action_type,

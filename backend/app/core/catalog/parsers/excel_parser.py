@@ -45,8 +45,7 @@ def _parse_sync(excel_bytes: bytes) -> ParseResult:
     header_row_idx: int | None = None
     for row_idx in range(1, ws.max_row + 1):
         candidate = [
-            str(_cell_value(row_idx, col) or "").strip()
-            for col in range(1, ws.max_column + 1)
+            str(_cell_value(row_idx, col) or "").strip() for col in range(1, ws.max_column + 1)
         ]
         if any(candidate):
             headers = [h or f"col_{i}" for i, h in enumerate(candidate)]
@@ -57,15 +56,12 @@ def _parse_sync(excel_bytes: bytes) -> ParseResult:
     if header_row_idx is not None:
         for row_idx in range(header_row_idx + 1, ws.max_row + 1):
             cells = [
-                str(_cell_value(row_idx, col) or "").strip()
-                for col in range(1, ws.max_column + 1)
+                str(_cell_value(row_idx, col) or "").strip() for col in range(1, ws.max_column + 1)
             ]
             if any(cells):
                 rows.append(dict(zip(headers, cells, strict=False)))
 
-    full_text = "\n".join(
-        " | ".join(str(v) for v in row.values()) for row in rows
-    )
+    full_text = "\n".join(" | ".join(str(v) for v in row.values()) for row in rows)
 
     return ParseResult(
         full_text=full_text,

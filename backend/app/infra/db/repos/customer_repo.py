@@ -52,9 +52,7 @@ class CustomerRepository(TenantRepository):
                 self._tenant_filter(Customer),
                 Customer.customer_id == customer_id,
             )
-            .values(
-                previous_dunning_count=text("previous_dunning_count + 1")
-            )
+            .values(previous_dunning_count=text("previous_dunning_count + 1"))
         )
 
     async def reset_dunning_count(self, customer_id: str) -> None:

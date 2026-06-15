@@ -27,20 +27,24 @@ class TestExtractor:
         rows: list[dict[str, object]] = [
             {"product_name": "Samsung Galaxy S24 Ultra", "price": "1199.99", "sku": "SGS24U"}
         ]
-        llm_response = json.dumps([
-            {
-                "row_index": 0,
-                "product_name": "Samsung Galaxy S24 Ultra",
-                "sku": "SGS24U",
-                "barcode": None,
-                "price": 1199.99,
-                "currency": "USD",
-                "specifications": {"RAM": "12GB", "Storage": "256GB"},
-                "_failure_reason": None,
-            }
-        ])
+        llm_response = json.dumps(
+            [
+                {
+                    "row_index": 0,
+                    "product_name": "Samsung Galaxy S24 Ultra",
+                    "sku": "SGS24U",
+                    "barcode": None,
+                    "price": 1199.99,
+                    "currency": "USD",
+                    "specifications": {"RAM": "12GB", "Storage": "256GB"},
+                    "_failure_reason": None,
+                }
+            ]
+        )
 
-        with patch("app.core.catalog.extractor.chat_completion", new=AsyncMock(return_value=llm_response)):
+        with patch(
+            "app.core.catalog.extractor.chat_completion", new=AsyncMock(return_value=llm_response)
+        ):
             result = await extract_rows(rows)
 
         assert len(result.products) == 1
@@ -54,20 +58,24 @@ class TestExtractor:
         from app.core.catalog.extractor import extract_rows
 
         rows: list[dict[str, object]] = [{"اسم المنتج": "تلفزيون سامسونج 55 بوصة", "السعر": "750"}]
-        llm_response = json.dumps([
-            {
-                "row_index": 0,
-                "product_name": "تلفزيون سامسونج 55 بوصة",
-                "sku": None,
-                "barcode": None,
-                "price": 750.0,
-                "currency": None,
-                "specifications": {"Screen Size": "55 inch"},
-                "_failure_reason": None,
-            }
-        ])
+        llm_response = json.dumps(
+            [
+                {
+                    "row_index": 0,
+                    "product_name": "تلفزيون سامسونج 55 بوصة",
+                    "sku": None,
+                    "barcode": None,
+                    "price": 750.0,
+                    "currency": None,
+                    "specifications": {"Screen Size": "55 inch"},
+                    "_failure_reason": None,
+                }
+            ]
+        )
 
-        with patch("app.core.catalog.extractor.chat_completion", new=AsyncMock(return_value=llm_response)):
+        with patch(
+            "app.core.catalog.extractor.chat_completion", new=AsyncMock(return_value=llm_response)
+        ):
             result = await extract_rows(rows)
 
         assert len(result.products) == 1
@@ -79,20 +87,24 @@ class TestExtractor:
         from app.core.catalog.extractor import extract_rows
 
         rows: list[dict[str, object]] = [{"col_0": "", "col_1": "123.00"}]
-        llm_response = json.dumps([
-            {
-                "row_index": 0,
-                "product_name": None,
-                "sku": None,
-                "barcode": None,
-                "price": 123.0,
-                "currency": None,
-                "specifications": {},
-                "_failure_reason": "No product name found in row",
-            }
-        ])
+        llm_response = json.dumps(
+            [
+                {
+                    "row_index": 0,
+                    "product_name": None,
+                    "sku": None,
+                    "barcode": None,
+                    "price": 123.0,
+                    "currency": None,
+                    "specifications": {},
+                    "_failure_reason": "No product name found in row",
+                }
+            ]
+        )
 
-        with patch("app.core.catalog.extractor.chat_completion", new=AsyncMock(return_value=llm_response)):
+        with patch(
+            "app.core.catalog.extractor.chat_completion", new=AsyncMock(return_value=llm_response)
+        ):
             result = await extract_rows(rows)
 
         assert len(result.products) == 0
@@ -140,23 +152,25 @@ class TestExtractor:
         """Specification keys must be in English regardless of source language."""
         from app.core.catalog.extractor import extract_rows
 
-        rows: list[dict[str, object]] = [
-            {"المنتج": "كمبيوتر محمول ديل", "الذاكرة": "16 جيجابايت"}
-        ]
-        llm_response = json.dumps([
-            {
-                "row_index": 0,
-                "product_name": "كمبيوتر محمول ديل",
-                "sku": None,
-                "barcode": None,
-                "price": None,
-                "currency": None,
-                "specifications": {"RAM": "16GB", "Brand": "Dell"},
-                "_failure_reason": None,
-            }
-        ])
+        rows: list[dict[str, object]] = [{"المنتج": "كمبيوتر محمول ديل", "الذاكرة": "16 جيجابايت"}]
+        llm_response = json.dumps(
+            [
+                {
+                    "row_index": 0,
+                    "product_name": "كمبيوتر محمول ديل",
+                    "sku": None,
+                    "barcode": None,
+                    "price": None,
+                    "currency": None,
+                    "specifications": {"RAM": "16GB", "Brand": "Dell"},
+                    "_failure_reason": None,
+                }
+            ]
+        )
 
-        with patch("app.core.catalog.extractor.chat_completion", new=AsyncMock(return_value=llm_response)):
+        with patch(
+            "app.core.catalog.extractor.chat_completion", new=AsyncMock(return_value=llm_response)
+        ):
             result = await extract_rows(rows)
 
         assert len(result.products) == 1

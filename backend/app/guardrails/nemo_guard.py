@@ -134,9 +134,9 @@ class NeMoGuard:
         if not template:
             return True, ""
 
-        prompt = template.replace(
-            "{{ context }}", context[:4000]
-        ).replace("{{ bot_response }}", response)  # cap context for token budget
+        prompt = template.replace("{{ context }}", context[:4000]).replace(
+            "{{ bot_response }}", response
+        )  # cap context for token budget
         try:
             from app.infra.llm.openai import chat_completion  # noqa: PLC0415
 

@@ -27,8 +27,8 @@ logger = logging.getLogger(__name__)
 class ModelRecord:
     name: str
     version: str
-    stage: str            # "staging" | "production" | "archived"
-    sha256_hash: str      # empty string if not tagged
+    stage: str  # "staging" | "production" | "archived"
+    sha256_hash: str  # empty string if not tagged
     metrics: dict[str, float] = field(default_factory=dict)
 
 
@@ -93,11 +93,7 @@ def champion_challenger_gate(
         )
         return False
 
-    passes = (
-        new_val >= champ_val - 0.001
-        if higher_is_better
-        else new_val <= champ_val + 0.001
-    )
+    passes = new_val >= champ_val - 0.001 if higher_is_better else new_val <= champ_val + 0.001
     logger.info(
         "champion_challenger_gate: metric=%s new=%.4f champion=%.4f higher_is_better=%s passes=%s",
         metric_key,
@@ -185,9 +181,7 @@ def promote_model(
             client.transition_model_version_stage(name, champion.version, "Archived")
 
         client.transition_model_version_stage(name, version, "Production")
-        logger.info(
-            "promote_model: '%s' version %s promoted to Production", name, version
-        )
+        logger.info("promote_model: '%s' version %s promoted to Production", name, version)
         return True
     except Exception as exc:
         logger.error("promote_model_failed: name=%s error=%s", name, exc)

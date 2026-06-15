@@ -54,7 +54,9 @@ async def run(state: AgentState) -> AgentState:
         from app.core.config import get_settings  # noqa: PLC0415
 
         settings = get_settings()
-        pool = await arq.create_pool(arq.connections.RedisSettings.from_dsn(str(settings.redis_url)))
+        pool = await arq.create_pool(
+            arq.connections.RedisSettings.from_dsn(str(settings.redis_url))
+        )
         job = await pool.enqueue_job(
             "enrich_document",
             document_id=document_id,
@@ -63,10 +65,7 @@ async def run(state: AgentState) -> AgentState:
         job_id = getattr(job, "job_id", "unknown") if job else "unknown"
         await pool.aclose()
 
-        result = (
-            f"Extraction job queued. "
-            f"Document: {document_id[:12]}... | ARQ Job: {job_id}"
-        )
+        result = f"Extraction job queued. Document: {document_id[:12]}... | ARQ Job: {job_id}"
     except Exception as exc:
         logger.warning("extraction_specialist_arq_failed", extra={"error": str(exc)})
         result = (

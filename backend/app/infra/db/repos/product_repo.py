@@ -126,8 +126,7 @@ class ProductRepository(TenantRepository):
     async def list_reorder_needed(self) -> list[Product]:
         """Return products whose qty_in_stock has fallen to or below reorder_threshold."""
         result = await self._session.execute(
-            select(Product)
-            .where(
+            select(Product).where(
                 self._tenant_filter(Product),
                 Product.reorder_threshold.isnot(None),
                 Product.qty_in_stock <= Product.reorder_threshold,

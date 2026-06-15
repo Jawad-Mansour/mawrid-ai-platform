@@ -166,7 +166,9 @@ async def stripe_payment_webhook(
         ) from exc
 
     if event.get("type") != "payment_intent.succeeded":
-        return WebhookResponse(status="ignored", detail=f"event type {event.get('type')} not handled")
+        return WebhookResponse(
+            status="ignored", detail=f"event type {event.get('type')} not handled"
+        )
 
     metadata: dict[str, Any] = event.get("data", {}).get("object", {}).get("metadata", {})
     tenant_id: str = metadata.get("tenant_id", "")

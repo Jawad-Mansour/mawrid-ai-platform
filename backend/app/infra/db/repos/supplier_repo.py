@@ -53,9 +53,7 @@ class SupplierRepository(TenantRepository):
 
     async def list_all(self) -> list[Supplier]:
         result = await self._session.execute(
-            select(Supplier)
-            .where(self._tenant_filter(Supplier))
-            .order_by(Supplier.name)
+            select(Supplier).where(self._tenant_filter(Supplier)).order_by(Supplier.name)
         )
         return list(result.scalars().all())
 

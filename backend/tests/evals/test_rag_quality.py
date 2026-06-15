@@ -83,6 +83,4 @@ async def test_rag_context_recall_above_threshold() -> None:
     from tests.evals.helpers.rag_evaluator import evaluate_rag_context_recall
 
     score = await evaluate_rag_context_recall()
-    assert score >= min_recall, (
-        f"RAG context recall {score:.3f} below threshold {min_recall}"
-    )
+    assert score >= min_recall, f"RAG context recall {score:.3f} below threshold {min_recall}"

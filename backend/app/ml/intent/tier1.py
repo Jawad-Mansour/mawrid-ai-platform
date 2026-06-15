@@ -39,9 +39,7 @@ INTENT_CLASSES = [
 
 CONFIDENCE_THRESHOLD = 0.70  # below this → escalate to Tier 2
 
-MODEL_PATH = (
-    Path(__file__).parent.parent.parent.parent / "ml_models" / "intent_tier1.pkl"
-)
+MODEL_PATH = Path(__file__).parent.parent.parent.parent / "ml_models" / "intent_tier1.pkl"
 
 _pipeline: Pipeline | None = None
 
@@ -62,6 +60,7 @@ def _load_or_build() -> Pipeline:
     if MODEL_PATH.exists():
         try:
             import joblib  # noqa: PLC0415
+
             _pipeline = joblib.load(MODEL_PATH)
             logger.info("intent_tier1_model_loaded", extra={"path": str(MODEL_PATH)})
             return _pipeline
@@ -79,7 +78,10 @@ def _train_in_memory() -> Pipeline:
 
     data_path = (
         Path(__file__).parent.parent.parent.parent
-        / "tests" / "evals" / "eval_dataset" / "intent_training_data.json"
+        / "tests"
+        / "evals"
+        / "eval_dataset"
+        / "intent_training_data.json"
     )
     if not data_path.exists():
         logger.warning("intent_training_data_not_found — using empty model")
@@ -103,29 +105,31 @@ def _train_in_memory() -> Pipeline:
 
 
 def _build_pipeline() -> Pipeline:
-    return Pipeline([
-        (
-            "tfidf",
-            TfidfVectorizer(
-                analyzer="word",
-                ngram_range=(1, 2),
-                max_features=30_000,
-                sublinear_tf=True,
-                strip_accents="unicode",
-                lowercase=True,
+    return Pipeline(
+        [
+            (
+                "tfidf",
+                TfidfVectorizer(
+                    analyzer="word",
+                    ngram_range=(1, 2),
+                    max_features=30_000,
+                    sublinear_tf=True,
+                    strip_accents="unicode",
+                    lowercase=True,
+                ),
             ),
-        ),
-        (
-            "lr",
-            LogisticRegression(
-                C=5.0,
-                max_iter=1000,
-                solver="lbfgs",
-                random_state=42,
-                n_jobs=-1,
+            (
+                "lr",
+                LogisticRegression(
+                    C=5.0,
+                    max_iter=1000,
+                    solver="lbfgs",
+                    random_state=42,
+                    n_jobs=-1,
+                ),
             ),
-        ),
-    ])
+        ]
+    )
 
 
 def predict(text: str) -> Tier1Result:

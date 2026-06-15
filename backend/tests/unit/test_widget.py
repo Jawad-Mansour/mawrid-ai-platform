@@ -36,10 +36,14 @@ def _generate_test_keys() -> tuple[str, str]:
         serialization.PrivateFormat.TraditionalOpenSSL,
         serialization.NoEncryption(),
     ).decode()
-    pub_pem = private.public_key().public_bytes(
-        serialization.Encoding.PEM,
-        serialization.PublicFormat.SubjectPublicKeyInfo,
-    ).decode()
+    pub_pem = (
+        private.public_key()
+        .public_bytes(
+            serialization.Encoding.PEM,
+            serialization.PublicFormat.SubjectPublicKeyInfo,
+        )
+        .decode()
+    )
     return priv_pem, pub_pem
 
 
@@ -224,7 +228,10 @@ class TestWidgetChat:
         with (
             patch("app.api.widget.get_secrets", return_value=self._mock_secrets()),
             patch("app.api.widget.TenantRepo", return_value=mock_repo),
-            patch("app.api.widget.run_rag", new=AsyncMock(return_value=MagicMock(answer="Great product!"))),
+            patch(
+                "app.api.widget.run_rag",
+                new=AsyncMock(return_value=MagicMock(answer="Great product!")),
+            ),
         ):
             app.dependency_overrides[get_session] = lambda: mock_session
             with TestClient(app, raise_server_exceptions=False) as client:

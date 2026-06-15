@@ -35,7 +35,11 @@ async def list_tools() -> list[Tool]:
                 "type": "object",
                 "properties": {
                     "tenant_id": {"type": "string"},
-                    "prefix": {"type": "string", "default": "docs/", "description": "MinIO path prefix"},
+                    "prefix": {
+                        "type": "string",
+                        "default": "docs/",
+                        "description": "MinIO path prefix",
+                    },
                     "limit": {"type": "integer", "default": 20},
                 },
                 "required": ["tenant_id"],
@@ -48,7 +52,10 @@ async def list_tools() -> list[Tool]:
                 "type": "object",
                 "properties": {
                     "tenant_id": {"type": "string"},
-                    "object_path": {"type": "string", "description": "MinIO object path within tenant bucket"},
+                    "object_path": {
+                        "type": "string",
+                        "description": "MinIO object path within tenant bucket",
+                    },
                     "expires_in_seconds": {"type": "integer", "default": 900},
                 },
                 "required": ["tenant_id", "object_path"],
@@ -94,11 +101,13 @@ async def _list_documents(tenant_id: str, prefix: str, limit: int) -> list[dict[
         for i, obj in enumerate(objects_iter):
             if i >= limit:
                 break
-            results.append({
-                "object_name": obj.object_name,
-                "size": obj.size,
-                "last_modified": str(obj.last_modified),
-            })
+            results.append(
+                {
+                    "object_name": obj.object_name,
+                    "size": obj.size,
+                    "last_modified": str(obj.last_modified),
+                }
+            )
         return results
     except Exception as exc:
         logger.warning("filesystem_list_failed", extra={"error": str(exc)})

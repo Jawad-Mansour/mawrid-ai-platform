@@ -36,9 +36,7 @@ INTENT_CLASSES = [
 ]
 
 CONFIDENCE_THRESHOLD = 0.80  # below this → escalate to Tier 3
-MODEL_DIR = (
-    Path(__file__).parent.parent.parent.parent / "ml_models" / "intent_tier2"
-)
+MODEL_DIR = Path(__file__).parent.parent.parent.parent / "ml_models" / "intent_tier2"
 
 _session: object | None = None  # onnxruntime.InferenceSession
 _tokenizer: object | None = None  # AutoTokenizer
@@ -89,6 +87,7 @@ def _try_load() -> bool:
         label_map_path = MODEL_DIR / "label_map.json"
         if label_map_path.exists():
             import json  # noqa: PLC0415
+
             raw: dict[str, str] = json.loads(label_map_path.read_text(encoding="utf-8"))
             _label_map = {int(k): v for k, v in raw.items()}
         else:
@@ -128,10 +127,13 @@ def predict(text: str) -> Tier2Result | None:
         )
 
         import onnxruntime as ort  # noqa: PLC0415
+
         session = _session
         assert isinstance(session, ort.InferenceSession)
 
-        ort_inputs = {k: v for k, v in inputs.items() if k in [i.name for i in session.get_inputs()]}
+        ort_inputs = {
+            k: v for k, v in inputs.items() if k in [i.name for i in session.get_inputs()]
+        }
         outputs = session.run(None, ort_inputs)
         logits: np.ndarray = outputs[0][0]
 

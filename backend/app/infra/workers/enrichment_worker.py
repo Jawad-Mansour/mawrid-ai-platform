@@ -136,9 +136,7 @@ async def startup(ctx: dict[str, object]) -> None:
     """Load Vault secrets and create DB session factory once per worker process."""
     settings = get_settings()
     load_secrets(settings)
-    engine: AsyncEngine = create_async_engine(
-        settings.database_url, echo=False, pool_pre_ping=True
-    )
+    engine: AsyncEngine = create_async_engine(settings.database_url, echo=False, pool_pre_ping=True)
     ctx["engine"] = engine
     ctx["session_factory"] = async_sessionmaker(engine, expire_on_commit=False)
     logger.info("enrichment_worker_started")
@@ -158,9 +156,7 @@ class WorkerSettings:
     functions = [enrich_product]
     on_startup = startup
     on_shutdown = shutdown
-    redis_settings = RedisSettings.from_dsn(
-        os.environ.get("REDIS_URL", "redis://localhost:6379/0")
-    )
+    redis_settings = RedisSettings.from_dsn(os.environ.get("REDIS_URL", "redis://localhost:6379/0"))
     job_timeout = 300
     max_jobs = 10
     max_tries = 3

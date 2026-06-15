@@ -27,14 +27,10 @@ depends_on = None
 def upgrade() -> None:
     # ── products: enrichment output columns ──────────────────────────────────
     op.add_column("products", sa.Column("description", sa.Text, nullable=True))
-    op.add_column(
-        "products", sa.Column("specifications", postgresql.JSONB, nullable=True)
-    )
+    op.add_column("products", sa.Column("specifications", postgresql.JSONB, nullable=True))
     op.add_column("products", sa.Column("image_path", sa.Text, nullable=True))
     op.add_column("products", sa.Column("enrichment_source", sa.Text, nullable=True))
-    op.add_column(
-        "products", sa.Column("enrichment_confidence", sa.Text, nullable=True)
-    )
+    op.add_column("products", sa.Column("enrichment_confidence", sa.Text, nullable=True))
     op.add_column("products", sa.Column("currency", sa.Text, nullable=True))
 
     # ── documents ─────────────────────────────────────────────────────────────
@@ -65,9 +61,7 @@ def upgrade() -> None:
         sa.Column("document_id", sa.Text, nullable=False, index=True),
         sa.Column("raw_row", postgresql.JSONB, nullable=False),
         sa.Column("failure_reason", sa.Text, nullable=False),
-        sa.Column(
-            "status", sa.Text, nullable=False, server_default="pending_review"
-        ),
+        sa.Column("status", sa.Text, nullable=False, server_default="pending_review"),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),

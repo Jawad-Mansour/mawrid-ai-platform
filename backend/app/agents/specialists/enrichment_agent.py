@@ -24,7 +24,9 @@ from langchain_core.messages import AIMessage
 logger = logging.getLogger(__name__)
 
 MAX_ENRICHMENT_STEPS = 5
-_UUID_RE = re.compile(r"\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b", re.IGNORECASE)
+_UUID_RE = re.compile(
+    r"\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b", re.IGNORECASE
+)
 _HEX_RE = re.compile(r"\b([0-9a-f]{32})\b", re.IGNORECASE)
 
 
@@ -51,8 +53,12 @@ async def run(state: AgentState) -> AgentState:
     last_msg = str(messages[-1].content) if messages else task
 
     # Extract product_id from task description
-    match = _UUID_RE.search(task) or _UUID_RE.search(last_msg) or \
-            _HEX_RE.search(task) or _HEX_RE.search(last_msg)
+    match = (
+        _UUID_RE.search(task)
+        or _UUID_RE.search(last_msg)
+        or _HEX_RE.search(task)
+        or _HEX_RE.search(last_msg)
+    )
     product_id = match.group(1) if match else None
 
     if not product_id:

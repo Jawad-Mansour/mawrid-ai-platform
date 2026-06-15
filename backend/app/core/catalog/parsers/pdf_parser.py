@@ -63,9 +63,7 @@ def _build_converter() -> DocumentConverter:
     pipeline_options.do_ocr = True
     pipeline_options.do_table_structure = True
     return DocumentConverter(
-        format_options={
-            InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)
-        }
+        format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)}
     )
 
 
@@ -88,9 +86,7 @@ def _parse_sync(pdf_bytes: bytes) -> _SyncResult:
             if df is not None and not df.empty:
                 headers = [str(c) for c in df.columns.tolist()]
                 for _, row in df.iterrows():
-                    rows.append(
-                        {h: str(v).strip() for h, v in zip(headers, row, strict=False)}
-                    )
+                    rows.append({h: str(v).strip() for h, v in zip(headers, row, strict=False)})
         except Exception as exc:
             logger.warning("pdf_table_extract_failed", error=str(exc))
 
@@ -135,7 +131,9 @@ async def parse_pdf(pdf_bytes: bytes, tenant_id: str) -> ParseResult:
             path = await upload_image(tenant_id, upload.object_name, upload.img_bytes)
             image_paths.append(path)
         except Exception as exc:
-            logger.warning("pdf_image_upload_failed", object_name=upload.object_name, error=str(exc))
+            logger.warning(
+                "pdf_image_upload_failed", object_name=upload.object_name, error=str(exc)
+            )
 
     return ParseResult(
         full_text=sync_result.full_text,

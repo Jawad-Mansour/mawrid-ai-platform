@@ -142,9 +142,7 @@ async def create_order_draft(
     supplier_repo = SupplierRepository(session, current_user.tenant_id)
     supplier = await supplier_repo.get_by_id(body.supplier_id)
     if supplier is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Supplier not found."
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Supplier not found.")
 
     order_repo = OrderRepository(session, current_user.tenant_id)
     items = [item.model_dump() for item in body.line_items]
@@ -162,7 +160,9 @@ async def create_order_draft(
         status=draft.status,
         line_items=draft.line_items,
         notes=draft.notes,
-        desired_delivery_date=str(draft.desired_delivery_date) if draft.desired_delivery_date else None,
+        desired_delivery_date=str(draft.desired_delivery_date)
+        if draft.desired_delivery_date
+        else None,
         created_at=str(draft.created_at),
     )
 
@@ -213,7 +213,9 @@ async def get_order_draft(
         status=draft.status,
         line_items=draft.line_items,
         notes=draft.notes,
-        desired_delivery_date=str(draft.desired_delivery_date) if draft.desired_delivery_date else None,
+        desired_delivery_date=str(draft.desired_delivery_date)
+        if draft.desired_delivery_date
+        else None,
         created_at=str(draft.created_at),
     )
 
@@ -256,7 +258,9 @@ async def update_order_draft(
         status=updated.status,
         line_items=updated.line_items,
         notes=updated.notes,
-        desired_delivery_date=str(updated.desired_delivery_date) if updated.desired_delivery_date else None,
+        desired_delivery_date=str(updated.desired_delivery_date)
+        if updated.desired_delivery_date
+        else None,
         created_at=str(updated.created_at),
     )
 
@@ -316,17 +320,14 @@ async def place_order(
 
     supplier = await supplier_repo.get_by_id(draft.supplier_id)
     if supplier is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Supplier not found."
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Supplier not found.")
 
     po_id = uuid.uuid4().hex
     po_number = f"PO-{datetime.now(UTC).strftime('%Y%m%d')}-{po_id[:6].upper()}"
 
     line_items: list[dict[str, Any]] = draft.line_items or []
     total = sum(
-        int(item.get("quantity", 0)) * float(item.get("unit_price", 0))
-        for item in line_items
+        int(item.get("quantity", 0)) * float(item.get("unit_price", 0)) for item in line_items
     )
 
     po_text = await _draft_po_text(
@@ -366,7 +367,9 @@ async def place_order(
         hitl_action_id=action.action_id,
         currency=supplier.currency,
         total_amount=total,
-        requested_delivery_date=str(draft.desired_delivery_date) if draft.desired_delivery_date else None,
+        requested_delivery_date=str(draft.desired_delivery_date)
+        if draft.desired_delivery_date
+        else None,
     )
 
     await order_repo.set_draft_status(order_id, "pending_hitl")
@@ -466,7 +469,9 @@ async def create_shipment(
         po_id=shipment.po_id,
         carrier=shipment.carrier,
         tracking_number=shipment.tracking_number,
-        expected_arrival_date=str(shipment.expected_arrival_date) if shipment.expected_arrival_date else None,
+        expected_arrival_date=str(shipment.expected_arrival_date)
+        if shipment.expected_arrival_date
+        else None,
         status=shipment.status,
         created_at=str(shipment.created_at),
     )

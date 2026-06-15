@@ -40,9 +40,7 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 
 _ACTIVE_SHIPMENT_STATUSES = {"shipped", "in_transit", "at_customs"}
 
-_EVAL_THRESHOLDS_PATH = (
-    Path(__file__).parent.parent.parent / "ml_config" / "eval_thresholds.yaml"
-)
+_EVAL_THRESHOLDS_PATH = Path(__file__).parent.parent.parent / "ml_config" / "eval_thresholds.yaml"
 
 # ── Response models ────────────────────────────────────────────────────────────
 
@@ -114,9 +112,7 @@ class DLQProductResponse(StrictModel):
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
 
-_LAST_DRIFT_CHECK_PATH = (
-    Path(__file__).parent.parent.parent / "ml_config" / "last_drift_check.json"
-)
+_LAST_DRIFT_CHECK_PATH = Path(__file__).parent.parent.parent / "ml_config" / "last_drift_check.json"
 
 
 def _load_eval_thresholds() -> dict[str, Any]:
@@ -169,9 +165,7 @@ async def _query_mlflow_models(tracking_uri: str) -> list[ModelHealth]:
             except Exception:
                 results.append(ModelHealth(name=model_name, status="not_registered"))
     except Exception:
-        results = [
-            ModelHealth(name=m, status="registry_unavailable") for m in known_models
-        ]
+        results = [ModelHealth(name=m, status="registry_unavailable") for m in known_models]
 
     return results
 
@@ -234,9 +228,7 @@ async def get_dashboard_summary(
 
     today = date.today()
     outstanding = sum(
-        float(i.amount_due)
-        for i in invoices
-        if i.direction == "receivable" and i.status != "paid"
+        float(i.amount_due) for i in invoices if i.direction == "receivable" and i.status != "paid"
     )
 
     return DashboardSummary(
@@ -251,11 +243,7 @@ async def get_dashboard_summary(
         ),
         active_shipments=sum(1 for s in shipments if s.status in _ACTIVE_SHIPMENT_STATUSES),
         total_invoices=len(invoices),
-        overdue_invoices=sum(
-            1
-            for i in invoices
-            if i.status != "paid" and i.due_date < today
-        ),
+        overdue_invoices=sum(1 for i in invoices if i.status != "paid" and i.due_date < today),
         outstanding_receivables=round(outstanding, 2),
         pending_hitl_count=len(pending_hitl),
         consumer_orders_pending=sum(

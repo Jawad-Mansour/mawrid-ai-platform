@@ -61,7 +61,7 @@ class TestDocumentParsing:
         ws = wb.active
         assert ws is not None
         ws.append(["product_name", "sku", "price"])
-        ws.append(["Samsung TV 55\"", "SAM-TV-55", "799.99"])
+        ws.append(['Samsung TV 55"', "SAM-TV-55", "799.99"])
         ws.append(["LG Fridge 20L", "LG-FR-20", "450.00"])
         buf = io.BytesIO()
         wb.save(buf)
@@ -69,7 +69,7 @@ class TestDocumentParsing:
         result = await parse_excel(buf.getvalue())
 
         assert len(result.rows) == 2  # noqa: PLR2004
-        assert result.rows[0]["product_name"] == "Samsung TV 55\""
+        assert result.rows[0]["product_name"] == 'Samsung TV 55"'
         assert result.rows[1]["sku"] == "LG-FR-20"
         assert result.rows[0]["price"] == "799.99"
 

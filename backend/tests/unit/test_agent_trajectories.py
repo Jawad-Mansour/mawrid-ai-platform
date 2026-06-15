@@ -121,7 +121,9 @@ class TestClassifierRoutingPerTrajectory:
         with patch("app.ml.intent.tier1._load_or_build", return_value=mock_pipeline):
             return classify_sync("test query")
 
-    @pytest.mark.parametrize("trajectory", _load_trajectories(), ids=[t["id"] for t in _load_trajectories()])
+    @pytest.mark.parametrize(
+        "trajectory", _load_trajectories(), ids=[t["id"] for t in _load_trajectories()]
+    )
     def test_trajectory_route(self, trajectory: dict[str, Any]) -> None:
         result = self._run_classify_sync(trajectory["expected_intent"])
         assert result.intent == trajectory["expected_intent"], (
@@ -177,9 +179,10 @@ class TestRouteConsistency:
 
         assert _route_for_intent("complex_task") == "agent"
 
-    @pytest.mark.parametrize("intent", [
-        "order_status", "stock_check", "shipment_status", "invoice_query", "dunning_action"
-    ])
+    @pytest.mark.parametrize(
+        "intent",
+        ["order_status", "stock_check", "shipment_status", "invoice_query", "dunning_action"],
+    )
     def test_all_direct_query_intents(self, intent: str) -> None:
         from app.ml.intent.classifier import _route_for_intent
 

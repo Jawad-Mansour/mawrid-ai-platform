@@ -110,7 +110,9 @@ async def _trigger_workflow(
     tenant_id: str,
 ) -> dict[str, Any]:
     if workflow_id not in WORKFLOW_REGISTRY:
-        return {"error": f"Unknown workflow_id {workflow_id!r}. Valid: {list(WORKFLOW_REGISTRY.keys())}"}
+        return {
+            "error": f"Unknown workflow_id {workflow_id!r}. Valid: {list(WORKFLOW_REGISTRY.keys())}"
+        }
 
     from app.core.config import get_settings  # noqa: PLC0415
 
@@ -138,7 +140,9 @@ async def _trigger_workflow(
         }
     except httpx.RequestError as exc:
         # n8n may not be running locally; log and return graceful error
-        logger.warning("n8n_webhook_unavailable", extra={"workflow": workflow_id, "error": str(exc)})
+        logger.warning(
+            "n8n_webhook_unavailable", extra={"workflow": workflow_id, "error": str(exc)}
+        )
         return {
             "workflow_id": workflow_id,
             "description": WORKFLOW_REGISTRY[workflow_id],
@@ -148,10 +152,7 @@ async def _trigger_workflow(
 
 
 def _list_workflow_status() -> list[dict[str, str]]:
-    return [
-        {"workflow_id": wid, "description": desc}
-        for wid, desc in WORKFLOW_REGISTRY.items()
-    ]
+    return [{"workflow_id": wid, "description": desc} for wid, desc in WORKFLOW_REGISTRY.items()]
 
 
 def get_tool_functions() -> dict[str, Any]:

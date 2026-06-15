@@ -35,19 +35,19 @@ _bundle: dict[str, Any] | None = None
 @dataclass(frozen=True)
 class SupplierFeatures:
     on_time_delivery_rate: float  # 0.0–1.0; fraction of on-time deliveries
-    damage_rate: float            # 0.0–1.0; items_damaged / items_received
-    avg_price_vs_market: float    # ratio; 1.0 = at market, >1.0 = over-priced
-    response_time_hours: float    # avg hours supplier takes to confirm PO
-    discrepancy_rate: float       # fraction of deliveries short by > 5%
-    catalog_completeness: float   # 0.0–1.0; fraction of profile fields filled
+    damage_rate: float  # 0.0–1.0; items_damaged / items_received
+    avg_price_vs_market: float  # ratio; 1.0 = at market, >1.0 = over-priced
+    response_time_hours: float  # avg hours supplier takes to confirm PO
+    discrepancy_rate: float  # fraction of deliveries short by > 5%
+    catalog_completeness: float  # 0.0–1.0; fraction of profile fields filled
 
 
 @dataclass
 class ScorerResult:
-    score: float                  # 0–100
+    score: float  # 0–100
     features: SupplierFeatures
-    method: str                   # "formula" | "ridge"
-    sample_count: int             # number of delivery events used
+    method: str  # "formula" | "ridge"
+    sample_count: int  # number of delivery events used
 
 
 def compute_score_formula(features: SupplierFeatures) -> float:
@@ -70,6 +70,7 @@ def _load_bundle() -> dict[str, Any] | None:
         return None
     try:
         import joblib  # noqa: PLC0415
+
         _bundle = joblib.load(MODEL_PATH)
         logger.info("supplier_scorer_model_loaded", extra={"path": str(MODEL_PATH)})
     except Exception as exc:
@@ -85,18 +86,24 @@ def score_supplier(features: SupplierFeatures, sample_count: int = 0) -> ScorerR
         try:
             scaler = bundle["scaler"]
             ridge = bundle["ridge"]
-            feat_arr = np.array([[
-                features.on_time_delivery_rate,
-                features.damage_rate,
-                features.avg_price_vs_market,
-                features.response_time_hours,
-                features.discrepancy_rate,
-                features.catalog_completeness,
-            ]])
+            feat_arr = np.array(
+                [
+                    [
+                        features.on_time_delivery_rate,
+                        features.damage_rate,
+                        features.avg_price_vs_market,
+                        features.response_time_hours,
+                        features.discrepancy_rate,
+                        features.catalog_completeness,
+                    ]
+                ]
+            )
             scaled = scaler.transform(feat_arr)
             raw = float(ridge.predict(scaled)[0])
             score = max(0.0, min(100.0, raw))
-            return ScorerResult(score=score, features=features, method="ridge", sample_count=sample_count)
+            return ScorerResult(
+                score=score, features=features, method="ridge", sample_count=sample_count
+            )
         except Exception as exc:
             logger.warning("supplier_scorer_ridge_failed", extra={"error": str(exc)})
 
@@ -126,9 +133,7 @@ def extract_features(
 
     total = len(events)
     on_time = sum(
-        1
-        for e in events
-        if e.delivered_date is not None and e.delivered_date <= e.promised_date
+        1 for e in events if e.delivered_date is not None and e.delivered_date <= e.promised_date
     )
     on_time_rate = on_time / total
 
@@ -136,28 +141,20 @@ def extract_features(
     total_damaged = sum(e.items_damaged or 0 for e in events)
     damage_rate = total_damaged / total_received
 
-    priced = [
-        e for e in events
-        if e.price_billed is not None and e.price_agreed > 0
-    ]
+    priced = [e for e in events if e.price_billed is not None and e.price_agreed > 0]
     avg_price = (
-        sum(cast(float, e.price_billed) / e.price_agreed for e in priced)
-        / len(priced)
+        sum(cast(float, e.price_billed) / e.price_agreed for e in priced) / len(priced)
         if priced
         else 1.0
     )
 
     timed = [e for e in events if e.response_time_hours is not None]
     response_hours = (
-        sum(cast(float, e.response_time_hours) for e in timed) / len(timed)
-        if timed
-        else 24.0
+        sum(cast(float, e.response_time_hours) for e in timed) / len(timed) if timed else 24.0
     )
 
     discrepant = sum(
-        1
-        for e in events
-        if e.items_ordered > 0 and e.items_received < e.items_ordered * 0.95
+        1 for e in events if e.items_ordered > 0 and e.items_received < e.items_ordered * 0.95
     )
     discrepancy_rate = discrepant / total
 

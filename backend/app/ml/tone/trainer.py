@@ -43,7 +43,10 @@ _LABEL_REVERSE: dict[int, str] = {v: k for k, v in _LABEL_MAP.items()}
 
 DATASET_PATH = (
     Path(__file__).parent.parent.parent.parent
-    / "tests" / "evals" / "eval_dataset" / "tone_training_data.json"
+    / "tests"
+    / "evals"
+    / "eval_dataset"
+    / "tone_training_data.json"
 )
 MODEL_DIR = Path(__file__).parent.parent.parent.parent / "ml_models"
 MODEL_PATH = MODEL_DIR / "tone_classifier.pkl"
@@ -57,13 +60,15 @@ def _load_dataset() -> tuple[np.ndarray, np.ndarray]:
     label_rows = []
     for ex in examples:
         segment_int = _SEGMENT_MAP.get(str(ex["customer_segment"]), 1)
-        feat_rows.append([
-            float(str(ex["days_overdue"])),
-            float(segment_int),
-            float(str(ex["overdue_amount"])),
-            float(str(ex["payment_history_score"])),
-            float(str(ex["previous_dunning_count"])),
-        ])
+        feat_rows.append(
+            [
+                float(str(ex["days_overdue"])),
+                float(segment_int),
+                float(str(ex["overdue_amount"])),
+                float(str(ex["payment_history_score"])),
+                float(str(ex["previous_dunning_count"])),
+            ]
+        )
         label_rows.append(_LABEL_MAP[str(ex["tone"])])
 
     return np.array(feat_rows, dtype=float), np.array(label_rows, dtype=int)
@@ -101,9 +106,7 @@ def train() -> None:
     # Training report
     y_pred = clf.predict(feat_scaled)
     train_f1 = f1_score(labels_res, y_pred, average="weighted")
-    report = classification_report(
-        labels_res, y_pred, target_names=["gentle", "neutral", "firm"]
-    )
+    report = classification_report(labels_res, y_pred, target_names=["gentle", "neutral", "firm"])
     logger.info("Training F1 (weighted) = %.4f", train_f1)
     logger.info("\n%s", report)
 
@@ -112,7 +115,7 @@ def train() -> None:
 
     # MLflow logging
     mlflow.set_tracking_uri("http://localhost:5000")
-    with mlflow.start_run(run_name="tone_classifier"):
+    with mlflow.start_run(run_name="tone_classifier") as run:
         mlflow.log_param("model", "GradientBoostingClassifier")
         mlflow.log_param("n_estimators", 200)
         mlflow.log_param("max_depth", 4)
@@ -122,7 +125,7 @@ def train() -> None:
         mlflow.log_metric("cv_f1_weighted_std", float(cv_scores.std()))
         mlflow.log_metric("train_f1_weighted", float(train_f1))
         mlflow.sklearn.log_model(clf, "tone_clf")
-        mlflow.register_model(f"runs:/{mlflow.active_run().info.run_id}/tone_clf", "tone_classifier")  # type: ignore[union-attr]
+        mlflow.register_model(f"runs:/{run.info.run_id}/tone_clf", "tone_classifier")
 
     # Local pickle fallback
     MODEL_DIR.mkdir(parents=True, exist_ok=True)

@@ -23,6 +23,7 @@ from fastapi.testclient import TestClient
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
+
 def _fake_user(tenant_id: str = "tenant-a", user_id: str = "user-1") -> Any:
     u = MagicMock()
     u.tenant_id = tenant_id
@@ -51,6 +52,7 @@ def client(app: FastAPI) -> TestClient:
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _make_product(
     product_id: str = "p1",

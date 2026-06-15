@@ -65,9 +65,7 @@ async def index_product(session: AsyncSession, product: Product) -> None:
     )
 
     # 2. Parent/child chunks — clear then rebuild for idempotency.
-    await session.execute(
-        delete(ProductChunk).where(ProductChunk.product_id == product.product_id)
-    )
+    await session.execute(delete(ProductChunk).where(ProductChunk.product_id == product.product_id))
 
     specs = build_chunks(full_text)
     parent_id_by_index: dict[int, str] = {}
@@ -97,9 +95,7 @@ async def index_product(session: AsyncSession, product: Product) -> None:
             continue
         vector = await embed(spec.chunk_text)
         parent_chunk_id = (
-            parent_id_by_index.get(spec.parent_index)
-            if spec.parent_index is not None
-            else None
+            parent_id_by_index.get(spec.parent_index) if spec.parent_index is not None else None
         )
         session.add(
             ProductChunk(
@@ -183,9 +179,7 @@ async def run_relay(
                             product_id = str(event.payload.get("product_id", ""))
                             if product_id:
                                 prod_result = await session.execute(
-                                    select(Product).where(
-                                        Product.product_id == product_id
-                                    )
+                                    select(Product).where(Product.product_id == product_id)
                                 )
                                 product = prod_result.scalar_one_or_none()
                                 if product is not None:

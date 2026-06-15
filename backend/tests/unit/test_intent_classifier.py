@@ -53,7 +53,13 @@ class TestIntentSets:
     """Validate the intent set definitions are consistent."""
 
     def test_direct_query_set(self) -> None:
-        expected = {"order_status", "stock_check", "shipment_status", "invoice_query", "dunning_action"}
+        expected = {
+            "order_status",
+            "stock_check",
+            "shipment_status",
+            "invoice_query",
+            "dunning_action",
+        }
         assert expected == DIRECT_QUERY_INTENTS
 
     def test_rag_set(self) -> None:
@@ -94,11 +100,18 @@ class TestTier1Predict:
         # Mock a high-confidence result via _load_or_build patch
         mock_pipeline = MagicMock()
         import numpy as np
+
         proba = np.array([0.0, 0.0, 0.85, 0.0, 0.0, 0.0, 0.0, 0.15])  # stock_check at idx 2
         mock_pipeline.predict_proba.return_value = [proba]
         mock_pipeline.classes_ = [
-            "product_search", "order_status", "stock_check", "shipment_status",
-            "invoice_query", "dunning_action", "complex_task", "out_of_scope",
+            "product_search",
+            "order_status",
+            "stock_check",
+            "shipment_status",
+            "invoice_query",
+            "dunning_action",
+            "complex_task",
+            "out_of_scope",
         ]
 
         with patch("app.ml.intent.tier1._load_or_build", return_value=mock_pipeline):
@@ -113,11 +126,18 @@ class TestTier1Predict:
 
         mock_pipeline = MagicMock()
         import numpy as np
+
         proba = np.array([0.70, 0.30, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
         mock_pipeline.predict_proba.return_value = [proba]
         mock_pipeline.classes_ = [
-            "product_search", "order_status", "stock_check", "shipment_status",
-            "invoice_query", "dunning_action", "complex_task", "out_of_scope",
+            "product_search",
+            "order_status",
+            "stock_check",
+            "shipment_status",
+            "invoice_query",
+            "dunning_action",
+            "complex_task",
+            "out_of_scope",
         ]
 
         with patch("app.ml.intent.tier1._load_or_build", return_value=mock_pipeline):
@@ -139,11 +159,18 @@ class TestClassifySync:
     def test_route_assigned(self) -> None:
         mock_pipeline = MagicMock()
         import numpy as np
+
         proba = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.95])
         mock_pipeline.predict_proba.return_value = [proba]
         mock_pipeline.classes_ = [
-            "product_search", "order_status", "stock_check", "shipment_status",
-            "invoice_query", "dunning_action", "complex_task", "out_of_scope",
+            "product_search",
+            "order_status",
+            "stock_check",
+            "shipment_status",
+            "invoice_query",
+            "dunning_action",
+            "complex_task",
+            "out_of_scope",
         ]
 
         with patch("app.ml.intent.tier1._load_or_build", return_value=mock_pipeline):
@@ -165,8 +192,14 @@ class TestClassifyCascade:
         proba = np.array([0.95, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.05])
         mock_pipeline.predict_proba.return_value = [proba]
         mock_pipeline.classes_ = [
-            "product_search", "order_status", "stock_check", "shipment_status",
-            "invoice_query", "dunning_action", "complex_task", "out_of_scope",
+            "product_search",
+            "order_status",
+            "stock_check",
+            "shipment_status",
+            "invoice_query",
+            "dunning_action",
+            "complex_task",
+            "out_of_scope",
         ]
 
         with patch("app.ml.intent.tier1._load_or_build", return_value=mock_pipeline):
@@ -186,8 +219,14 @@ class TestClassifyCascade:
         proba = np.array([0.2, 0.15, 0.1, 0.1, 0.1, 0.1, 0.1, 0.15])
         mock_pipeline.predict_proba.return_value = [proba]
         mock_pipeline.classes_ = [
-            "product_search", "order_status", "stock_check", "shipment_status",
-            "invoice_query", "dunning_action", "complex_task", "out_of_scope",
+            "product_search",
+            "order_status",
+            "stock_check",
+            "shipment_status",
+            "invoice_query",
+            "dunning_action",
+            "complex_task",
+            "out_of_scope",
         ]
 
         with (
@@ -213,8 +252,14 @@ class TestClassifyCascade:
         proba = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.99])
         mock_pipeline.predict_proba.return_value = [proba]
         mock_pipeline.classes_ = [
-            "product_search", "order_status", "stock_check", "shipment_status",
-            "invoice_query", "dunning_action", "complex_task", "out_of_scope",
+            "product_search",
+            "order_status",
+            "stock_check",
+            "shipment_status",
+            "invoice_query",
+            "dunning_action",
+            "complex_task",
+            "out_of_scope",
         ]
 
         with patch("app.ml.intent.tier1._load_or_build", return_value=mock_pipeline):
@@ -231,8 +276,14 @@ class TestClassifyCascade:
         proba = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.92, 0.08])
         mock_pipeline.predict_proba.return_value = [proba]
         mock_pipeline.classes_ = [
-            "product_search", "order_status", "stock_check", "shipment_status",
-            "invoice_query", "dunning_action", "complex_task", "out_of_scope",
+            "product_search",
+            "order_status",
+            "stock_check",
+            "shipment_status",
+            "invoice_query",
+            "dunning_action",
+            "complex_task",
+            "out_of_scope",
         ]
 
         with patch("app.ml.intent.tier1._load_or_build", return_value=mock_pipeline):
@@ -252,8 +303,14 @@ class TestClassifyCascade:
         proba = np.array([0.3, 0.3, 0.1, 0.1, 0.05, 0.05, 0.05, 0.05])
         mock_pipeline.predict_proba.return_value = [proba]
         mock_pipeline.classes_ = [
-            "product_search", "order_status", "stock_check", "shipment_status",
-            "invoice_query", "dunning_action", "complex_task", "out_of_scope",
+            "product_search",
+            "order_status",
+            "stock_check",
+            "shipment_status",
+            "invoice_query",
+            "dunning_action",
+            "complex_task",
+            "out_of_scope",
         ]
 
         t2_result = Tier2Result(

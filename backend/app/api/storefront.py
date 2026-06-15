@@ -269,9 +269,7 @@ async def validate_cart(
             available_qty=product.storefront_qty if product is not None else 0,
             requested_qty=cart_item.qty,
             unit_price=(
-                float(product.retail_price)
-                if product is not None and product.retail_price
-                else 0.0
+                float(product.retail_price) if product is not None and product.retail_price else 0.0
             ),
         )
         items.append(result.item)
@@ -342,11 +340,13 @@ async def checkout(
                     f"{product.storefront_qty} available, {cart_item.qty} requested."
                 ),
             )
-        validated.append({
-            "product": product,
-            "qty": cart_item.qty,
-            "unit_price": float(product.retail_price) if product.retail_price else 0.0,
-        })
+        validated.append(
+            {
+                "product": product,
+                "qty": cart_item.qty,
+                "unit_price": float(product.retail_price) if product.retail_price else 0.0,
+            }
+        )
 
     total = calculate_order_total([(v["unit_price"], v["qty"]) for v in validated])
     order_id = uuid.uuid4().hex

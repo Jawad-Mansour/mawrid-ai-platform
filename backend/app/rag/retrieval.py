@@ -87,9 +87,7 @@ async def apply_parent_doc_mapping(
     if not parent_ids:
         return chunks
 
-    parent_map: dict[str, VectorHit] = await fetch_parent_chunks(
-        session, tenant_id, parent_ids
-    )
+    parent_map: dict[str, VectorHit] = await fetch_parent_chunks(session, tenant_id, parent_ids)
 
     seen_parents: set[str] = set()
     upgraded: list[ChunkResult] = []

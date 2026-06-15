@@ -173,7 +173,9 @@ class InvoiceRepository(TenantRepository):
         }
         for inv in invoices:
             days_overdue = (today - inv.due_date).days
-            amount = float(inv.amount_due) if isinstance(inv.amount_due, Decimal) else inv.amount_due
+            amount = (
+                float(inv.amount_due) if isinstance(inv.amount_due, Decimal) else inv.amount_due
+            )
             if days_overdue <= 0:
                 buckets["current"] += amount
             elif days_overdue <= 30:

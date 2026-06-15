@@ -118,9 +118,7 @@ async def fetch_parent_chunks(
           AND chunk_id = ANY(:ids)
         """
     )
-    result = await session.execute(
-        sql, {"tenant_id": tenant_id, "ids": parent_chunk_ids}
-    )
+    result = await session.execute(sql, {"tenant_id": tenant_id, "ids": parent_chunk_ids})
     rows = result.fetchall()
     return {
         row.chunk_id: VectorHit(

@@ -68,8 +68,10 @@ def mmr_select(
             # Subsequent: pick chunk maximizing MMR
             best = max(
                 remaining,
-                key=lambda i: lambda_ * normalized_scores[i]
-                - (1 - lambda_) * max(chunk_sim[i][j] for j in selected_indices),
+                key=lambda i: (
+                    lambda_ * normalized_scores[i]
+                    - (1 - lambda_) * max(chunk_sim[i][j] for j in selected_indices)
+                ),
             )
 
         selected_indices.append(best)

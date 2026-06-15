@@ -29,7 +29,10 @@ logger = logging.getLogger(__name__)
 
 DATASET_PATH = (
     Path(__file__).parent.parent.parent.parent
-    / "tests" / "evals" / "eval_dataset" / "supplier_training_data.json"
+    / "tests"
+    / "evals"
+    / "eval_dataset"
+    / "supplier_training_data.json"
 )
 MODEL_DIR = Path(__file__).parent.parent.parent.parent / "ml_models"
 MODEL_PATH = MODEL_DIR / "supplier_scorer.pkl"

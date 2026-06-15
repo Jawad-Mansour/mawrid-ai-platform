@@ -93,7 +93,9 @@ async def file_dispute(
             },
         )
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+        ) from exc
 
     await session.commit()
     logger.info(
@@ -190,9 +192,12 @@ async def list_dunning_sequences(
 
         from app.infra.db.models.dunning import DunningSequence  # noqa: PLC0415
 
-        q = select(DunningSequence).where(
-            repo._tenant_filter(DunningSequence)
-        ).order_by(DunningSequence.created_at.desc()).limit(200)
+        q = (
+            select(DunningSequence)
+            .where(repo._tenant_filter(DunningSequence))
+            .order_by(DunningSequence.created_at.desc())
+            .limit(200)
+        )
         if track:
             q = q.where(DunningSequence.track == track)
         result = await session.execute(q)

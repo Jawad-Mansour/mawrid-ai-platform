@@ -184,7 +184,11 @@ class TestSupervisorNode:
 
         state = self._base_state()
 
-        with patch("app.infra.llm.openai.chat_completion", new_callable=AsyncMock, return_value="discovery_specialist"):
+        with patch(
+            "app.infra.llm.openai.chat_completion",
+            new_callable=AsyncMock,
+            return_value="discovery_specialist",
+        ):
             cmd = await supervisor_node(state)  # type: ignore[arg-type]
 
         assert cmd.goto == "discovery_specialist"
@@ -197,7 +201,9 @@ class TestSupervisorNode:
 
         state = self._base_state(specialist_result="Suppliers found and HITL created.")
 
-        with patch("app.infra.llm.openai.chat_completion", new_callable=AsyncMock, return_value="done"):
+        with patch(
+            "app.infra.llm.openai.chat_completion", new_callable=AsyncMock, return_value="done"
+        ):
             cmd = await supervisor_node(state)  # type: ignore[arg-type]
 
         assert cmd.goto == END
@@ -211,7 +217,11 @@ class TestSupervisorNode:
 
         state = self._base_state()
 
-        with patch("app.infra.llm.openai.chat_completion", new_callable=AsyncMock, side_effect=RuntimeError("OpenAI unavailable")):
+        with patch(
+            "app.infra.llm.openai.chat_completion",
+            new_callable=AsyncMock,
+            side_effect=RuntimeError("OpenAI unavailable"),
+        ):
             cmd = await supervisor_node(state)  # type: ignore[arg-type]
 
         assert cmd.goto == END
@@ -223,25 +233,34 @@ class TestSupervisorNode:
 
         state = self._base_state()
 
-        with patch("app.infra.llm.openai.chat_completion", new_callable=AsyncMock, return_value="do_magic_things"):
+        with patch(
+            "app.infra.llm.openai.chat_completion",
+            new_callable=AsyncMock,
+            return_value="do_magic_things",
+        ):
             cmd = await supervisor_node(state)  # type: ignore[arg-type]
 
         assert cmd.goto == END
 
-    @pytest.mark.parametrize("specialist", [
-        "extraction_specialist",
-        "enrichment_specialist",
-        "communication_specialist",
-        "stock_monitor_specialist",
-        "discovery_specialist",
-    ])
+    @pytest.mark.parametrize(
+        "specialist",
+        [
+            "extraction_specialist",
+            "enrichment_specialist",
+            "communication_specialist",
+            "stock_monitor_specialist",
+            "discovery_specialist",
+        ],
+    )
     @pytest.mark.asyncio
     async def test_all_specialists_routable(self, specialist: str) -> None:
         from app.agents.supervisor import supervisor_node
 
         state = self._base_state()
 
-        with patch("app.infra.llm.openai.chat_completion", new_callable=AsyncMock, return_value=specialist):
+        with patch(
+            "app.infra.llm.openai.chat_completion", new_callable=AsyncMock, return_value=specialist
+        ):
             cmd = await supervisor_node(state)  # type: ignore[arg-type]
 
         assert cmd.goto == specialist

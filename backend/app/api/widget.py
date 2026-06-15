@@ -306,16 +306,24 @@ async def widget_chat(
     try:
         payload = jwt.decode(token_str, secrets.jwt_public_key, algorithms=[_ALGORITHM])
     except jwt.ExpiredSignatureError as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Widget token expired") from exc
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Widget token expired"
+        ) from exc
     except jwt.InvalidTokenError as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid widget token") from exc
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid widget token"
+        ) from exc
 
     if payload.get("scope") != "widget":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Token scope must be 'widget'")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Token scope must be 'widget'"
+        )
 
     tenant_id: str = payload.get("tenant_id", "")
     if not tenant_id:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing tenant_id in token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing tenant_id in token"
+        )
 
     # Origin check
     origin = request.headers.get("Origin", "")

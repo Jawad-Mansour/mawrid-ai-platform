@@ -60,10 +60,12 @@ def _make_extraction_llm_response(rows: list[dict[str, object]]) -> str:
     return json.dumps(items)
 
 
-_ENRICH_GPT_RESPONSE = json.dumps({
-    "specifications": {"Category": "General", "Brand": "TestBrand"},
-    "description": "A general-purpose test widget.",
-})
+_ENRICH_GPT_RESPONSE = json.dumps(
+    {
+        "specifications": {"Category": "General", "Brand": "TestBrand"},
+        "description": "A general-purpose test widget.",
+    }
+)
 
 
 class FakeIcecat:
@@ -223,40 +225,66 @@ class TestEnrichmentE2E:
         and stored. Failed rows are not placed in the outbox.
         """
         rows: list[dict[str, object]] = [
-            {"product": f"Good Product {i}", "price": float(100 * i)}
-            for i in range(1, 4)
+            {"product": f"Good Product {i}", "price": float(100 * i)} for i in range(1, 4)
         ] + [
             {"col_0": "", "col_1": ""},  # empty row — will fail
             {"col_0": "", "col_1": ""},  # empty row — will fail
         ]
 
-        llm_response = json.dumps([
-            {
-                "row_index": 0, "product_name": "Good Product 1", "sku": None,
-                "barcode": None, "price": 100.0, "currency": "USD",
-                "specifications": {}, "_failure_reason": None,
-            },
-            {
-                "row_index": 1, "product_name": "Good Product 2", "sku": None,
-                "barcode": None, "price": 200.0, "currency": "USD",
-                "specifications": {}, "_failure_reason": None,
-            },
-            {
-                "row_index": 2, "product_name": "Good Product 3", "sku": None,
-                "barcode": None, "price": 300.0, "currency": "USD",
-                "specifications": {}, "_failure_reason": None,
-            },
-            {
-                "row_index": 3, "product_name": None, "sku": None,
-                "barcode": None, "price": None, "currency": None,
-                "specifications": {}, "_failure_reason": "No product name found",
-            },
-            {
-                "row_index": 4, "product_name": None, "sku": None,
-                "barcode": None, "price": None, "currency": None,
-                "specifications": {}, "_failure_reason": "No product name found",
-            },
-        ])
+        llm_response = json.dumps(
+            [
+                {
+                    "row_index": 0,
+                    "product_name": "Good Product 1",
+                    "sku": None,
+                    "barcode": None,
+                    "price": 100.0,
+                    "currency": "USD",
+                    "specifications": {},
+                    "_failure_reason": None,
+                },
+                {
+                    "row_index": 1,
+                    "product_name": "Good Product 2",
+                    "sku": None,
+                    "barcode": None,
+                    "price": 200.0,
+                    "currency": "USD",
+                    "specifications": {},
+                    "_failure_reason": None,
+                },
+                {
+                    "row_index": 2,
+                    "product_name": "Good Product 3",
+                    "sku": None,
+                    "barcode": None,
+                    "price": 300.0,
+                    "currency": "USD",
+                    "specifications": {},
+                    "_failure_reason": None,
+                },
+                {
+                    "row_index": 3,
+                    "product_name": None,
+                    "sku": None,
+                    "barcode": None,
+                    "price": None,
+                    "currency": None,
+                    "specifications": {},
+                    "_failure_reason": "No product name found",
+                },
+                {
+                    "row_index": 4,
+                    "product_name": None,
+                    "sku": None,
+                    "barcode": None,
+                    "price": None,
+                    "currency": None,
+                    "specifications": {},
+                    "_failure_reason": "No product name found",
+                },
+            ]
+        )
 
         with patch(
             "app.core.catalog.extractor.chat_completion",
@@ -281,9 +309,7 @@ class TestEnrichmentE2E:
             new=AsyncMock(return_value=_ENRICH_GPT_RESPONSE),
         ):
             for extracted in extraction.products:
-                enriched = await pipeline.run(
-                    EnrichmentInput(product_name=extracted.product_name)
-                )
+                enriched = await pipeline.run(EnrichmentInput(product_name=extracted.product_name))
                 product_hash = compute_product_hash(tenant_id, extracted.product_name)
                 product = Product(
                     product_id=uuid.uuid4().hex,

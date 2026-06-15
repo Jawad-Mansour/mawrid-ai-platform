@@ -81,9 +81,7 @@ async def embed_text(text: str, model: str = "text-embedding-3-small") -> list[f
     wait=wait_exponential(multiplier=1, min=2, max=10),
     reraise=True,
 )
-async def embed_batch(
-    texts: list[str], model: str = "text-embedding-3-small"
-) -> list[list[float]]:
+async def embed_batch(texts: list[str], model: str = "text-embedding-3-small") -> list[list[float]]:
     """Embed a batch of texts. Returns list of 1536-dim float vectors."""
     client = _get_client()
     response = await client.embeddings.create(input=texts, model=model)

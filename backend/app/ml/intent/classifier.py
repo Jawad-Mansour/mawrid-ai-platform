@@ -53,9 +53,9 @@ AGENT_INTENTS = {"complex_task"}
 class ClassificationResult:
     intent: str
     confidence: float
-    tier_used: int           # 1, 2, or 3
+    tier_used: int  # 1, 2, or 3
     latency_ms: float
-    route: str               # "rag" | "direct_query" | "agent" | "rejected"
+    route: str  # "rag" | "direct_query" | "agent" | "rejected"
     tier1_latency_ms: float = 0.0
     tier2_latency_ms: float = 0.0
     tier3_latency_ms: float = 0.0

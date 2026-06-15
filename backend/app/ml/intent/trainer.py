@@ -27,19 +27,31 @@ logger = logging.getLogger(__name__)
 
 DATA_PATH = (
     Path(__file__).parent.parent.parent.parent
-    / "tests" / "evals" / "eval_dataset" / "intent_training_data.json"
+    / "tests"
+    / "evals"
+    / "eval_dataset"
+    / "intent_training_data.json"
 )
 TEST_PATH = (
     Path(__file__).parent.parent.parent.parent
-    / "tests" / "evals" / "eval_dataset" / "intent_test_set.json"
+    / "tests"
+    / "evals"
+    / "eval_dataset"
+    / "intent_test_set.json"
 )
 MODEL_DIR = Path(__file__).parent.parent.parent.parent / "ml_models"
 TIER1_PATH = MODEL_DIR / "intent_tier1.pkl"
 TIER2_DIR = MODEL_DIR / "intent_tier2"
 
 INTENT_CLASSES = [
-    "product_search", "order_status", "stock_check", "shipment_status",
-    "invoice_query", "dunning_action", "complex_task", "out_of_scope",
+    "product_search",
+    "order_status",
+    "stock_check",
+    "shipment_status",
+    "invoice_query",
+    "dunning_action",
+    "complex_task",
+    "out_of_scope",
 ]
 
 
@@ -64,23 +76,31 @@ def train_tier1() -> float:
     logger.info("Loading training data from %s", DATA_PATH)
     train_texts, train_labels = _load_dataset(DATA_PATH)
 
-    pipeline = Pipeline([
-        ("tfidf", TfidfVectorizer(
-            analyzer="word",
-            ngram_range=(1, 2),
-            max_features=30_000,
-            sublinear_tf=True,
-            strip_accents="unicode",
-            lowercase=True,
-        )),
-        ("lr", LogisticRegression(
-            C=5.0,
-            max_iter=1000,
-            solver="lbfgs",
-            random_state=42,
-            n_jobs=-1,
-        )),
-    ])
+    pipeline = Pipeline(
+        [
+            (
+                "tfidf",
+                TfidfVectorizer(
+                    analyzer="word",
+                    ngram_range=(1, 2),
+                    max_features=30_000,
+                    sublinear_tf=True,
+                    strip_accents="unicode",
+                    lowercase=True,
+                ),
+            ),
+            (
+                "lr",
+                LogisticRegression(
+                    C=5.0,
+                    max_iter=1000,
+                    solver="lbfgs",
+                    random_state=42,
+                    n_jobs=-1,
+                ),
+            ),
+        ]
+    )
 
     # 5-fold cross-validation
     cv_f1 = cross_val_score(pipeline, train_texts, train_labels, cv=5, scoring="f1_macro")
@@ -212,14 +232,13 @@ def train_tier2() -> None:
     from optimum.onnxruntime import ORTModelForSequenceClassification  # noqa: PLC0415
 
     TIER2_DIR.mkdir(parents=True, exist_ok=True)
-    ort_model = ORTModelForSequenceClassification.from_pretrained(
-        str(tmp_dir), export=True
-    )
+    ort_model = ORTModelForSequenceClassification.from_pretrained(str(tmp_dir), export=True)
     ort_model.save_pretrained(str(TIER2_DIR))
     tokenizer.save_pretrained(str(TIER2_DIR))
 
     # Save label map
     import json as _json  # noqa: PLC0415
+
     (TIER2_DIR / "label_map.json").write_text(
         _json.dumps({str(i): cls for i, cls in id2label.items()}, indent=2),
         encoding="utf-8",

@@ -86,8 +86,16 @@ def generate_invoice_pdf(data: InvoiceData) -> bytes:
     styles = getSampleStyleSheet()
     _brand = colors.HexColor("#1A56DB")  # Mawrid blue
 
-    h1 = ParagraphStyle("H1", parent=styles["Heading1"], textColor=_brand, fontSize=22, spaceAfter=4)
-    h2 = ParagraphStyle("H2", parent=styles["Heading2"], textColor=colors.HexColor("#374151"), fontSize=11, spaceAfter=2)
+    h1 = ParagraphStyle(
+        "H1", parent=styles["Heading1"], textColor=_brand, fontSize=22, spaceAfter=4
+    )
+    h2 = ParagraphStyle(
+        "H2",
+        parent=styles["Heading2"],
+        textColor=colors.HexColor("#374151"),
+        fontSize=11,
+        spaceAfter=2,
+    )
     body = ParagraphStyle("Body", parent=styles["Normal"], fontSize=9, leading=14)
     small = ParagraphStyle("Small", parent=styles["Normal"], fontSize=8, textColor=colors.gray)
 
@@ -109,16 +117,20 @@ def generate_invoice_pdf(data: InvoiceData) -> bytes:
         ["Currency", data.currency],
     ]
     meta_table = Table(meta_data, colWidths=[3.5 * cm, 6 * cm])
-    meta_table.setStyle(TableStyle([
-        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
-        ("FONTSIZE", (0, 0), (-1, -1), 9),
-        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
-        ("TEXTCOLOR", (0, 0), (0, -1), colors.HexColor("#374151")),
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("ROWBACKGROUNDS", (0, 0), (-1, -1), [colors.white, colors.HexColor("#F9FAFB")]),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-        ("TOPPADDING", (0, 0), (-1, -1), 3),
-    ]))
+    meta_table.setStyle(
+        TableStyle(
+            [
+                ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+                ("FONTSIZE", (0, 0), (-1, -1), 9),
+                ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+                ("TEXTCOLOR", (0, 0), (0, -1), colors.HexColor("#374151")),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("ROWBACKGROUNDS", (0, 0), (-1, -1), [colors.white, colors.HexColor("#F9FAFB")]),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+                ("TOPPADDING", (0, 0), (-1, -1), 3),
+            ]
+        )
+    )
     story.append(meta_table)
     story.append(Spacer(1, 0.6 * cm))
 
@@ -135,40 +147,50 @@ def generate_invoice_pdf(data: InvoiceData) -> bytes:
     headers = ["Product", "Qty", f"Unit Price ({data.currency})", f"Total ({data.currency})"]
     rows: list[list[str]] = [headers]
     for item in data.items:
-        rows.append([
-            item.product_name,
-            str(item.qty),
-            f"{item.unit_price:,.2f}",
-            f"{item.line_total:,.2f}",
-        ])
+        rows.append(
+            [
+                item.product_name,
+                str(item.qty),
+                f"{item.unit_price:,.2f}",
+                f"{item.line_total:,.2f}",
+            ]
+        )
 
     items_table = Table(rows, colWidths=col_widths)
-    items_table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), _brand),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, -1), 9),
-        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
-        ("ALIGN", (1, 0), (-1, -1), "RIGHT"),
-        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F9FAFB")]),
-        ("GRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#E5E7EB")),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
-        ("TOPPADDING", (0, 0), (-1, -1), 5),
-    ]))
+    items_table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), _brand),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 9),
+                ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+                ("ALIGN", (1, 0), (-1, -1), "RIGHT"),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F9FAFB")]),
+                ("GRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#E5E7EB")),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+                ("TOPPADDING", (0, 0), (-1, -1), 5),
+            ]
+        )
+    )
     story.append(items_table)
     story.append(Spacer(1, 0.4 * cm))
 
     # ── Total ────────────────────────────────────────────────────────────────────
     total_data = [["", "", "TOTAL", f"{data.total:,.2f} {data.currency}"]]
     total_table = Table(total_data, colWidths=col_widths)
-    total_table.setStyle(TableStyle([
-        ("FONTNAME", (0, 0), (-1, -1), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, -1), 10),
-        ("ALIGN", (2, 0), (-1, -1), "RIGHT"),
-        ("TEXTCOLOR", (2, 0), (-1, -1), _brand),
-        ("LINEABOVE", (2, 0), (-1, 0), 1, _brand),
-        ("TOPPADDING", (0, 0), (-1, -1), 6),
-    ]))
+    total_table.setStyle(
+        TableStyle(
+            [
+                ("FONTNAME", (0, 0), (-1, -1), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 10),
+                ("ALIGN", (2, 0), (-1, -1), "RIGHT"),
+                ("TEXTCOLOR", (2, 0), (-1, -1), _brand),
+                ("LINEABOVE", (2, 0), (-1, 0), 1, _brand),
+                ("TOPPADDING", (0, 0), (-1, -1), 6),
+            ]
+        )
+    )
     story.append(total_table)
     story.append(Spacer(1, 1 * cm))
 

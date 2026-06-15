@@ -121,19 +121,13 @@ async def match_supplier(
 
     if best_score >= 0.9 and best_id:
         method = "embedding" if emb_score > tfidf_score else "tfidf"
-        logger.info(
-            "supplier_match_auto", tenant_id=tenant_id, method=method, score=best_score
-        )
-        return SupplierMatchResult(
-            match_type=method, supplier_id=best_id, confidence=best_score
-        )
+        logger.info("supplier_match_auto", tenant_id=tenant_id, method=method, score=best_score)
+        return SupplierMatchResult(match_type=method, supplier_id=best_id, confidence=best_score)
 
     action_id = str(uuid.uuid4())
     payload: dict[str, object] = {"query_name": name, "confidence": round(best_score, 4)}
     if best_score >= 0.3 and best_id:
-        candidate_name = next(
-            (s.name for s in all_suppliers if s.supplier_id == best_id), ""
-        )
+        candidate_name = next((s.name for s in all_suppliers if s.supplier_id == best_id), "")
         payload["candidate_supplier_id"] = best_id
         payload["candidate_name"] = candidate_name
         payload["action"] = "review_match"
@@ -179,9 +173,7 @@ async def record_delivery_event(
     if supplier is None:
         raise ValueError(f"Supplier {supplier_id} not found")
 
-    delivered = (
-        date.fromisoformat(event_in.delivered_date) if event_in.delivered_date else None
-    )
+    delivered = date.fromisoformat(event_in.delivered_date) if event_in.delivered_date else None
     event = SupplierDeliveryEvent(
         delivery_event_id=str(uuid.uuid4()),
         tenant_id=tenant_id,
@@ -270,10 +262,7 @@ async def trigger_reorder_check(
     action_ids: list[str] = []
     for product in products:
         pending = await hitl_repo.list_pending(action_type="purchase_order_send")
-        if any(
-            str(h.payload.get("product_id", "")) == product.product_id
-            for h in pending
-        ):
+        if any(str(h.payload.get("product_id", "")) == product.product_id for h in pending):
             logger.info(
                 "reorder_check_skip_active_po",
                 tenant_id=tenant_id,
@@ -371,11 +360,13 @@ async def discover_suppliers(
     candidates: list[DiscoveryCandidate] = []
     for r in results:
         if isinstance(r, dict):
-            candidates.append(DiscoveryCandidate(
-                name=str(r.get("title", "Unknown"))[:80],
-                website=str(r.get("url", "")) or None,
-                snippet=str(r.get("content", ""))[:200] or None,
-            ))
+            candidates.append(
+                DiscoveryCandidate(
+                    name=str(r.get("title", "Unknown"))[:80],
+                    website=str(r.get("url", "")) or None,
+                    snippet=str(r.get("content", ""))[:200] or None,
+                )
+            )
 
     action_ids: list[str] = []
     for candidate in candidates[:3]:

@@ -75,12 +75,8 @@ async def graph_expand(
         if seed not in graph:
             continue
         # Get nodes within max_hops
-        reachable = nx.single_source_shortest_path_length(
-            graph, seed, cutoff=max_hops
-        )
-        neighbor_ids.update(
-            nid for nid in reachable if nid not in existing_product_ids
-        )
+        reachable = nx.single_source_shortest_path_length(graph, seed, cutoff=max_hops)
+        neighbor_ids.update(nid for nid in reachable if nid not in existing_product_ids)
 
     if not neighbor_ids:
         return candidates

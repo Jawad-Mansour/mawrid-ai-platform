@@ -125,9 +125,7 @@ async def run_rag(
 
     # ── Step 8: GPT-4o answer generation ────────────────────────────────────
     context_text = _build_context(final_chunks)
-    answer = await _generate_answer(
-        query=safe_query, chunks=final_chunks, scope=scope
-    )
+    answer = await _generate_answer(query=safe_query, chunks=final_chunks, scope=scope)
 
     # ── Phase 5: NeMo output rail ────────────────────────────────────────────
     if guard is not None:

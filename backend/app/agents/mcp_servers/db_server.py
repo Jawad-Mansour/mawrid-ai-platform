@@ -101,7 +101,9 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
     result: Any
     try:
         if name == "search_products":
-            result = await _search_products(arguments["query"], tenant_id, arguments.get("limit", 10))
+            result = await _search_products(
+                arguments["query"], tenant_id, arguments.get("limit", 10)
+            )
         elif name == "get_order_status":
             result = await _get_order_status(arguments["order_id"], tenant_id)
         elif name == "check_stock":
@@ -132,6 +134,7 @@ async def _search_products(query: str, tenant_id: str, limit: int) -> list[dict[
     session_factory, engine = await _get_session(tenant_id)
     try:
         from app.infra.db.repos.product_repo import ProductRepository  # noqa: PLC0415
+
         async with session_factory() as session:
             repo = ProductRepository(session, tenant_id)
             products = await repo.list_all()
@@ -156,6 +159,7 @@ async def _get_order_status(order_id: str, tenant_id: str) -> dict[str, Any]:
     session_factory, engine = await _get_session(tenant_id)
     try:
         from app.infra.db.repos.order_repo import OrderRepository  # noqa: PLC0415
+
         async with session_factory() as session:
             repo = OrderRepository(session, tenant_id)
             order = await repo.get_by_id(order_id)
@@ -178,6 +182,7 @@ async def _get_shipment_status(reference: str, tenant_id: str) -> dict[str, Any]
     session_factory, engine = await _get_session(tenant_id)
     try:
         from app.infra.db.repos.shipment_repo import ShipmentRepository  # noqa: PLC0415
+
         async with session_factory() as session:
             repo = ShipmentRepository(session, tenant_id)
             shipments = await repo.list_by_po(reference)
@@ -188,7 +193,9 @@ async def _get_shipment_status(reference: str, tenant_id: str) -> dict[str, Any]
                 "shipment_id": shipment.shipment_id,
                 "status": shipment.status,
                 "carrier": shipment.carrier,
-                "eta": str(shipment.expected_arrival_date) if shipment.expected_arrival_date else None,
+                "eta": str(shipment.expected_arrival_date)
+                if shipment.expected_arrival_date
+                else None,
             }
     finally:
         await engine.dispose()
@@ -200,6 +207,7 @@ async def _list_overdue_invoices(tenant_id: str, limit: int) -> list[dict[str, A
         from datetime import date  # noqa: PLC0415
 
         from app.infra.db.repos.invoice_repo import InvoiceRepository  # noqa: PLC0415
+
         async with session_factory() as session:
             repo = InvoiceRepository(session, tenant_id)
             invoices = await repo.list_overdue_b2b_receivables(date.today())

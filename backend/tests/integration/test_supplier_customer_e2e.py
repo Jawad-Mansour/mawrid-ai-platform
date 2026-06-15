@@ -30,9 +30,7 @@ class TestSupplierMatchingWaterfall:
     """AC-1: Supplier matching waterfall produces correct outcomes."""
 
     @pytest.mark.asyncio
-    async def test_exact_name_auto_links(
-        self, db_session: AsyncSession, tenant_id: str
-    ) -> None:
+    async def test_exact_name_auto_links(self, db_session: AsyncSession, tenant_id: str) -> None:
         from app.core.suppliers.services import match_supplier
         from app.infra.db.repos.supplier_repo import SupplierRepository
 
@@ -94,9 +92,7 @@ class TestSupplierScoring:
             price_billed=10.0,
             response_time_hours=2.0,
         )
-        result = await record_delivery_event(
-            db_session, tenant_id, supplier.supplier_id, event
-        )
+        result = await record_delivery_event(db_session, tenant_id, supplier.supplier_id, event)
         assert result.score > 80.0
 
     @pytest.mark.asyncio
@@ -126,9 +122,7 @@ class TestSupplierScoring:
             price_agreed=10.0,
             price_billed=10.0,
         )
-        result = await record_delivery_event(
-            db_session, tenant_id, supplier.supplier_id, event
-        )
+        result = await record_delivery_event(db_session, tenant_id, supplier.supplier_id, event)
         assert result.score < 90.0
 
 
@@ -136,9 +130,7 @@ class TestCustomerMatchingWaterfall:
     """AC-4: Customer matching waterfall."""
 
     @pytest.mark.asyncio
-    async def test_exact_email_auto_links(
-        self, db_session: AsyncSession, tenant_id: str
-    ) -> None:
+    async def test_exact_email_auto_links(self, db_session: AsyncSession, tenant_id: str) -> None:
         from app.core.customers.services import match_or_create_customer
         from app.infra.db.models.customer import Customer
         from app.infra.db.repos.customer_repo import CustomerRepository
@@ -213,7 +205,5 @@ class TestPaymentHistoryScore:
         )
         assert result.customer_id is not None
 
-        new_score = await record_payment_outcome(
-            db_session, tenant_id, result.customer_id, 1.0
-        )
+        new_score = await record_payment_outcome(db_session, tenant_id, result.customer_id, 1.0)
         assert new_score == pytest.approx(1.0)

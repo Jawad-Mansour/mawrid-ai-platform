@@ -34,6 +34,7 @@ class StripeGateway:
         Create a Stripe PaymentIntent. Amount is in major currency units (e.g. USD).
         Returns client_secret and payment_intent_id for the frontend to complete payment.
         """
+
         def _create() -> _stripe.PaymentIntent:
             return _stripe.PaymentIntent.create(
                 api_key=self._api_key,

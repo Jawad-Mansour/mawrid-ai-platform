@@ -57,10 +57,12 @@ class DunningRepository(TenantRepository):
 
     async def list_by_invoice(self, invoice_id: str) -> list[DunningSequence]:
         result = await self._session.execute(
-            select(DunningSequence).where(
+            select(DunningSequence)
+            .where(
                 self._tenant_filter(DunningSequence),
                 DunningSequence.invoice_id == invoice_id,
-            ).order_by(DunningSequence.created_at)
+            )
+            .order_by(DunningSequence.created_at)
         )
         return list(result.scalars().all())
 

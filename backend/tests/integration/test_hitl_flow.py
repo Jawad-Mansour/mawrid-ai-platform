@@ -75,9 +75,7 @@ class TestHITLLifecycle:
         )
         await db_session.flush()
 
-        result = await approve_action(
-            action.action_id, "purchase_order_send", payload, sender
-        )
+        result = await approve_action(action.action_id, "purchase_order_send", payload, sender)
         assert result.status == "approved"
         # External write fired exactly once, only at approval.
         assert len(sender.sent) == 1
@@ -107,9 +105,7 @@ class TestHITLLifecycle:
         )
         await db_session.flush()
 
-        result = await approve_action(
-            action.action_id, "supplier_match_review", payload, sender
-        )
+        result = await approve_action(action.action_id, "supplier_match_review", payload, sender)
         assert result.status == "approved"
         assert sender.sent == []  # no email channel for this action type
 

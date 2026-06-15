@@ -200,7 +200,6 @@ async def _handle_direct_query(
 ) -> str:
     """Handle direct DB query intents without LLM. Returns human-readable answer."""
     try:
-
         from app.agents.mcp_servers.db_server import get_tool_functions  # noqa: PLC0415
 
         tools = get_tool_functions()
@@ -210,7 +209,11 @@ async def _handle_direct_query(
             results = await tools["check_stock"](query, tenant_id)
             if not results or (isinstance(results, list) and results and "error" in results[0]):
                 return "No products matching your query were found in the catalog."
-            lines = [f"- {r['name']}: {r.get('qty_in_stock', 0)} units in stock" for r in results if isinstance(r, dict)]
+            lines = [
+                f"- {r['name']}: {r.get('qty_in_stock', 0)} units in stock"
+                for r in results
+                if isinstance(r, dict)
+            ]
             return "Stock levels:\n" + "\n".join(lines) if lines else "No matching products found."
 
         if intent == "invoice_query":
@@ -219,13 +222,15 @@ async def _handle_direct_query(
                 return "No overdue invoices found."
             lines = [
                 f"- Invoice {r['invoice_id']}: {r.get('amount', 0)} (due {r.get('due_date', 'N/A')})"
-                for r in overdue if isinstance(r, dict) and "invoice_id" in r
+                for r in overdue
+                if isinstance(r, dict) and "invoice_id" in r
             ]
             return f"Overdue invoices ({len(lines)}):\n" + "\n".join(lines)
 
         if intent == "order_status":
             # Try to extract an order_id from the query
             import re  # noqa: PLC0415
+
             match = re.search(r"\b(PO[-\s]?\d{3,})\b", query, re.IGNORECASE)
             if match:
                 order_id = match.group(1).replace(" ", "-")
@@ -236,6 +241,7 @@ async def _handle_direct_query(
 
         if intent == "shipment_status":
             import re  # noqa: PLC0415
+
             match = re.search(r"\b(PO[-\s]?\d{3,}|SHP[-\s]?\d{3,})\b", query, re.IGNORECASE)
             if match:
                 ref = match.group(1).replace(" ", "-")

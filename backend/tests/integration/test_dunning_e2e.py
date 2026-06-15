@@ -133,7 +133,9 @@ class TestTrack1Payables:
         )
         await db_session.flush()
 
-        with patch("app.core.dunning.services.chat_completion", new=AsyncMock(return_value=_MOCK_DRAFT)):
+        with patch(
+            "app.core.dunning.services.chat_completion", new=AsyncMock(return_value=_MOCK_DRAFT)
+        ):
             action_ids = await trigger_track1(db_session, tenant_id, today)
 
         assert len(action_ids) >= 1
@@ -152,9 +154,7 @@ class TestTrack1Payables:
         assert seq.track == "payables"
 
     @pytest.mark.asyncio
-    async def test_no_email_invoice_skipped(
-        self, db_session: AsyncSession, tenant_id: str
-    ) -> None:
+    async def test_no_email_invoice_skipped(self, db_session: AsyncSession, tenant_id: str) -> None:
         """Invoices without contact_email are silently skipped."""
         from app.core.dunning.services import trigger_track1
 
@@ -168,7 +168,9 @@ class TestTrack1Payables:
         )
         await db_session.flush()
 
-        with patch("app.core.dunning.services.chat_completion", new=AsyncMock(return_value=_MOCK_DRAFT)):
+        with patch(
+            "app.core.dunning.services.chat_completion", new=AsyncMock(return_value=_MOCK_DRAFT)
+        ):
             action_ids = await trigger_track1(db_session, tenant_id, today)
 
         assert action_ids == []
@@ -190,7 +192,9 @@ class TestTrack1Payables:
         )
         await db_session.flush()
 
-        with patch("app.core.dunning.services.chat_completion", new=AsyncMock(return_value=_MOCK_DRAFT)):
+        with patch(
+            "app.core.dunning.services.chat_completion", new=AsyncMock(return_value=_MOCK_DRAFT)
+        ):
             first = await trigger_track1(db_session, tenant_id, today)
             second = await trigger_track1(db_session, tenant_id, today)
 
@@ -217,7 +221,9 @@ class TestTrack1Payables:
         )
         await db_session.flush()
 
-        with patch("app.core.dunning.services.chat_completion", new=AsyncMock(return_value=_MOCK_DRAFT)):
+        with patch(
+            "app.core.dunning.services.chat_completion", new=AsyncMock(return_value=_MOCK_DRAFT)
+        ):
             action_ids = await trigger_track1(db_session, tenant_id, today)
 
         assert action_ids == []
@@ -228,9 +234,7 @@ class TestTrack1Payables:
 
 class TestTrack2Disputes:
     @pytest.mark.asyncio
-    async def test_dispute_hitl_created(
-        self, db_session: AsyncSession, tenant_id: str
-    ) -> None:
+    async def test_dispute_hitl_created(self, db_session: AsyncSession, tenant_id: str) -> None:
         """Track 2 creates a HITL action with the dispute draft."""
         from app.core.dunning.services import trigger_track2
         from app.infra.db.repos.hitl_repo import HITLRepository
@@ -248,7 +252,9 @@ class TestTrack2Disputes:
             "resolution_requested": "Credit note or replacement.",
         }
 
-        with patch("app.core.dunning.services.chat_completion", new=AsyncMock(return_value=_MOCK_DRAFT)):
+        with patch(
+            "app.core.dunning.services.chat_completion", new=AsyncMock(return_value=_MOCK_DRAFT)
+        ):
             action_id = await trigger_track2(
                 db_session, tenant_id, invoice_id, supplier_id, dispute_context
             )
@@ -262,9 +268,7 @@ class TestTrack2Disputes:
         assert action.status == "pending"
 
     @pytest.mark.asyncio
-    async def test_supplier_no_email_raises(
-        self, db_session: AsyncSession, tenant_id: str
-    ) -> None:
+    async def test_supplier_no_email_raises(self, db_session: AsyncSession, tenant_id: str) -> None:
         """Supplier without email raises ValueError (caller must validate)."""
         from app.core.dunning.services import trigger_track2
         from sqlalchemy import text
@@ -281,7 +285,9 @@ class TestTrack2Disputes:
         await db_session.flush()
 
         with (
-            patch("app.core.dunning.services.chat_completion", new=AsyncMock(return_value=_MOCK_DRAFT)),
+            patch(
+                "app.core.dunning.services.chat_completion", new=AsyncMock(return_value=_MOCK_DRAFT)
+            ),
             pytest.raises(ValueError, match="no email"),
         ):
             await trigger_track2(db_session, tenant_id, invoice_id, supplier_id, {})
@@ -292,9 +298,7 @@ class TestTrack2Disputes:
 
 class TestTrack3Receivables:
     @pytest.mark.asyncio
-    async def test_day7_hitl_created(
-        self, db_session: AsyncSession, tenant_id: str
-    ) -> None:
+    async def test_day7_hitl_created(self, db_session: AsyncSession, tenant_id: str) -> None:
         """Receivable invoice overdue by 7 days triggers Day 7 HITL."""
         from app.core.dunning.services import trigger_track3
         from app.infra.db.repos.hitl_repo import HITLRepository
@@ -309,7 +313,9 @@ class TestTrack3Receivables:
         )
         await db_session.flush()
 
-        with patch("app.core.dunning.services.chat_completion", new=AsyncMock(return_value=_MOCK_DRAFT)):
+        with patch(
+            "app.core.dunning.services.chat_completion", new=AsyncMock(return_value=_MOCK_DRAFT)
+        ):
             action_ids = await trigger_track3(db_session, tenant_id, today)
 
         assert len(action_ids) >= 1
@@ -338,7 +344,9 @@ class TestTrack3Receivables:
         )
         await db_session.flush()
 
-        with patch("app.core.dunning.services.chat_completion", new=AsyncMock(return_value=_MOCK_DRAFT)):
+        with patch(
+            "app.core.dunning.services.chat_completion", new=AsyncMock(return_value=_MOCK_DRAFT)
+        ):
             action_ids = await trigger_track3(db_session, tenant_id, today)
 
         hitl_repo = HITLRepository(db_session, tenant_id)
@@ -352,9 +360,7 @@ class TestTrack3Receivables:
 
 class TestTrack4B2C:
     @pytest.mark.asyncio
-    async def test_day3_hitl_created(
-        self, db_session: AsyncSession, tenant_id: str
-    ) -> None:
+    async def test_day3_hitl_created(self, db_session: AsyncSession, tenant_id: str) -> None:
         """B2C invoice 3 days past invoice_date triggers Day 3 HITL."""
         from app.core.dunning.services import trigger_track4
         from app.infra.db.repos.hitl_repo import HITLRepository
@@ -370,7 +376,9 @@ class TestTrack4B2C:
         )
         await db_session.flush()
 
-        with patch("app.core.dunning.services.chat_completion", new=AsyncMock(return_value=_MOCK_DRAFT)):
+        with patch(
+            "app.core.dunning.services.chat_completion", new=AsyncMock(return_value=_MOCK_DRAFT)
+        ):
             action_ids = await trigger_track4(db_session, tenant_id, today)
 
         assert len(action_ids) >= 1
@@ -382,9 +390,7 @@ class TestTrack4B2C:
         assert action.payload["track"] == "b2c"
 
     @pytest.mark.asyncio
-    async def test_b2c_idempotency(
-        self, db_session: AsyncSession, tenant_id: str
-    ) -> None:
+    async def test_b2c_idempotency(self, db_session: AsyncSession, tenant_id: str) -> None:
         """Triggering Track 4 twice for the same invoice creates only one HITL action."""
         from app.core.dunning.services import trigger_track4
 
@@ -399,7 +405,9 @@ class TestTrack4B2C:
         )
         await db_session.flush()
 
-        with patch("app.core.dunning.services.chat_completion", new=AsyncMock(return_value=_MOCK_DRAFT)):
+        with patch(
+            "app.core.dunning.services.chat_completion", new=AsyncMock(return_value=_MOCK_DRAFT)
+        ):
             first = await trigger_track4(db_session, tenant_id, today)
             second = await trigger_track4(db_session, tenant_id, today)
 
@@ -435,7 +443,9 @@ class TestPaymentAutoStop:
         )
         await db_session.flush()
 
-        with patch("app.core.dunning.services.chat_completion", new=AsyncMock(return_value=_MOCK_DRAFT)):
+        with patch(
+            "app.core.dunning.services.chat_completion", new=AsyncMock(return_value=_MOCK_DRAFT)
+        ):
             action_ids = await trigger_track1(db_session, tenant_id, today)
         assert len(action_ids) == 1
 
@@ -499,7 +509,9 @@ class TestDunningCrossTenantIsolation:
         )
         await db_session.flush()
 
-        with patch("app.core.dunning.services.chat_completion", new=AsyncMock(return_value=_MOCK_DRAFT)):
+        with patch(
+            "app.core.dunning.services.chat_completion", new=AsyncMock(return_value=_MOCK_DRAFT)
+        ):
             action_ids = await trigger_track1(db_session, tenant_a, today)
 
         # tenant_a should see zero matching invoices

@@ -144,7 +144,9 @@ class TestListPublishedProducts:
         with (
             patch("app.api.storefront.ProductRepository", return_value=mock_product_repo),
             patch("app.api.storefront.TenantRepo", return_value=mock_tenant_repo),
-            patch("app.api.storefront.get_presigned_url", new_callable=AsyncMock, return_value=None),
+            patch(
+                "app.api.storefront.get_presigned_url", new_callable=AsyncMock, return_value=None
+            ),
         ):
             resp = client.get(self._url, headers=_TENANT_HEADER)
 
@@ -186,7 +188,9 @@ class TestGetProductDetail:
         with (
             patch("app.api.storefront.ProductRepository", return_value=mock_product_repo),
             patch("app.api.storefront.TenantRepo", return_value=mock_tenant_repo),
-            patch("app.api.storefront.get_presigned_url", new_callable=AsyncMock, return_value=None),
+            patch(
+                "app.api.storefront.get_presigned_url", new_callable=AsyncMock, return_value=None
+            ),
         ):
             resp = client.get(self._url.format(product_id="p1"), headers=_TENANT_HEADER)
 

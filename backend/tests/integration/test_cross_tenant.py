@@ -73,28 +73,20 @@ async def _make_product(
 
 class TestProductIsolation:
     @pytest.mark.asyncio
-    async def test_v1_get_by_id_cross_tenant_returns_none(
-        self, db_session: AsyncSession
-    ) -> None:
+    async def test_v1_get_by_id_cross_tenant_returns_none(self, db_session: AsyncSession) -> None:
         from app.infra.db.repos.product_repo import ProductRepository
 
         b_product = await _make_product(db_session, TENANT_B, name="B Secret Product")
         # Tenant A asks for B's product by its real id → must not see it.
-        leaked = await ProductRepository(db_session, TENANT_A).get_by_id(
-            b_product.product_id
-        )
+        leaked = await ProductRepository(db_session, TENANT_A).get_by_id(b_product.product_id)
         assert leaked is None
 
     @pytest.mark.asyncio
-    async def test_v2_get_by_hash_cross_tenant_returns_none(
-        self, db_session: AsyncSession
-    ) -> None:
+    async def test_v2_get_by_hash_cross_tenant_returns_none(self, db_session: AsyncSession) -> None:
         from app.infra.db.repos.product_repo import ProductRepository
 
         b_product = await _make_product(db_session, TENANT_B, name="B Hashed Product")
-        leaked = await ProductRepository(db_session, TENANT_A).get_by_hash(
-            b_product.product_hash
-        )
+        leaked = await ProductRepository(db_session, TENANT_A).get_by_hash(b_product.product_hash)
         assert leaked is None
 
     @pytest.mark.asyncio
@@ -109,16 +101,12 @@ class TestProductIsolation:
         assert leaked is None
 
     @pytest.mark.asyncio
-    async def test_v4_list_all_excludes_other_tenant(
-        self, db_session: AsyncSession
-    ) -> None:
+    async def test_v4_list_all_excludes_other_tenant(self, db_session: AsyncSession) -> None:
         from app.infra.db.repos.product_repo import ProductRepository
 
         a_product = await _make_product(db_session, TENANT_A, name="A Listed")
         b_product = await _make_product(db_session, TENANT_B, name="B Listed")
-        a_ids = {
-            p.product_id for p in await ProductRepository(db_session, TENANT_A).list_all()
-        }
+        a_ids = {p.product_id for p in await ProductRepository(db_session, TENANT_A).list_all()}
         assert a_product.product_id in a_ids
         assert b_product.product_id not in a_ids
 
@@ -137,9 +125,7 @@ class TestProductIsolation:
         )
         await db_session.flush()
         # B's product is unchanged when read by B.
-        still = await ProductRepository(db_session, TENANT_B).get_by_id(
-            b_product.product_id
-        )
+        still = await ProductRepository(db_session, TENANT_B).get_by_id(b_product.product_id)
         assert still is not None
         assert still.storefront_status == "published"
 
@@ -149,17 +135,13 @@ class TestProductIsolation:
     ) -> None:
         from app.infra.db.repos.product_repo import ProductRepository
 
-        b_product = await _make_product(
-            db_session, TENANT_B, name="B Stock", storefront_qty=10
-        )
+        b_product = await _make_product(db_session, TENANT_B, name="B Stock", storefront_qty=10)
         ok = await ProductRepository(db_session, TENANT_A).decrement_storefront_qty(
             b_product.product_id, 5
         )
         assert ok is False  # A cannot decrement B's stock
         await db_session.flush()
-        still = await ProductRepository(db_session, TENANT_B).get_by_id(
-            b_product.product_id
-        )
+        still = await ProductRepository(db_session, TENANT_B).get_by_id(b_product.product_id)
         assert still is not None
         assert still.storefront_qty == 10  # noqa: PLR2004
 
@@ -182,9 +164,7 @@ class TestHITLIsolation:
         return action
 
     @pytest.mark.asyncio
-    async def test_v7_get_by_id_cross_tenant_returns_none(
-        self, db_session: AsyncSession
-    ) -> None:
+    async def test_v7_get_by_id_cross_tenant_returns_none(self, db_session: AsyncSession) -> None:
         from app.infra.db.repos.hitl_repo import HITLRepository
 
         b_action = await self._make_hitl(db_session, TENANT_B)
@@ -192,9 +172,7 @@ class TestHITLIsolation:
         assert leaked is None
 
     @pytest.mark.asyncio
-    async def test_v8_list_pending_excludes_other_tenant(
-        self, db_session: AsyncSession
-    ) -> None:
+    async def test_v8_list_pending_excludes_other_tenant(self, db_session: AsyncSession) -> None:
         from app.infra.db.repos.hitl_repo import HITLRepository
 
         b_action = await self._make_hitl(db_session, TENANT_B)
@@ -202,15 +180,11 @@ class TestHITLIsolation:
         assert b_action.action_id not in {a.action_id for a in a_pending}
 
     @pytest.mark.asyncio
-    async def test_v9_set_status_cannot_touch_other_tenant(
-        self, db_session: AsyncSession
-    ) -> None:
+    async def test_v9_set_status_cannot_touch_other_tenant(self, db_session: AsyncSession) -> None:
         from app.infra.db.repos.hitl_repo import HITLRepository
 
         b_action = await self._make_hitl(db_session, TENANT_B)
-        await HITLRepository(db_session, TENANT_A).set_status(
-            b_action.action_id, "approved"
-        )
+        await HITLRepository(db_session, TENANT_A).set_status(b_action.action_id, "approved")
         await db_session.flush()
         still = await HITLRepository(db_session, TENANT_B).get_by_id(b_action.action_id)
         assert still is not None
@@ -223,9 +197,7 @@ class TestHITLIsolation:
         from app.infra.db.repos.hitl_repo import HITLRepository
 
         shared_invoice = _new_id()
-        b_action = await self._make_hitl(
-            db_session, TENANT_B, invoice_id=shared_invoice
-        )
+        b_action = await self._make_hitl(db_session, TENANT_B, invoice_id=shared_invoice)
         # A cancels by the SAME invoice id — must not reach B's action.
         cancelled = await HITLRepository(db_session, TENANT_A).bulk_cancel_by_invoice(
             shared_invoice
@@ -251,9 +223,7 @@ class TestDomainEntityIsolation:
             supplier_id=_new_id(), name="B Supplier", email="b@s.com"
         )
         await db_session.flush()
-        leaked = await SupplierRepository(db_session, TENANT_A).get_by_id(
-            b_supplier.supplier_id
-        )
+        leaked = await SupplierRepository(db_session, TENANT_A).get_by_id(b_supplier.supplier_id)
         assert leaked is None
 
     @pytest.mark.asyncio
@@ -296,9 +266,7 @@ class TestDomainEntityIsolation:
         )
         await InvoiceRepository(db_session, TENANT_B).create(b_invoice)
         await db_session.flush()
-        leaked = await InvoiceRepository(db_session, TENANT_A).get_by_id(
-            b_invoice.invoice_id
-        )
+        leaked = await InvoiceRepository(db_session, TENANT_A).get_by_id(b_invoice.invoice_id)
         assert leaked is None
 
 
@@ -332,9 +300,7 @@ class TestVectorAndOutboxIsolation:
             )
         await db_session.flush()
 
-        hits = await search_chunks(
-            db_session, TENANT_A, query_embedding=vec, top_k=20, scope="all"
-        )
+        hits = await search_chunks(db_session, TENANT_A, query_embedding=vec, top_k=20, scope="all")
         returned_products = {h.product_id for h in hits}
         assert b_product.product_id not in returned_products
 

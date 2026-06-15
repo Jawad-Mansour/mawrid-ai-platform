@@ -98,10 +98,12 @@ def _make_pipeline(
     )
 
 
-_GPT_ENRICH_RESPONSE = json.dumps({
-    "specifications": {"RAM": "8GB", "Storage": "256GB", "Color": "Black"},
-    "description": "A flagship smartphone with premium camera and performance.",
-})
+_GPT_ENRICH_RESPONSE = json.dumps(
+    {
+        "specifications": {"RAM": "8GB", "Storage": "256GB", "Color": "Black"},
+        "description": "A flagship smartphone with premium camera and performance.",
+    }
+)
 
 
 class TestIcecatConfidence:
@@ -217,9 +219,7 @@ class TestEnrichmentOutput:
             "app.core.catalog.enrichment_pipeline.chat_completion",
             new=AsyncMock(return_value=_GPT_ENRICH_RESPONSE),
         ):
-            output = await pipeline.run(
-                EnrichmentInput(product_name="تلفزيون سامسونج 65 بوصة")
-            )
+            output = await pipeline.run(EnrichmentInput(product_name="تلفزيون سامسونج 65 بوصة"))
 
         assert output.product_name == "تلفزيون سامسونج 65 بوصة"
 
@@ -229,17 +229,19 @@ class TestEnrichmentOutput:
         pipeline = _make_pipeline(
             icecat=FakeIcecat(name_data=_ICECAT_RESPONSE_5_SPECS),
         )
-        gpt_response = json.dumps({
-            "specifications": {
-                "RAM": "8GB",
-                "Storage": "256GB",
-                "Display": "6.1 inch",
-                "Battery": "3279 mAh",
-                "Camera": "12MP",
-                "Color": "Midnight Black",
-            },
-            "description": "Flagship device.",
-        })
+        gpt_response = json.dumps(
+            {
+                "specifications": {
+                    "RAM": "8GB",
+                    "Storage": "256GB",
+                    "Display": "6.1 inch",
+                    "Battery": "3279 mAh",
+                    "Camera": "12MP",
+                    "Color": "Midnight Black",
+                },
+                "description": "Flagship device.",
+            }
+        )
 
         with patch(
             "app.core.catalog.enrichment_pipeline.chat_completion",

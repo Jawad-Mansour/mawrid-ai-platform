@@ -38,8 +38,8 @@ class CustomerDomain(BaseModel):
 class CustomerMatchResult(BaseModel):
     model_config = {"extra": "forbid"}
 
-    match_type: str              # "email" | "phone" | "name_tfidf" | "hitl" | "created"
-    customer_id: str | None      # set for auto-links and new records; None while HITL pending
-    confidence: float            # 0.0–1.0
-    created: bool = False        # True when a brand-new customer record was inserted
+    match_type: str  # "email" | "phone" | "name_tfidf" | "hitl" | "created"
+    customer_id: str | None  # set for auto-links and new records; None while HITL pending
+    confidence: float  # 0.0–1.0
+    created: bool = False  # True when a brand-new customer record was inserted
     hitl_action_id: str | None = None

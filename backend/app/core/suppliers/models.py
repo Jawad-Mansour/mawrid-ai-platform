@@ -20,7 +20,7 @@ class DeliveryEventInput(BaseModel):
     model_config = {"extra": "forbid"}
 
     order_id: str | None = None
-    promised_date: str           # ISO date YYYY-MM-DD
+    promised_date: str  # ISO date YYYY-MM-DD
     delivered_date: str | None = None
     items_ordered: int = Field(default=1, ge=1)
     items_received: int = Field(default=0, ge=0)
@@ -34,9 +34,9 @@ class DeliveryEventInput(BaseModel):
 class SupplierMatchResult(BaseModel):
     model_config = {"extra": "forbid"}
 
-    match_type: str           # "exact" | "tfidf" | "embedding" | "hitl" | "no_match"
-    supplier_id: str | None   # set for auto-links; None when HITL pending
-    confidence: float         # 0.0–1.0
+    match_type: str  # "exact" | "tfidf" | "embedding" | "hitl" | "no_match"
+    supplier_id: str | None  # set for auto-links; None when HITL pending
+    confidence: float  # 0.0–1.0
     hitl_action_id: str | None = None
 
 

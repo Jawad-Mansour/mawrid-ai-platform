@@ -73,9 +73,7 @@ class TestSupplierCRUD:
         assert fetched.currency == "USD"
 
     @pytest.mark.asyncio
-    async def test_supplier_cross_tenant_isolation(
-        self, db_session: AsyncSession
-    ) -> None:
+    async def test_supplier_cross_tenant_isolation(self, db_session: AsyncSession) -> None:
         """Tenant A cannot see Tenant B's suppliers."""
         from app.infra.db.repos.supplier_repo import SupplierRepository
 
@@ -141,9 +139,7 @@ class TestOrderDraftLifecycle:
         from app.infra.db.repos.supplier_repo import SupplierRepository
 
         supplier_repo = SupplierRepository(db_session, tenant_id)
-        supplier = await supplier_repo.create(
-            supplier_id=uuid.uuid4().hex, name="Supplier X"
-        )
+        supplier = await supplier_repo.create(supplier_id=uuid.uuid4().hex, name="Supplier X")
         await db_session.flush()
 
         order_repo = OrderRepository(db_session, tenant_id)
@@ -165,9 +161,7 @@ class TestOrderDraftLifecycle:
         assert updated.notes == "Updated note"
 
     @pytest.mark.asyncio
-    async def test_order_cross_tenant_isolation(
-        self, db_session: AsyncSession
-    ) -> None:
+    async def test_order_cross_tenant_isolation(self, db_session: AsyncSession) -> None:
         from app.infra.db.repos.order_repo import OrderRepository
         from app.infra.db.repos.supplier_repo import SupplierRepository
 
@@ -331,7 +325,7 @@ class TestShipmentTracking:
         from sqlalchemy import select
 
         # Create product with 0 stock
-        product_id = await _create_product(db_session, tenant_id, "Samsung TV 55\"")
+        product_id = await _create_product(db_session, tenant_id, 'Samsung TV 55"')
         await db_session.flush()
 
         supplier_repo = SupplierRepository(db_session, tenant_id)
@@ -363,6 +357,7 @@ class TestShipmentTracking:
         # Receive goods: 10 received, 1 damaged → net = 9
         net_qty = 10 - 1
         from sqlalchemy import update as sa_update
+
         await db_session.execute(
             sa_update(Product)
             .where(Product.tenant_id == tenant_id, Product.product_id == product_id)
@@ -380,9 +375,7 @@ class TestShipmentTracking:
 
         # Verify stock
         result = await db_session.execute(
-            select(Product).where(
-                Product.tenant_id == tenant_id, Product.product_id == product_id
-            )
+            select(Product).where(Product.tenant_id == tenant_id, Product.product_id == product_id)
         )
         product = result.scalar_one()
         assert product.qty_in_stock == net_qty
@@ -423,9 +416,7 @@ class TestStorefrontPublishing:
         await db_session.flush()
 
         result = await db_session.execute(
-            select(Product).where(
-                Product.tenant_id == tenant_id, Product.product_id == product_id
-            )
+            select(Product).where(Product.tenant_id == tenant_id, Product.product_id == product_id)
         )
         p = result.scalar_one()
         assert p.storefront_status == "published"
