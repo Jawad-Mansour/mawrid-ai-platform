@@ -8,6 +8,7 @@ export default {
     extend: {
       colors: {
         bg: { DEFAULT: rgb("--bg"), soft: rgb("--bg-soft"), card: "var(--bg-card)" },
+        page: rgb("--page"),
         line: "var(--line)",
         // "gold" is the themeable accent token (kept named gold across components)
         gold: { DEFAULT: rgb("--accent"), soft: rgb("--accent-soft"), deep: rgb("--accent-deep") },

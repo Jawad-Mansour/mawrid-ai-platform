@@ -14,8 +14,8 @@ export interface ThemeDef {
 export const THEMES: ThemeDef[] = [
   { key: "gold", name: "Desert Gold", available: true, swatch: ["#D4A373", "#9D4EDD"], hint: "Warm earth tones — the signature look." },
   { key: "blue", name: "Royal Blue", available: true, swatch: ["#548EFF", "#8264FF"], hint: "Cool, focused, fintech-grade." },
-  { key: "light", name: "Daylight", available: false, swatch: ["#2563EB", "#E5E9F2"], hint: "Light mode — coming soon." },
-  { key: "emerald", name: "Forest", available: false, swatch: ["#2D6A4F", "#40916C"], hint: "Coming soon." },
+  { key: "emerald", name: "Forest", available: true, swatch: ["#34A86E", "#6ECD98"], hint: "Calm, natural, high-trust green." },
+  { key: "light", name: "Daylight", available: true, swatch: ["#2563EB", "#E5E9F2"], hint: "Bright workspace for daytime." },
 ];
 
 interface ThemeStore {

@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useBootstrapAuth } from "@/hooks/useAuth";
 import { useApplyTheme } from "@/stores/theme";
+import { LogoutOverlay } from "@/components/LogoutOverlay";
 import { Intelligence } from "@/pages/Intelligence";
 import { Suppliers } from "@/pages/Suppliers";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -21,6 +22,8 @@ export default function App() {
   useBootstrapAuth();
   useApplyTheme();
   return (
+    <>
+    <LogoutOverlay />
     <Routes>
       <Route path="/choose-mode" element={<ChooseMode />} />
       <Route path="/signup" element={<Signup />} />
@@ -42,5 +45,6 @@ export default function App() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   );
 }

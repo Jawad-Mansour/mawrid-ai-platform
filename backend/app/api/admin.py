@@ -141,16 +141,26 @@ def _run_drift_status() -> str:
     return "ok"
 
 
-async def _query_mlflow_models(tracking_uri: str) -> list[ModelHealth]:
-    known_models = ["tone_classifier", "supplier_scorer", "intent_tier1"]
-    results: list[ModelHealth] = []
+_MLFLOW_KNOWN_MODELS = ["tone_classifier", "supplier_scorer", "intent_tier1"]
 
+
+def _query_mlflow_models_sync(tracking_uri: str) -> list[ModelHealth]:
+    """Blocking MLflow registry read. MUST run in a thread — the MLflow client is
+    synchronous and, if the server is unreachable, retries for ~12 min by default,
+    which would freeze the entire async event loop. We cap its retry budget hard."""
+    import os  # noqa: PLC0415
+
+    # Cap MLflow's own HTTP retry/timeout so a dead server fails in seconds, not minutes.
+    os.environ.setdefault("MLFLOW_HTTP_REQUEST_TIMEOUT", "4")
+    os.environ.setdefault("MLFLOW_HTTP_REQUEST_MAX_RETRIES", "1")
+
+    results: list[ModelHealth] = []
     try:
         import mlflow  # noqa: PLC0415
 
         mlflow.set_tracking_uri(tracking_uri)
         client = mlflow.MlflowClient()
-        for model_name in known_models:
+        for model_name in _MLFLOW_KNOWN_MODELS:
             try:
                 reg = client.get_registered_model(model_name)
                 latest = reg.latest_versions[0] if reg.latest_versions else None
@@ -165,9 +175,23 @@ async def _query_mlflow_models(tracking_uri: str) -> list[ModelHealth]:
             except Exception:
                 results.append(ModelHealth(name=model_name, status="not_registered"))
     except Exception:
-        results = [ModelHealth(name=m, status="registry_unavailable") for m in known_models]
+        results = [ModelHealth(name=m, status="registry_unavailable") for m in _MLFLOW_KNOWN_MODELS]
 
     return results
+
+
+async def _query_mlflow_models(tracking_uri: str) -> list[ModelHealth]:
+    """Non-blocking wrapper: offload to a thread and hard-cap total wait. If MLflow
+    is slow or down, return 'registry_unavailable' fast instead of hanging."""
+    try:
+        return await asyncio.wait_for(
+            asyncio.to_thread(_query_mlflow_models_sync, tracking_uri),
+            timeout=8.0,
+        )
+    except Exception:
+        return [
+            ModelHealth(name=m, status="registry_unavailable") for m in _MLFLOW_KNOWN_MODELS
+        ]
 
 
 async def _fetch_n8n_workflows(base_url: str, api_key: str) -> N8nStatusResponse:

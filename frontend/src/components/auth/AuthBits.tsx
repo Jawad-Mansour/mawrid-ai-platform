@@ -9,7 +9,7 @@ export function PasswordField({
   onChange,
   placeholder = "Password",
   ...rest
-}: { value: string; onChange: (v: string) => void } & InputHTMLAttributes<HTMLInputElement>) {
+}: { value: string; onChange: (v: string) => void } & Omit<InputHTMLAttributes<HTMLInputElement>, "onChange">) {
   const [show, setShow] = useState(false);
   return (
     <div className="relative">

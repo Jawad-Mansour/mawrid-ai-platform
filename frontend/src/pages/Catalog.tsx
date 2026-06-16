@@ -21,6 +21,17 @@ export function Catalog() {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("all");
   const [search, setSearch] = useState("");
   const [lastDoc, setLastDoc] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+
+  const ACCEPT = [".pdf", ".xlsx", ".xls"];
+  function accepted(f: File) {
+    return ACCEPT.some((ext) => f.name.toLowerCase().endsWith(ext));
+  }
+  function takeFile(f: File | undefined) {
+    if (!f) return;
+    if (!accepted(f)) { toast.error("Only PDF or Excel (.pdf, .xlsx, .xls) files are supported."); return; }
+    upload.mutate(f);
+  }
 
   const products = useQuery({
     queryKey: ["catalog"],
@@ -67,19 +78,26 @@ export function Catalog() {
             type="file"
             accept=".pdf,.xlsx,.xls"
             className="hidden"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) upload.mutate(f); }}
+            onChange={(e) => { takeFile(e.target.files?.[0]); e.target.value = ""; }}
           />
-          <button
-            onClick={() => fileRef.current?.click()}
-            disabled={upload.isPending}
-            className="flex w-full flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-line bg-white/[0.02] px-6 py-10 text-center transition-colors hover:border-gold/50 hover:bg-gold/5"
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => !upload.isPending && fileRef.current?.click()}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") fileRef.current?.click(); }}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={(e) => { e.preventDefault(); setDragOver(false); }}
+            onDrop={(e) => { e.preventDefault(); setDragOver(false); takeFile(e.dataTransfer.files?.[0]); }}
+            className={`flex w-full cursor-pointer flex-col items-center gap-3 rounded-2xl border-2 border-dashed px-6 py-10 text-center transition-all ${
+              dragOver ? "scale-[1.02] border-gold bg-gold/10 shadow-glow" : "border-line bg-white/[0.02] hover:border-gold/50 hover:bg-gold/5"
+            } ${upload.isPending ? "pointer-events-none opacity-70" : ""}`}
           >
-            <UploadCloud className="h-10 w-10 text-gold" />
+            <UploadCloud className={`h-10 w-10 text-gold transition-transform ${dragOver ? "scale-110" : ""}`} />
             <div>
-              <div className="font-600 text-ink">{upload.isPending ? "Uploading…" : "Upload supplier sheet"}</div>
+              <div className="font-600 text-ink">{upload.isPending ? "Uploading…" : dragOver ? "Drop to upload" : "Drag & drop or click to upload"}</div>
               <div className="mt-1 text-xs text-ink-faint">PDF or Excel · parsed instantly</div>
             </div>
-          </button>
+          </div>
 
           {lastDoc && (
             <div className="mt-4 rounded-xl border border-line bg-white/[0.02] p-4">

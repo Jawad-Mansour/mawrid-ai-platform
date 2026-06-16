@@ -29,12 +29,22 @@ _client: Minio | None = None
 def _get_client() -> Minio:
     global _client
     if _client is None:
+        import urllib3  # noqa: PLC0415
+
         secrets = get_secrets()
+        # Bounded timeouts + limited retries so a slow/dead MinIO fails in seconds,
+        # not after urllib3's long default backoff. Uploads run in a worker thread,
+        # but an unbounded hang there still leaves the request pending forever.
+        http_client = urllib3.PoolManager(
+            timeout=urllib3.Timeout(connect=3.0, read=10.0),
+            retries=urllib3.Retry(total=1, backoff_factor=0.2),
+        )
         _client = Minio(
             endpoint=secrets.minio_endpoint,
             access_key=secrets.minio_access_key,
             secret_key=secrets.minio_secret_key,
             secure=False,
+            http_client=http_client,
         )
     return _client
 

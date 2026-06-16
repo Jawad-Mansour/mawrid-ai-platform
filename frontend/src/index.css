@@ -52,6 +52,61 @@
   color-scheme: dark;
 }
 
+[data-theme="emerald"] {
+  --bg: 10 20 16;
+  --bg-soft: 14 26 20;
+  --bg-card: rgba(12, 24, 18, 0.72);
+  --line: rgba(64, 145, 108, 0.16);
+  --accent: 52 168 110;
+  --accent-soft: 110 205 152;
+  --accent-deep: 33 110 75;
+  --accent-rgb: 52 168 110;
+  --grape: 138 110 224;
+  --grape-soft: 170 148 240;
+  --emerald: 52 168 110;
+  --emerald-soft: 110 205 152;
+  --danger: 235 88 92;
+  --warn: 224 168 70;
+  --ink: 226 240 230;
+  --ink-soft: 150 180 162;
+  --ink-faint: 95 122 105;
+  --globe-base-rgb: 30 62 46;
+  --globe-glow-rgb: 22 46 34;
+  --page: 10 20 16;
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --bg: 255 255 255;
+  --bg-soft: 247 249 252;
+  --bg-card: rgba(255, 255, 255, 0.82);
+  --line: rgba(30, 52, 92, 0.12);
+  --accent: 37 99 235;
+  --accent-soft: 59 130 246;
+  --accent-deep: 29 78 196;
+  --accent-rgb: 37 99 235;
+  --grape: 124 92 246;
+  --grape-soft: 99 73 214;
+  --emerald: 22 145 100;
+  --emerald-soft: 17 122 84;
+  --danger: 220 60 66;
+  --warn: 190 130 30;
+  --ink: 23 32 48;
+  --ink-soft: 71 88 116;
+  --ink-faint: 122 138 162;
+  --globe-base-rgb: 196 210 235;
+  --globe-glow-rgb: 222 232 248;
+  --page: 240 244 250;
+  color-scheme: light;
+}
+
+/* Light theme: the dark-tuned white/black overlay utilities need to flip so
+   cards, inputs and hovers stay legible on a bright canvas. */
+[data-theme="light"] .input { background: rgba(20, 40, 80, 0.04); }
+[data-theme="light"] .btn-ghost,
+[data-theme="light"] .chip { background: rgba(20, 40, 80, 0.03); }
+[data-theme="light"] .card { box-shadow: 0 8px 30px -12px rgba(30, 52, 92, 0.22); }
+
 html,
 body,
 #root {

@@ -11,7 +11,7 @@ import { useAuthStore } from "@/stores/auth";
 import type { MeResponse, OperationalMode, TokenResponse } from "@/lib/types";
 
 export function useAuth() {
-  const { user, ready, setUser, setReady } = useAuthStore();
+  const { user, ready, setUser, setReady, setLoggingOut } = useAuthStore();
   const navigate = useNavigate();
 
   const refreshMe = useCallback(async () => {
@@ -46,10 +46,15 @@ export function useAuth() {
   );
 
   const logout = useCallback(() => {
-    setToken(null);
-    setUser(null);
-    navigate("/login");
-  }, [navigate, setUser]);
+    // Play a brief sign-out animation, then clear the session and route to /login.
+    setLoggingOut(true);
+    setTimeout(() => {
+      setToken(null);
+      setUser(null);
+      navigate("/login");
+      setLoggingOut(false);
+    }, 1100);
+  }, [navigate, setUser, setLoggingOut]);
 
   return { user, ready, setReady, refreshMe, login, signup, logout };
 }
