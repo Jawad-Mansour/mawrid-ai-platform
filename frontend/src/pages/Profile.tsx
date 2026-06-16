@@ -1,6 +1,8 @@
 // Feature: Profile — avatar upload + display name + account details.
 import { useRef, useState } from "react";
-import { Camera, Trash2, User, Mail, Building2, ShieldCheck, Save, Globe } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { Camera, Trash2, User, Mail, Building2, ShieldCheck, Save, Globe, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/stores/profile";
@@ -8,10 +10,20 @@ import { Card, SectionTitle } from "@/components/ui";
 
 export function Profile() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { avatar, displayName, title, setAvatar, setDisplayName, setTitle } = useProfile();
   const fileRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(displayName);
   const [role, setRole] = useState(title);
+  const [saved, setSaved] = useState(false);
+
+  function handleSave() {
+    setDisplayName(name);
+    setTitle(role);
+    setSaved(true);
+    // brief success animation, then return to wherever the user came from
+    setTimeout(() => navigate(-1), 1100);
+  }
 
   function pickAvatar(file: File | undefined) {
     if (!file) return;
@@ -26,6 +38,19 @@ export function Profile() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
+      <AnimatePresence>
+        {saved && (
+          <motion.div className="fixed inset-0 z-[100] grid place-items-center bg-page/80 backdrop-blur-md" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div className="flex flex-col items-center gap-3" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 200, damping: 14 }}>
+              <div className="grid h-20 w-20 place-items-center rounded-full bg-gradient-to-br from-emerald to-emerald-soft shadow-glow">
+                <Check className="h-10 w-10 text-white" />
+              </div>
+              <div className="text-lg font-800 text-ink">Profile saved</div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <SectionTitle title="Profile" subtitle="Your photo and details across Mawrid." />
 
       <Card>
@@ -51,7 +76,7 @@ export function Profile() {
               <input className="input" placeholder="e.g. Operations Lead" value={role} onChange={(e) => setRole(e.target.value)} />
             </div>
             <div className="flex gap-2">
-              <button className="btn-gold" onClick={() => { setDisplayName(name); setTitle(role); toast.success("Profile saved"); }}><Save className="h-4 w-4" /> Save</button>
+              <button className="btn-gold" onClick={handleSave}><Save className="h-4 w-4" /> Save</button>
               {avatar && <button className="btn-ghost" onClick={() => setAvatar(null)}><Trash2 className="h-4 w-4" /> Remove photo</button>}
             </div>
           </div>

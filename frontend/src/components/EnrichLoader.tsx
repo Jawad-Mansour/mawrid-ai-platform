@@ -8,13 +8,16 @@ const H = S / 2;
 const faceBase =
   "absolute rounded-lg border border-gold/50 bg-gradient-to-br from-gold/30 to-grape/30 shadow-glow backdrop-blur-sm";
 
-/** A 3D box. phase "open" = lid up + sparkles rising; "enriching" = lid closed + spinning. */
+/** A proper 3D cube. "enriching" = closed cube spinning, viewed from the front;
+ *  "open" = the top opens like a lid with sparkles rising. */
 export function EnrichBox({ phase }: { phase: "open" | "enriching" }) {
   const spinning = phase === "enriching";
   const faceStyle = { width: S, height: S, left: "50%", top: "50%", marginLeft: -H, marginTop: -H } as const;
+  // small tilt = front view (not top-down); a bit more tilt when open so you see inside
+  const tilt = spinning ? -18 : -46;
 
   return (
-    <div className="relative grid h-52 w-full place-items-center" style={{ perspective: 900 }}>
+    <div className="relative grid h-56 w-full place-items-center" style={{ perspective: 760 }}>
       {/* sparkles rising out of the open box */}
       {phase === "open" &&
         [0, 1, 2, 3, 4].map((i) => (
@@ -23,7 +26,7 @@ export function EnrichBox({ phase }: { phase: "open" | "enriching" }) {
             className="absolute"
             style={{ left: `calc(50% + ${(i - 2) * 16}px)` }}
             initial={{ y: 10, opacity: 0 }}
-            animate={{ y: [-10, -54], opacity: [0, 1, 0] }}
+            animate={{ y: [-10, -58], opacity: [0, 1, 0] }}
             transition={{ duration: 2.2, repeat: Infinity, delay: i * 0.35 }}
           >
             <Sparkles className="h-4 w-4 text-gold" />
@@ -33,38 +36,40 @@ export function EnrichBox({ phase }: { phase: "open" | "enriching" }) {
       <motion.div
         className="relative"
         style={{ width: S, height: S, transformStyle: "preserve-3d" }}
-        animate={{ rotateX: 58, rotateY: spinning ? 360 : 0, y: phase === "open" ? [0, -6, 0] : 0 }}
+        animate={{ rotateX: tilt, rotateY: spinning ? 360 : -32, y: phase === "open" ? [0, -6, 0] : 0 }}
         transition={{
-          rotateY: spinning ? { duration: 4.5, repeat: Infinity, ease: "linear" } : { duration: 0.6 },
+          rotateY: spinning ? { duration: 7, repeat: Infinity, ease: "linear" } : { duration: 0.6 },
           rotateX: { duration: 0.6 },
           y: { duration: 3, repeat: Infinity },
         }}
       >
-        {/* walls + floor (open-top box) */}
-        <div className={faceBase} style={{ ...faceStyle, transform: `translateZ(${H}px)` }} />
+        {/* the 4 sides + bottom of a clean cube */}
+        <div className={`${faceBase} grid place-items-center`} style={{ ...faceStyle, transform: `translateZ(${H}px)` }}>
+          <Sparkles className="h-8 w-8 text-gold/80" />
+        </div>
         <div className={faceBase} style={{ ...faceStyle, transform: `rotateY(180deg) translateZ(${H}px)` }} />
         <div className={faceBase} style={{ ...faceStyle, transform: `rotateY(90deg) translateZ(${H}px)` }} />
-        <div className={faceBase} style={{ ...faceStyle, transform: `rotateY(-90deg) translateZ(${H}px)` }} />
-        <div className={`${faceBase} grid place-items-center`} style={{ ...faceStyle, transform: `rotateX(90deg) translateZ(${H}px)` }}>
-          <Sparkles className="h-8 w-8 text-gold/70" />
+        <div className={`${faceBase} grid place-items-center`} style={{ ...faceStyle, transform: `rotateY(-90deg) translateZ(${H}px)` }}>
+          <Sparkles className="h-7 w-7 text-grape-soft/80" />
         </div>
+        <div className={faceBase} style={{ ...faceStyle, transform: `rotateX(-90deg) translateZ(${H}px)` }} />
 
-        {/* lid — hinged at the back edge: open (up) when idle, closed when enriching */}
-        <div style={{ ...faceStyle, position: "absolute", transformStyle: "preserve-3d", transform: `translateZ(${H}px) rotateX(-90deg)`, transformOrigin: "top" }}>
+        {/* the top = a lid hinged at the back edge (closed when enriching, open when idle) */}
+        <div style={{ ...faceStyle, position: "absolute", transformStyle: "preserve-3d", transform: `rotateX(90deg) translateZ(${H}px)`, transformOrigin: "top" }}>
           <motion.div
             className={`${faceBase} grid place-items-center`}
             style={{ width: S, height: S, transformOrigin: "top" }}
-            animate={{ rotateX: phase === "open" ? -78 : 0 }}
+            animate={{ rotateX: phase === "open" ? -112 : 0 }}
             transition={{ type: "spring", stiffness: 120, damping: 14 }}
           >
-            <Sparkles className="h-7 w-7 text-grape-soft" />
+            <Sparkles className="h-7 w-7 text-gold/70" />
           </motion.div>
         </div>
       </motion.div>
 
       {/* center glow */}
       <motion.div
-        className="pointer-events-none absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold/30 blur-2xl"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold/30 blur-2xl"
         animate={{ scale: spinning ? [1, 1.35, 1] : [1, 1.1, 1], opacity: [0.4, 0.8, 0.4] }}
         transition={{ duration: 2, repeat: Infinity }}
       />

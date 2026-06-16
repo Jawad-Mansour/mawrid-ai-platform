@@ -373,32 +373,34 @@ Return ONLY valid JSON (no markdown fences) with exactly these keys:
   "description": "<rich Markdown description, see structure below>"
 }
 
-FIRST, identify the EXACT product. Many appliances are combos or have a precise type
-(e.g. a "washer-dryer combo", not just a "washing machine"). Read the web content
-carefully and state the true type and ALL key figures — for a washer-dryer that means
-BOTH the wash capacity AND the dry capacity (e.g. "10 kg wash / 6 kg dry"). Do not
-under-describe: if the sources say it is a freestanding front-load washer-dryer with
-smart Wi-Fi and a 39-minute rapid cycle, say exactly that.
+This product can be from ANY category — appliances, electronics, apparel & textiles,
+food & grocery, beauty & cosmetics, tools & hardware, furniture, toys, auto parts, etc.
+FIRST identify the exact product TYPE and category from the web content, then state the
+true type and ALL key figures (don't under-describe: a "washer-dryer combo" is not just a
+"washing machine"; state both wash AND dry capacity).
 
-The "description" MUST be detailed Markdown with these sections (omit a section only
-if there is genuinely no information for it):
+The "description" MUST be detailed Markdown. ALWAYS include the summary, Core
+Specifications and Key Features. Then include ONLY the additional sections that fit this
+product's category (omit the rest entirely — never force appliance sections onto a t-shirt):
 
-<a precise 1-2 sentence summary naming the exact product type and headline figures
- (capacities, key feature), and who it's for>
+<a precise 1-2 sentence summary naming the exact product type, headline figures, and who it's for>
 
 ## Core Specifications
-- **<Spec name>:** <value>
-- ... (functionality, capacity, type, power/motor, performance, dimensions, etc.)
+- **<Spec name>:** <value>   (the most important attributes for THIS category — e.g.
+  appliance: capacity/power/dimensions; apparel: material/fit/sizes; food: weight/ingredients;
+  electronics: chipset/storage/ports; cosmetics: volume/skin-type)
 
 ## Key Features
 - <notable feature with a short benefit>
-- ...
 
-## Manuals & Resources
-- <user manual / official resource, with a Markdown link if a URL is known>
-
-## Replacement Parts & Maintenance
-- <common spare parts or maintenance notes, if the product is a serviceable appliance/device>
+Then choose the relevant ones (and only those with real info):
+- **## Materials & Care** (apparel, textiles, furniture) — material, wash/care instructions
+- **## Sizing & Fit** (apparel, footwear) — size range, fit
+- **## Ingredients & Nutrition** (food, grocery) — ingredients, nutrition, weight, allergens
+- **## How to Use** (cosmetics, supplements, consumables)
+- **## In the Box / Compatibility** (electronics, accessories) — what's included, what it works with
+- **## Manuals & Resources** (appliances, electronics, tools) — manuals/official resources
+- **## Replacement Parts & Maintenance** (serviceable appliances/devices only)
 
 Rules:
 - Ground every claim in the web content or existing specs — do NOT invent numbers.
