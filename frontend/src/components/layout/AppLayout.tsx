@@ -4,6 +4,7 @@ import { Navigate, Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { Chatbot } from "@/components/Chatbot";
+import { Background } from "@/components/Background";
 import { useAuthStore } from "@/stores/auth";
 import { Loading } from "@/components/ui";
 
@@ -16,6 +17,7 @@ export function AppLayout() {
 
   return (
     <div className="flex min-h-screen bg-radial-fade">
+      <Background />
       <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar />

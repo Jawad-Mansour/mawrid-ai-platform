@@ -3,11 +3,12 @@
 // API:     GET /catalog/products · POST /catalog/products/{id}/approve · /retry-enrichment
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ShieldQuestion, ImageOff, Check, RefreshCw, Eye } from "lucide-react";
+import { ShieldQuestion, ImageOff, Check, RefreshCw, Eye, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { apiGet, apiPost, apiErr } from "@/lib/api";
 import { Card, SectionTitle, Loading, EmptyState } from "@/components/ui";
 import { ProductModal } from "@/components/ProductModal";
+import { EditProductModal } from "@/components/EditProductModal";
 import type { Product } from "@/lib/types";
 
 function asList(d: unknown): Product[] {
@@ -19,6 +20,7 @@ function asList(d: unknown): Product[] {
 export function NeedsReview() {
   const qc = useQueryClient();
   const [open, setOpen] = useState<Product | null>(null);
+  const [editing, setEditing] = useState<Product | null>(null);
   const products = useQuery({ queryKey: ["catalog"], queryFn: () => apiGet<unknown>("/catalog/products?limit=300"), refetchInterval: 8000 });
   const items = useMemo(() => asList(products.data).filter((p) => p.enrichment_status === "needs_review"), [products.data]);
 
@@ -58,7 +60,8 @@ export function NeedsReview() {
                   {(!p.description || p.description.length < 220) && <li>• Thin description</li>}
                 </ul>
                 <div className="mt-auto flex gap-2 pt-3">
-                  <button onClick={() => setOpen(p)} className="btn-ghost flex-1 !py-2 text-xs"><Eye className="h-3.5 w-3.5" /> View</button>
+                  <button onClick={() => setEditing(p)} className="btn-ghost flex-1 !py-2 text-xs"><Pencil className="h-3.5 w-3.5" /> Edit</button>
+                  <button onClick={() => setOpen(p)} className="btn-ghost !py-2 text-xs" title="View"><Eye className="h-3.5 w-3.5" /></button>
                   <button onClick={() => reenrich.mutate(p.product_id)} disabled={reenrich.isPending} className="btn-ghost !py-2 text-xs" title="Re-run enrichment"><RefreshCw className="h-3.5 w-3.5" /></button>
                   <button onClick={() => approve.mutate(p.product_id)} disabled={approve.isPending} className="btn-gold !py-2 text-xs"><Check className="h-3.5 w-3.5" /> Approve</button>
                 </div>
@@ -69,6 +72,7 @@ export function NeedsReview() {
       )}
 
       {open && <ProductModal product={open} onClose={() => setOpen(null)} />}
+      {editing && <EditProductModal product={editing} onClose={() => setEditing(null)} />}
     </div>
   );
 }

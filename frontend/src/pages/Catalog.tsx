@@ -4,11 +4,12 @@
 // API:     GET /catalog/products
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, RefreshCw, ImageOff, ShoppingBag, Check, ExternalLink, FileSpreadsheet, ArrowRight, UploadCloud } from "lucide-react";
+import { Search, RefreshCw, ImageOff, ShoppingBag, Check, ExternalLink, FileSpreadsheet, ArrowRight, UploadCloud, Pencil } from "lucide-react";
 import { Link } from "react-router-dom";
 import { apiGet } from "@/lib/api";
 import { SectionTitle, StatusBadge, Loading, EmptyState } from "@/components/ui";
 import { ProductModal } from "@/components/ProductModal";
+import { EditProductModal } from "@/components/EditProductModal";
 import { useBasket } from "@/stores/basket";
 import { formatCurrency } from "@/lib/utils";
 import type { Product } from "@/lib/types";
@@ -43,6 +44,7 @@ export function Catalog() {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["key"]>("all");
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState<Product | null>(null);
+  const [editing, setEditing] = useState<Product | null>(null);
 
   const products = useQuery({ queryKey: ["catalog"], queryFn: () => apiGet<unknown>("/catalog/products?limit=300"), refetchInterval: 8000 });
   const all = useMemo(() => asList(products.data), [products.data]);
@@ -92,59 +94,62 @@ export function Catalog() {
           hint="Upload a supplier sheet to build your catalogue — the AI fetches real images, descriptions and specs." />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {rows.map((p) => <ProductGridCard key={p.product_id} p={p} q={search} onOpen={() => setOpen(p)} />)}
+          {rows.map((p) => <ProductGridCard key={p.product_id} p={p} q={search} onOpen={() => setOpen(p)} onEdit={() => setEditing(p)} />)}
         </div>
       )}
 
       {open && <ProductModal product={open} onClose={() => setOpen(null)} />}
+      {editing && <EditProductModal product={editing} onClose={() => setEditing(null)} />}
     </div>
   );
 }
 
-function ProductGridCard({ p, q, onOpen }: { p: Product; q: string; onOpen: () => void }) {
+function ProductGridCard({ p, q, onOpen, onEdit }: { p: Product; q: string; onOpen: () => void; onEdit: () => void }) {
   const basket = useBasket();
   const inBasket = basket.has(p.product_id);
   const [imgOk, setImgOk] = useState(true);
+  // Always render exactly 3 spec slots so every card has the same height.
   const specs = Object.entries(p.specifications ?? {}).slice(0, 3);
-  const excerpt = plain(p.description).slice(0, 110);
+  const excerpt = plain(p.description).slice(0, 120);
 
   return (
-    <div className="card group flex flex-col overflow-hidden p-0 transition-all hover:-translate-y-0.5 hover:shadow-glow">
-      <button onClick={onOpen} className="relative grid aspect-[4/3] place-items-center bg-white">
+    <div className="card group flex h-full flex-col overflow-hidden p-0 transition-all hover:-translate-y-0.5 hover:shadow-glow">
+      <button onClick={onOpen} className="relative grid aspect-[4/3] shrink-0 place-items-center bg-white">
         {p.image_url && imgOk ? (
           <img src={p.image_url} alt={p.product_name} className="h-full w-full object-contain p-3" loading="lazy" onError={() => setImgOk(false)} />
         ) : (
-          <div className="flex flex-col items-center gap-1 text-ink-faint/60"><ImageOff className="h-7 w-7" /><span className="text-[10px]">no image</span></div>
+          <div className="flex flex-col items-center gap-1 text-ink-faint/50"><ImageOff className="h-7 w-7" /><span className="text-[10px]">no image — edit to add</span></div>
         )}
         <div className="absolute left-2 top-2"><StatusBadge status={p.enrichment_status} /></div>
-        {p.enrichment_source && <span className="chip absolute right-2 top-2 border-line bg-black/50 text-[10px] text-white/90">{p.enrichment_source}</span>}
+        {p.enrichment_source && <span className="chip absolute right-2 top-2 border-white/20 bg-black/55 text-[10px] font-600 text-white">{p.enrichment_source}</span>}
       </button>
 
       <div className="flex flex-1 flex-col p-3.5">
         <button onClick={onOpen} className="text-left">
-          <div className="line-clamp-2 text-sm font-700 leading-snug text-ink"><Highlight text={p.product_name} q={q} /></div>
+          <div className="line-clamp-2 min-h-[2.4rem] text-sm font-700 leading-snug text-ink"><Highlight text={p.product_name} q={q} /></div>
           <div className="mt-0.5 font-mono text-[11px] text-ink-faint">{p.sku ?? "no sku"}</div>
         </button>
 
-        {excerpt && <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-ink-faint">{excerpt}…</p>}
+        {/* description — always reserve 2 lines so cards align */}
+        <p className="mt-1.5 line-clamp-2 min-h-[2.1rem] text-xs leading-relaxed text-ink-soft">{excerpt ? `${excerpt}…` : <span className="text-ink-faint">No description yet.</span>}</p>
 
-        {specs.length > 0 && (
-          <div className="mt-2 space-y-0.5">
-            {specs.map(([k, v]) => (
-              <div key={k} className="flex justify-between gap-2 text-[11px]">
-                <span className="truncate text-ink-faint">{k}</span>
-                <span className="truncate text-right text-ink-soft">{String(v)}</span>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* specs — always reserve 3 rows */}
+        <div className="mt-2 min-h-[3.4rem] space-y-0.5">
+          {specs.map(([k, v]) => (
+            <div key={k} className="flex justify-between gap-2 text-[11px]">
+              <span className="truncate text-ink-faint">{k}</span>
+              <span className="truncate text-right font-500 text-ink-soft">{String(v)}</span>
+            </div>
+          ))}
+        </div>
 
-        <div className="mt-auto flex items-center justify-between pt-3">
+        <div className="mt-auto flex items-center justify-between border-t border-line pt-3">
           <div className="text-sm font-700 text-ink">{p.price != null ? formatCurrency(p.price, p.currency ?? "USD") : <span className="text-xs text-ink-faint">—</span>}</div>
           <div className="flex items-center gap-1.5">
             {p.source_urls && p.source_urls.length > 0 && (
               <a href={p.source_urls[0].url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} title="Source" className="grid h-7 w-7 place-items-center rounded-lg border border-line text-ink-faint hover:text-ink"><ExternalLink className="h-3.5 w-3.5" /></a>
             )}
+            <button onClick={onEdit} title="Edit product" className="grid h-7 w-7 place-items-center rounded-lg border border-line text-ink-faint hover:border-gold/50 hover:text-gold-soft"><Pencil className="h-3.5 w-3.5" /></button>
             <button onClick={() => basket.add(p)} title={inBasket ? "Noted for order" : "Note for order"}
               className={`grid h-7 w-7 place-items-center rounded-lg border transition-all ${inBasket ? "border-gold bg-gold text-bg" : "border-line text-ink-soft hover:border-gold/50 hover:text-gold-soft"}`}>
               {inBasket ? <Check className="h-3.5 w-3.5" /> : <ShoppingBag className="h-3.5 w-3.5" />}

@@ -397,10 +397,13 @@ async def enrich_document(
         if result.enrichment_status == "enriched":
             continue
 
+        # Stable job id => ARQ de-duplicates: re-submitting the same product while
+        # a job is still queued/running is a no-op (no duplicate enrichment).
         await arq_pool.enqueue_job(
             "enrich_product",
             tenant_id=tenant_id,
             product_id=result.product_id,
+            _job_id=f"enrich:{tenant_id}:{product_hash}",
         )
         jobs_submitted += 1
 
@@ -575,6 +578,56 @@ async def retry_product_enrichment(
     )
     logger.info("enrichment_retried", product_id=product_id)
     return {"product_id": product_id, "status": "queued"}
+
+
+class EditProductRequest(StrictModel):
+    product_name: str | None = None
+    sku: str | None = None
+    barcode: str | None = None
+    description: str | None = None
+    specifications: dict[str, Any] | None = None
+    image_url: str | None = None  # http(s) URL or MinIO object path
+    retail_price: float | None = None
+    currency: str | None = None
+
+
+@router.patch(
+    "/products/{product_id}",
+    response_model=ProductCard,
+    summary="Human edit of a product — fill/fix image, description, specs, price",
+)
+async def edit_product(
+    product_id: str,
+    body: EditProductRequest,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> ProductCard:
+    product_repo = ProductRepository(session, current_user.tenant_id)
+    product = await product_repo.get_by_id(product_id)
+    if product is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found.")
+
+    data = body.model_dump(exclude_unset=True)
+    if "product_name" in data and data["product_name"]:
+        product.product_name = data["product_name"]
+    if "sku" in data:
+        product.sku = data["sku"]
+    if "barcode" in data:
+        product.barcode = data["barcode"]
+    if "description" in data:
+        product.description = data["description"]
+    if "specifications" in data:
+        product.specifications = data["specifications"]
+    if "image_url" in data:
+        product.image_path = data["image_url"]
+    if "currency" in data:
+        product.currency = data["currency"]
+    if "retail_price" in data and data["retail_price"] is not None:
+        product.retail_price = data["retail_price"]
+
+    await session.commit()
+    logger.info("product_edited", product_id=product_id, fields=list(data.keys()))
+    return await _to_card(current_user.tenant_id, product)
 
 
 @router.post(

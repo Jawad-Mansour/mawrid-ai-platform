@@ -12,6 +12,7 @@ import { Dashboard } from "@/pages/Dashboard";
 import { UploadPage } from "@/pages/UploadPage";
 import { UploadHistory } from "@/pages/UploadHistory";
 import { NeedsReview } from "@/pages/NeedsReview";
+import { NotificationsPage } from "@/pages/NotificationsPage";
 import { Catalog } from "@/pages/Catalog";
 import { Approvals } from "@/pages/Approvals";
 import { Procurement } from "@/pages/Procurement";
@@ -39,6 +40,7 @@ export default function App() {
         <Route path="/catalog" element={<Catalog />} />
         <Route path="/needs-review" element={<NeedsReview />} />
         <Route path="/approvals" element={<Approvals />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/procurement" element={<Procurement />} />
         <Route path="/publishing" element={<Publishing />} />
         <Route path="/dunning" element={<Dunning />} />

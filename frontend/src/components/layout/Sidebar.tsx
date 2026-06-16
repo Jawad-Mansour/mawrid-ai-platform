@@ -1,141 +1,144 @@
-// Feature: Layout — collapsible sectioned navigation
+// Feature: Layout — collapsible sectioned navigation with user card, notifications,
+//          theme toggle and sign-out.
 import { NavLink } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard, CheckSquare, Boxes, ScanLine, ClipboardList,
   Store, Banknote, BrainCircuit, Settings, ChevronLeft, Users, Sparkles, UploadCloud,
-  History, ShieldQuestion, LogOut,
+  History, ShieldQuestion, LogOut, Bell, Palette,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { apiGet } from "@/lib/api";
 import { useAuthStore } from "@/stores/auth";
 import { useAuth } from "@/hooks/useAuth";
-import type { OperationalMode } from "@/lib/types";
+import { THEMES, useThemeStore } from "@/stores/theme";
+import type { OperationalMode, DashboardSummary } from "@/lib/types";
 
-interface Item {
-  to: string;
-  label: string;
-  icon: LucideIcon;
-  modes?: OperationalMode[];
-}
-interface Section {
-  title: string;
-  items: Item[];
-}
-
-const SECTIONS: Section[] = [
-  { title: "Main", items: [
-    { to: "/", label: "Dashboard", icon: LayoutDashboard },
-    { to: "/approvals", label: "HITL Approvals", icon: CheckSquare },
-  ]},
-  { title: "Catalog", items: [
-    { to: "/upload", label: "Upload Sheet", icon: UploadCloud },
-    { to: "/uploads", label: "Upload History", icon: History },
-    { to: "/catalog", label: "Catalogue", icon: Boxes },
-    { to: "/needs-review", label: "Needs Review", icon: ShieldQuestion },
-    { to: "/barcode", label: "Barcode Scanner", icon: ScanLine },
-  ]},
-  { title: "Procurement", items: [
-    { to: "/procurement", label: "Create Order", icon: ClipboardList },
-    { to: "/suppliers", label: "Suppliers", icon: Users },
-    { to: "/publishing", label: "Storefront Publishing", icon: Store, modes: ["hybrid", "retail_only"] },
-  ]},
-  { title: "Financial", items: [
-    { to: "/dunning", label: "Dunning Engine", icon: Banknote },
-  ]},
-  { title: "Intelligence", items: [
-    { to: "/intelligence", label: "AI Assistant", icon: Sparkles },
-    { to: "/ai-health", label: "AI Model Health", icon: BrainCircuit },
-  ]},
-  { title: "Settings", items: [
-    { to: "/settings", label: "Settings", icon: Settings },
-  ]},
-];
-
-const navItemCls = (active: boolean) =>
-  cn(
-    "group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-500 transition-all",
-    active
-      ? "bg-gold/15 text-gold-soft shadow-[inset_0_0_0_1px_rgba(212,163,115,0.3)]"
-      : "text-ink-soft hover:bg-white/[0.05] hover:text-ink",
-  );
+interface Item { to: string; label: string; icon: LucideIcon; modes?: OperationalMode[]; badge?: number }
+interface Section { title: string; items: Item[] }
 
 export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
-  const mode = useAuthStore((s) => s.user?.operational_mode);
+  const user = useAuthStore((s) => s.user);
+  const mode = user?.operational_mode;
   const { logout } = useAuth();
+  const { theme, setTheme } = useThemeStore();
+  const cycleTheme = () => {
+    const avail = THEMES.filter((t) => t.available);
+    const i = avail.findIndex((t) => t.key === theme);
+    setTheme(avail[(i + 1) % avail.length].key);
+  };
+
+  const { data: summary } = useQuery({ queryKey: ["summary-bell"], queryFn: () => apiGet<DashboardSummary>("/admin/summary"), refetchInterval: 20_000 });
+  const importantCount = (summary?.pending_hitl_count ?? 0) + (summary?.failed_enrichment ?? 0);
+
+  const sections: Section[] = [
+    { title: "Main", items: [
+      { to: "/", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/approvals", label: "HITL Approvals", icon: CheckSquare },
+      { to: "/notifications", label: "Notifications", icon: Bell, badge: importantCount },
+    ]},
+    { title: "Catalog", items: [
+      { to: "/upload", label: "Upload Sheet", icon: UploadCloud },
+      { to: "/uploads", label: "Upload History", icon: History },
+      { to: "/catalog", label: "Catalogue", icon: Boxes },
+      { to: "/needs-review", label: "Needs Review", icon: ShieldQuestion },
+      { to: "/barcode", label: "Barcode Scanner", icon: ScanLine },
+    ]},
+    { title: "Procurement", items: [
+      { to: "/procurement", label: "Create Order", icon: ClipboardList },
+      { to: "/suppliers", label: "Suppliers", icon: Users },
+      { to: "/publishing", label: "Storefront Publishing", icon: Store, modes: ["hybrid", "retail_only"] },
+    ]},
+    { title: "Financial", items: [{ to: "/dunning", label: "Dunning Engine", icon: Banknote }]},
+    { title: "Intelligence", items: [
+      { to: "/intelligence", label: "AI Assistant", icon: Sparkles },
+      { to: "/ai-health", label: "AI Model Health", icon: BrainCircuit },
+    ]},
+    { title: "Settings", items: [{ to: "/settings", label: "Settings", icon: Settings }]},
+  ];
+
+  const linkCls = ({ isActive }: { isActive: boolean }) =>
+    cn(
+      "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-500 transition-all",
+      isActive
+        ? "bg-gold/15 text-gold-soft"
+        : "text-ink-soft hover:bg-white/[0.05] hover:text-ink",
+    );
 
   return (
-    <aside
-      className={cn(
-        "glass sticky top-0 z-30 flex h-screen flex-col rounded-none border-y-0 border-l-0 transition-all duration-300",
-        collapsed ? "w-[76px]" : "w-[252px]",
-      )}
-    >
+    <aside className={cn("glass sticky top-0 z-30 flex h-screen flex-col rounded-none border-y-0 border-l-0 transition-all duration-300", collapsed ? "w-[76px]" : "w-[256px]")}>
+      {/* brand */}
       <div className="flex items-center gap-3 px-4 py-5">
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-gold to-grape shadow-glow">
-          <span className="font-800 text-bg">M</span>
+        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-gold to-grape shadow-glow">
+          <span className="text-lg font-800 text-bg">M</span>
         </div>
         {!collapsed && (
           <div className="min-w-0">
-            <div className="truncate font-800 tracking-tight text-ink">Mawrid</div>
-            <div className="truncate text-[11px] uppercase tracking-widest text-ink-faint">
-              {mode ? mode.replace("_", " ") : "Ops Platform"}
-            </div>
+            <div className="truncate text-lg font-800 tracking-tight text-ink">Mawrid</div>
+            <div className="truncate text-[10px] uppercase tracking-[0.2em] text-ink-faint">{mode ? mode.replace("_", " ") : "Ops Platform"}</div>
           </div>
         )}
       </div>
 
-      <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-2">
-        {SECTIONS.map((section) => {
+      <div className="mx-4 h-px bg-gradient-to-r from-transparent via-gold/25 to-transparent" />
+
+      {/* nav */}
+      <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
+        {sections.map((section) => {
           const items = section.items.filter((i) => !i.modes || (mode && i.modes.includes(mode)));
           if (!items.length) return null;
           return (
             <div key={section.title}>
-              {!collapsed && (
-                <div className="px-3 pb-1.5 text-[10px] font-700 uppercase tracking-[0.18em] text-ink-faint">
-                  {section.title}
-                </div>
-              )}
+              {!collapsed && <div className="px-3 pb-1.5 text-[10px] font-700 uppercase tracking-[0.18em] text-ink-faint">{section.title}</div>}
               <div className="space-y-1">
                 {items.map((it) => (
-                  <NavLink
-                    key={it.to}
-                    to={it.to}
-                    end={it.to === "/"}
-                    title={it.label}
-                    className={({ isActive }) =>
-                      cn(
-                        "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-500 transition-all",
-                        isActive
-                          ? "bg-gold/15 text-gold-soft shadow-[inset_0_0_0_1px_rgba(212,163,115,0.3)]"
-                          : "text-ink-soft hover:bg-white/[0.05] hover:text-ink",
-                      )
-                    }
-                  >
-                    <it.icon className="h-[18px] w-[18px] shrink-0" />
-                    {!collapsed && <span className="truncate">{it.label}</span>}
+                  <NavLink key={it.to} to={it.to} end={it.to === "/"} title={it.label} className={linkCls}>
+                    {({ isActive }) => (
+                      <>
+                        {isActive && <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-gold" />}
+                        <it.icon className="h-[18px] w-[18px] shrink-0" />
+                        {!collapsed && <span className="flex-1 truncate">{it.label}</span>}
+                        {!!it.badge && it.badge > 0 && (
+                          <span className={cn("grid h-5 min-w-5 place-items-center rounded-full bg-gold px-1 text-[10px] font-700 text-bg", collapsed && "absolute right-1 top-1")}>{it.badge}</span>
+                        )}
+                      </>
+                    )}
                   </NavLink>
                 ))}
               </div>
             </div>
           );
         })}
-
-        {/* Sign out — lives under Settings, as an action (not a route) */}
-        <div className="pt-1">
-          <button onClick={logout} title="Sign out" className={navItemCls(false) + " hover:!bg-danger/10 hover:!text-danger"}>
-            <LogOut className="h-[18px] w-[18px] shrink-0" />
-            {!collapsed && <span className="truncate">Sign out</span>}
-          </button>
-        </div>
       </nav>
 
-      <button
-        onClick={onToggle}
-        className="m-3 flex items-center justify-center gap-2 rounded-xl border border-line bg-white/[0.02] py-2.5 text-xs text-ink-soft hover:bg-white/[0.06]"
-      >
-        <ChevronLeft className={cn("h-4 w-4 transition-transform", collapsed && "rotate-180")} />
-        {!collapsed && "Collapse"}
-      </button>
+      {/* footer: user card + theme + sign out + collapse */}
+      <div className="space-y-2 border-t border-line p-3">
+        <div className={cn("flex items-center gap-2.5 rounded-xl border border-line bg-white/[0.02] p-2", collapsed && "justify-center")}>
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-grape to-gold text-sm font-800 text-bg">
+            {(user?.email ?? "M")[0]?.toUpperCase()}
+          </div>
+          {!collapsed && (
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-xs font-700 text-ink">{user?.email ?? "—"}</div>
+              <div className="text-[10px] uppercase tracking-wider text-ink-faint">{user?.role ?? ""}</div>
+            </div>
+          )}
+        </div>
+
+        <div className={cn("flex gap-2", collapsed && "flex-col")}>
+          <button onClick={cycleTheme} title="Switch theme" className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-line bg-white/[0.02] py-2 text-xs text-ink-soft hover:bg-white/[0.06]">
+            <Palette className="h-4 w-4" />{!collapsed && "Theme"}
+          </button>
+          <button onClick={logout} title="Sign out" className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-danger/30 bg-danger/5 py-2 text-xs text-danger hover:bg-danger/15">
+            <LogOut className="h-4 w-4" />{!collapsed && "Sign out"}
+          </button>
+        </div>
+
+        <button onClick={onToggle} className="flex w-full items-center justify-center gap-2 rounded-xl border border-line bg-white/[0.02] py-2 text-xs text-ink-soft hover:bg-white/[0.06]">
+          <ChevronLeft className={cn("h-4 w-4 transition-transform", collapsed && "rotate-180")} />{!collapsed && "Collapse"}
+        </button>
+      </div>
     </aside>
   );
 }

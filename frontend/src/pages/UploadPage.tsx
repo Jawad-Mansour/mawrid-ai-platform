@@ -3,10 +3,11 @@
 //          3D loading animation. Enrichment progress is read from the server, so it
 //          keeps tracking even if you leave this tab and come back.
 // API:     POST /catalog/documents/upload · POST /catalog/documents/{id}/enrich · GET /catalog/products
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { UploadCloud, FileSpreadsheet, Sparkles, ArrowRight, Building2, MapPin } from "lucide-react";
+import { motion } from "framer-motion";
+import { UploadCloud, FileSpreadsheet, Sparkles, ArrowRight, Building2, MapPin, CheckCircle2, X } from "lucide-react";
 import { toast } from "sonner";
 import { apiGet, apiPost, apiUpload, apiErr } from "@/lib/api";
 import { Card, SectionTitle } from "@/components/ui";
@@ -25,7 +26,11 @@ export function UploadPage() {
   const [supplierName, setSupplierName] = useState("");
   const [supplierLocation, setSupplierLocation] = useState("");
   const [doc, setDoc] = useState<{ id: string; rows: number; filename: string } | null>(null);
-  const wasEnriching = useRef(false);
+  // "active enrichment" flag persists in localStorage so the done celebration
+  // survives navigating away and back, and stays until dismissed.
+  const [activeTs, setActiveTs] = useState<number>(() => Number(localStorage.getItem("mawrid_enrich_active") || 0));
+  const markActive = () => { const t = Date.now(); localStorage.setItem("mawrid_enrich_active", String(t)); setActiveTs(t); };
+  const clearActive = () => { localStorage.removeItem("mawrid_enrich_active"); setActiveTs(0); };
 
   // Server-derived progress — survives leaving and re-entering this tab.
   const products = useQuery({
@@ -38,14 +43,8 @@ export function UploadPage() {
   const total = all.length;
   const done = total - pending;
   const enriching = pending > 0;
-
-  useEffect(() => {
-    if (enriching) wasEnriching.current = true;
-    else if (wasEnriching.current) {
-      wasEnriching.current = false;
-      toast.success("Catalogue enriched — open the Catalogue to see it");
-    }
-  }, [enriching]);
+  // Show the done state once enrichment finished (>6s after starting, to avoid a flash).
+  const showDone = !enriching && activeTs > 0 && total > 0 && Date.now() - activeTs > 6000;
 
   const ACCEPT = [".pdf", ".xlsx", ".xls"];
   const upload = useMutation({
@@ -64,6 +63,7 @@ export function UploadPage() {
     mutationFn: (docId: string) => apiPost<{ jobs_submitted: number; failed_rows: number }>(`/catalog/documents/${docId}/enrich`, {}),
     onSuccess: (r) => {
       setDoc(null);
+      markActive();
       products.refetch();
       toast.success(`${r.jobs_submitted} product(s) queued — enriching one by one`);
     },
@@ -77,6 +77,31 @@ export function UploadPage() {
       return;
     }
     upload.mutate(f);
+  }
+
+  // ── Done view (persists across navigation until dismissed) ──────────────────
+  if (showDone) {
+    return (
+      <div className="mx-auto max-w-3xl space-y-6">
+        <SectionTitle title="Upload Supplier Sheet" />
+        <Card>
+          <button onClick={clearActive} className="float-right grid h-8 w-8 place-items-center rounded-lg text-ink-faint hover:text-ink" title="Dismiss"><X className="h-4 w-4" /></button>
+          <div className="flex flex-col items-center gap-4 py-8 text-center">
+            <motion.div initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 200, damping: 14 }}>
+              <CheckCircle2 className="h-16 w-16 text-emerald-soft" />
+            </motion.div>
+            <div>
+              <div className="text-xl font-800 text-ink">Catalogue enriched 🎉</div>
+              <div className="mt-1 text-sm text-ink-soft">{total} product(s) now have real images, descriptions and specs.</div>
+            </div>
+            <div className="flex flex-wrap justify-center gap-3">
+              <Link to="/catalog" className="btn-gold" onClick={clearActive}><FileSpreadsheet className="h-4 w-4" /> Open catalogue <ArrowRight className="h-4 w-4" /></Link>
+              <button className="btn-ghost" onClick={clearActive}>Upload another sheet</button>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
   }
 
   // ── Enriching view (server-driven; persists across navigation) ──────────────
