@@ -33,8 +33,8 @@ logger = structlog.get_logger(__name__)
 _ICECAT_BASE = "https://icecat.us/api"
 _SEARXNG_TIMEOUT = 8.0
 _HTTPX_TIMEOUT = 10.0
-_MAX_WEB_CHARS = 8000  # truncate scraped content to stay within GPT-4o context
-_TOP_URLS = 3
+_MAX_WEB_CHARS = 14000  # truncate scraped content to stay within GPT-4o context
+_TOP_URLS = 5
 
 
 # ── Protocols for dependency injection (testable without network) ─────────────
@@ -256,22 +256,47 @@ def _parse_icecat(
 # ── GPT-4o spec fill ─────────────────────────────────────────────────────────
 
 _SPEC_FILL_PROMPT = """\
-You are a technical product data specialist.
+You are a product research specialist writing a catalogue entry for an importer,
+similar to a Google "AI overview" for a product code.
 
-Given the product name, existing specifications (may be empty), and web content
-scraped from product pages, extract or infer additional specifications.
+You are given the product name/code, any existing specifications, and web content
+scraped from manufacturer pages, manuals, retailers and parts distributors.
 
-Return a JSON object with these keys only:
+Return ONLY valid JSON (no markdown fences) with exactly these keys:
 {
-  "specifications": { "<English key>": "<value>" },
-  "description": "<2-3 sentence product description in English>"
+  "specifications": { "<Title Case key>": "<value>" },
+  "description": "<rich Markdown description, see structure below>"
 }
 
+The "description" MUST be detailed Markdown with these sections (omit a section only
+if there is genuinely no information for it):
+
+<one-sentence summary of what the product is and who it's for>
+
+## Core Specifications
+- **<Spec name>:** <value>
+- ... (functionality, capacity, type, power/motor, performance, dimensions, etc.)
+
+## Key Features
+- <notable feature with a short benefit>
+- ...
+
+## Manuals & Resources
+- <user manual / official resource, with a Markdown link if a URL is known>
+
+## Replacement Parts & Maintenance
+- <common spare parts or maintenance notes, if the product is a serviceable appliance/device>
+
 Rules:
-- Merge and deduplicate with existing specifications.
-- Do NOT invent values — only use what appears in the web content.
-- Keep keys short and in Title Case (e.g. "Screen Size", "RAM", "Battery Capacity").
-- Return ONLY valid JSON — no markdown fences.
+- Ground every claim in the web content or existing specs — do NOT invent numbers.
+- NEVER invent URLs. Only use a Markdown link if the exact URL appears in the web content;
+  otherwise describe the resource in plain text with no link.
+- Avoid vague filler values ("Durable", "Standard", "Compliant with industry standards").
+  If you don't have a real value for a spec, omit that spec entirely.
+- Be specific (capacities, cycle times, motor type, materials, model compatibilities).
+- For the "specifications" object give 6-15 of the most important spec key/value pairs.
+- Keep spec keys short and in Title Case (e.g. "Wash Capacity", "Motor Type", "Spin Speed").
+- Write in clear English. Return ONLY the JSON object.
 """
 
 
@@ -294,7 +319,7 @@ async def _gpt4o_enrich(
         {"role": "user", "content": user_content},
     ]
     try:
-        raw = await chat_completion(messages, temperature=0.0, max_tokens=1024)
+        raw = await chat_completion(messages, temperature=0.2, max_tokens=1800)
         import re  # noqa: PLC0415
 
         cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip(), flags=re.MULTILINE)

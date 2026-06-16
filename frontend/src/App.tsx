@@ -9,6 +9,7 @@ import { ChooseMode } from "@/pages/auth/ChooseMode";
 import { Signup } from "@/pages/auth/Signup";
 import { Login } from "@/pages/auth/Login";
 import { Dashboard } from "@/pages/Dashboard";
+import { UploadPage } from "@/pages/UploadPage";
 import { Catalog } from "@/pages/Catalog";
 import { Approvals } from "@/pages/Approvals";
 import { Procurement } from "@/pages/Procurement";
@@ -31,6 +32,7 @@ export default function App() {
 
       <Route element={<AppLayout />}>
         <Route path="/" element={<Dashboard />} />
+        <Route path="/upload" element={<UploadPage />} />
         <Route path="/catalog" element={<Catalog />} />
         <Route path="/approvals" element={<Approvals />} />
         <Route path="/procurement" element={<Procurement />} />

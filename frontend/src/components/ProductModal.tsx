@@ -1,16 +1,19 @@
 // Feature: Catalog — product detail modal with enrichment sources + "ask the agent"
 // API:     GET /catalog/products/{id} · POST /catalog/products/{id}/ask
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ExternalLink, Sparkles, Send, ImageOff, Package, ShoppingBag, Check } from "lucide-react";
+import { X, ExternalLink, Sparkles, Send, ImageOff, Package, ShoppingBag, Check, MessageSquare } from "lucide-react";
 import { apiPost, apiErr } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
 import { Spinner, StatusBadge } from "@/components/ui";
+import { Markdown } from "@/components/Markdown";
 import { useBasket } from "@/stores/basket";
 import type { Product, AskProductResponse, SourceLink } from "@/lib/types";
 
 export function ProductModal({ product, onClose }: { product: Product; onClose: () => void }) {
   const basket = useBasket();
+  const navigate = useNavigate();
   const inBasket = basket.has(product.product_id);
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState(false);
@@ -85,7 +88,7 @@ export function ProductModal({ product, onClose }: { product: Product; onClose: 
             {product.description && (
               <div>
                 <div className="mb-1 text-xs font-600 uppercase tracking-wider text-ink-faint">Description</div>
-                <p className="text-sm leading-relaxed text-ink-soft">{product.description}</p>
+                <Markdown>{product.description}</Markdown>
               </div>
             )}
 
@@ -118,14 +121,22 @@ export function ProductModal({ product, onClose }: { product: Product; onClose: 
 
             {/* ask the agent */}
             <div className="rounded-xl border border-gold/30 bg-gold/5 p-4">
-              <div className="mb-2 flex items-center gap-2 text-sm font-600 text-ink"><Sparkles className="h-4 w-4 text-gold" /> Ask about this product</div>
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2 text-sm font-600 text-ink"><Sparkles className="h-4 w-4 text-gold" /> Ask about this product</span>
+                <button
+                  onClick={() => navigate("/intelligence", { state: { seed: `Tell me more about the ${product.product_name}${product.sku ? ` (${product.sku})` : ""}.`, product_name: product.product_name } })}
+                  className="chip border-grape/40 bg-grape/10 text-grape-soft hover:bg-grape/20"
+                >
+                  <MessageSquare className="h-3 w-3" /> Continue in AI Assistant
+                </button>
+              </div>
               <form onSubmit={(e) => { e.preventDefault(); ask(); }} className="flex gap-2">
-                <input className="input" placeholder="e.g. Is it compatible with macOS? What's the warranty?" value={q} onChange={(e) => setQ(e.target.value)} />
+                <input className="input" placeholder="e.g. Is it inverter? What's the warranty?" value={q} onChange={(e) => setQ(e.target.value)} />
                 <button type="submit" disabled={busy || !q.trim()} className="btn-gold !px-3.5">{busy ? <Spinner className="h-4 w-4" /> : <Send className="h-4 w-4" />}</button>
               </form>
               {answer && (
-                <div className="mt-3 rounded-lg bg-black/20 p-3 text-sm text-ink-soft">
-                  <p className="whitespace-pre-wrap">{answer.answer}</p>
+                <div className="mt-3 rounded-lg bg-black/20 p-3">
+                  <Markdown>{answer.answer}</Markdown>
                   {answer.sources.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {answer.sources.map((s, i) => (

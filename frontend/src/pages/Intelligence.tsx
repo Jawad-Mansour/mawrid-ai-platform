@@ -1,11 +1,13 @@
 // Feature: Intelligence — full-page RAG assistant (admin scope)
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Send, Sparkles, Search, Boxes, Banknote, Truck, FileText, User } from "lucide-react";
 import { apiPost, apiErr } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import type { ChatResponse } from "@/lib/types";
 import { Spinner } from "@/components/ui";
+import { Markdown } from "@/components/Markdown";
 
 interface Msg { role: "user" | "bot"; text: string; meta?: { route?: string | null; intent?: string | null; sources?: number } }
 
@@ -22,6 +24,18 @@ export function Intelligence() {
   const [busy, setBusy] = useState(false);
   const session = useRef(crypto.randomUUID());
   const listRef = useRef<HTMLDivElement>(null);
+  const location = useLocation();
+  const seededRef = useRef(false);
+
+  // When opened from a product ("Continue in AI Assistant"), seed the first question.
+  useEffect(() => {
+    const seed = (location.state as { seed?: string } | null)?.seed;
+    if (seed && !seededRef.current) {
+      seededRef.current = true;
+      send(seed);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
 
   async function send(text: string) {
     const query = text.trim();
@@ -87,7 +101,7 @@ export function Intelligence() {
                   {m.role === "user" ? <User className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
                 </div>
                 <div className={cn("max-w-[80%] rounded-2xl px-4 py-3 text-sm", m.role === "user" ? "bg-gold text-bg" : "card")}>
-                  <div className="whitespace-pre-wrap">{m.text}</div>
+                  {m.role === "user" ? <div className="whitespace-pre-wrap">{m.text}</div> : <Markdown>{m.text}</Markdown>}
                   {m.meta && (m.meta.route || m.meta.sources != null) && (
                     <div className="mt-2 flex gap-1.5">
                       {m.meta.route && <span className="chip border-line bg-black/20 text-ink-faint">{m.meta.route}</span>}
