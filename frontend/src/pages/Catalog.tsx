@@ -137,8 +137,8 @@ function ProductGridCard({ p, q, onOpen, onEdit }: { p: Product; q: string; onOp
         <div className="mt-2 min-h-[3.4rem] space-y-0.5">
           {specs.map(([k, v]) => (
             <div key={k} className="flex justify-between gap-2 text-[11px]">
-              <span className="truncate text-ink-faint">{k}</span>
-              <span className="truncate text-right font-500 text-ink-soft">{String(v)}</span>
+              <span className="truncate text-ink-soft">{k}</span>
+              <span className="truncate text-right font-600 text-ink">{String(v)}</span>
             </div>
           ))}
         </div>

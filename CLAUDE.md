@@ -251,7 +251,8 @@ Track what is done. Update this section when each phase's Verify gate passes.
 | | **Phase 9 complete — all 17 workflows implemented (WF-01–WF-15 + WF-10a/b/c)** | ✅ |
 | **10 — Admin UI** | 10.0 Backend APIs: GET /admin/summary, GET /admin/ai-health, GET /admin/workflows, GET /admin/consumer-orders, POST /admin/consumer-orders/{id}/fulfill, GET /admin/enrichment/dlq, POST /admin/enrichment/dlq/{id}/retry | ✅ Done |
 | | 10.1 ConsumerOrderRepository (list, get, create, set_status) | ✅ Done |
-| | 10.2 Frontend: Operations dashboard + all feature UIs + HITL keyboard shortcuts | ⬜ Pending (after Phases 11–13 backend) |
+| | 10.2 Frontend (React 18 + Vite + Tailwind): full app shell, dashboard (3D globe), HITL approvals, **Upload Sheet / Upload History / Catalogue / Needs Review** (rich image cards, search+highlight, per-card **Edit** modal, basket), **Create Order** (basket→receipt→PO), Suppliers, Dunning, Publishing, AI Assistant, AI Model Health, Notifications (Important/Info tabs), Profile (avatar), Settings (themes); slogan topbar + collapsible sidebar + animated background | ✅ Done |
+| | 10.3 Catalog enrichment UI works end-to-end on real uploads: Icecat→image-search→web → real image + rich Markdown description + sources; uncertain → needs_review (human Edit fixes it). `PATCH /catalog/products/{id}`, `GET /catalog/documents`, supplier name+location on upload. Migration 0010 (products.source_urls, suppliers.location). See `resources/phases/progress.md` Session Update 2026-06-16. | ✅ Done |
 | **11 — Storefront** | 11.1 Payment gateways (Stripe/OMT/Whish) + PaymentGateway Protocol | ✅ Done |
 | | 11.2 Invoice PDF generation (reportlab Platypus, `POST /invoices/generate`) | ✅ Done |
 | | 11.3 Storefront API (`/store/products`, `/store/cart/validate`, `/store/checkout`, `/store/orders/{id}`) | ✅ Done |

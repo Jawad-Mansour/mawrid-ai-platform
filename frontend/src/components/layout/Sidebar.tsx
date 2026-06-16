@@ -1,10 +1,12 @@
-// Feature: Layout — collapsible sectioned navigation with user card, notifications,
-//          theme toggle and sign-out.
-import { NavLink } from "react-router-dom";
+// Feature: Layout — collapsible sectioned navigation with profile card, notifications,
+//          theme toggle and sign-out. Sections expand/collapse like dropdowns.
+import { useState } from "react";
+import { NavLink, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   LayoutDashboard, CheckSquare, Boxes, ScanLine, ClipboardList,
-  Store, Banknote, BrainCircuit, Settings, ChevronLeft, Users, Sparkles, UploadCloud,
+  Store, Banknote, BrainCircuit, Settings, ChevronLeft, ChevronDown, Users, Sparkles, UploadCloud,
   History, ShieldQuestion, LogOut, Bell, Palette,
   type LucideIcon,
 } from "lucide-react";
@@ -12,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { apiGet } from "@/lib/api";
 import { useAuthStore } from "@/stores/auth";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/stores/profile";
 import { THEMES, useThemeStore } from "@/stores/theme";
 import type { OperationalMode, DashboardSummary } from "@/lib/types";
 
@@ -22,6 +25,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
   const user = useAuthStore((s) => s.user);
   const mode = user?.operational_mode;
   const { logout } = useAuth();
+  const { avatar, displayName } = useProfile();
   const { theme, setTheme } = useThemeStore();
   const cycleTheme = () => {
     const avail = THEMES.filter((t) => t.available);
@@ -58,12 +62,14 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
     { title: "Settings", items: [{ to: "/settings", label: "Settings", icon: Settings }]},
   ];
 
+  // all sections expanded by default; clicking a header collapses it
+  const [closed, setClosed] = useState<Record<string, boolean>>({});
+  const toggleSection = (t: string) => setClosed((c) => ({ ...c, [t]: !c[t] }));
+
   const linkCls = ({ isActive }: { isActive: boolean }) =>
     cn(
       "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-500 transition-all",
-      isActive
-        ? "bg-gold/15 text-gold-soft"
-        : "text-ink-soft hover:bg-white/[0.05] hover:text-ink",
+      isActive ? "bg-gold/15 text-gold-soft" : "text-ink-soft hover:bg-white/[0.05] hover:text-ink",
     );
 
   return (
@@ -83,48 +89,58 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
 
       <div className="mx-4 h-px bg-gradient-to-r from-transparent via-gold/25 to-transparent" />
 
-      {/* nav */}
-      <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
+      {/* nav with collapsible sections */}
+      <nav className="flex-1 space-y-1.5 overflow-y-auto px-3 py-4">
         {sections.map((section) => {
           const items = section.items.filter((i) => !i.modes || (mode && i.modes.includes(mode)));
           if (!items.length) return null;
+          const isOpen = !closed[section.title];
           return (
             <div key={section.title}>
-              {!collapsed && <div className="px-3 pb-1.5 text-[10px] font-700 uppercase tracking-[0.18em] text-ink-faint">{section.title}</div>}
-              <div className="space-y-1">
-                {items.map((it) => (
-                  <NavLink key={it.to} to={it.to} end={it.to === "/"} title={it.label} className={linkCls}>
-                    {({ isActive }) => (
-                      <>
-                        {isActive && <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-gold" />}
-                        <it.icon className="h-[18px] w-[18px] shrink-0" />
-                        {!collapsed && <span className="flex-1 truncate">{it.label}</span>}
-                        {!!it.badge && it.badge > 0 && (
-                          <span className={cn("grid h-5 min-w-5 place-items-center rounded-full bg-gold px-1 text-[10px] font-700 text-bg", collapsed && "absolute right-1 top-1")}>{it.badge}</span>
+              {!collapsed ? (
+                <button onClick={() => toggleSection(section.title)} className="flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-[10px] font-700 uppercase tracking-[0.18em] text-ink-faint hover:text-ink-soft">
+                  <span>{section.title}</span>
+                  <ChevronDown className={cn("h-3 w-3 transition-transform", !isOpen && "-rotate-90")} />
+                </button>
+              ) : <div className="my-1 h-px bg-line" />}
+              <AnimatePresence initial={false}>
+                {(isOpen || collapsed) && (
+                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="space-y-1 overflow-hidden">
+                    {items.map((it) => (
+                      <NavLink key={it.to} to={it.to} end={it.to === "/"} title={it.label} className={linkCls}>
+                        {({ isActive }) => (
+                          <>
+                            {isActive && <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-gold" />}
+                            <it.icon className="h-[18px] w-[18px] shrink-0" />
+                            {!collapsed && <span className="flex-1 truncate">{it.label}</span>}
+                            {!!it.badge && it.badge > 0 && (
+                              <span className={cn("grid h-5 min-w-5 place-items-center rounded-full bg-gold px-1 text-[10px] font-700 text-bg", collapsed && "absolute right-1 top-1")}>{it.badge}</span>
+                            )}
+                          </>
                         )}
-                      </>
-                    )}
-                  </NavLink>
-                ))}
-              </div>
+                      </NavLink>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           );
         })}
       </nav>
 
-      {/* footer: user card + theme + sign out + collapse */}
+      {/* footer: profile card + theme + sign out + collapse */}
       <div className="space-y-2 border-t border-line p-3">
-        <div className={cn("flex items-center gap-2.5 rounded-xl border border-line bg-white/[0.02] p-2", collapsed && "justify-center")}>
-          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-grape to-gold text-sm font-800 text-bg">
-            {(user?.email ?? "M")[0]?.toUpperCase()}
+        <Link to="/profile" className={cn("flex items-center gap-2.5 rounded-xl border border-line bg-white/[0.02] p-2 transition-colors hover:border-gold/30 hover:bg-white/[0.05]", collapsed && "justify-center")} title="Profile">
+          <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-gradient-to-br from-grape to-gold text-sm font-800 text-bg">
+            {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" /> : (displayName || user?.email || "M")[0]?.toUpperCase()}
           </div>
           {!collapsed && (
             <div className="min-w-0 flex-1">
-              <div className="truncate text-xs font-700 text-ink">{user?.email ?? "—"}</div>
+              <div className="truncate text-xs font-700 text-ink">{displayName || user?.email || "—"}</div>
               <div className="text-[10px] uppercase tracking-wider text-ink-faint">{user?.role ?? ""}</div>
             </div>
           )}
-        </div>
+        </Link>
 
         <div className={cn("flex gap-2", collapsed && "flex-col")}>
           <button onClick={cycleTheme} title="Switch theme" className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-line bg-white/[0.02] py-2 text-xs text-ink-soft hover:bg-white/[0.06]">

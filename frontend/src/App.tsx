@@ -13,6 +13,7 @@ import { UploadPage } from "@/pages/UploadPage";
 import { UploadHistory } from "@/pages/UploadHistory";
 import { NeedsReview } from "@/pages/NeedsReview";
 import { NotificationsPage } from "@/pages/NotificationsPage";
+import { Profile } from "@/pages/Profile";
 import { Catalog } from "@/pages/Catalog";
 import { Approvals } from "@/pages/Approvals";
 import { Procurement } from "@/pages/Procurement";
@@ -49,6 +50,7 @@ export default function App() {
         <Route path="/barcode" element={<Barcode />} />
         <Route path="/ai-health" element={<AiHealth />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/profile" element={<Profile />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

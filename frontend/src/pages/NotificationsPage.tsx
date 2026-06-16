@@ -1,5 +1,6 @@
-// Feature: Notifications center — important (act now) vs informational.
+// Feature: Notifications center — important (act now) vs informational, tabbed.
 // API:     GET /admin/summary · GET /catalog/products
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -7,6 +8,7 @@ import {
   CheckSquare, AlertTriangle, ShieldQuestion, Sparkles, PackageMinus, BellOff, ChevronRight,
 } from "lucide-react";
 import { apiGet } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { Card, SectionTitle } from "@/components/ui";
 import type { DashboardSummary, Product } from "@/lib/types";
 
@@ -20,6 +22,7 @@ function asProducts(d: unknown): Product[] {
 
 export function NotificationsPage() {
   const navigate = useNavigate();
+  const [tab, setTab] = useState<"important" | "info">("important");
   const summary = useQuery({ queryKey: ["summary-bell"], queryFn: () => apiGet<DashboardSummary>("/admin/summary"), refetchInterval: 15_000 });
   const products = useQuery({ queryKey: ["catalog"], queryFn: () => apiGet<unknown>("/catalog/products?limit=300"), refetchInterval: 10_000 });
 
@@ -53,40 +56,43 @@ export function NotificationsPage() {
     </motion.button>
   );
 
-  const empty = important.length === 0 && info.length === 0;
+  const list = tab === "important" ? important : info;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <SectionTitle title="Notifications" subtitle="Everything that needs your attention — separated by urgency." />
 
-      {empty ? (
-        <Card>
-          <div className="flex flex-col items-center gap-3 py-14 text-center text-ink-faint">
-            <BellOff className="h-9 w-9" />
-            <div className="text-base font-700 text-ink">You're all caught up 🎉</div>
-            <div className="text-sm">No approvals, reviews, or alerts right now.</div>
-          </div>
-        </Card>
-      ) : (
-        <>
-          <div>
-            <div className="mb-2 flex items-center gap-2 text-xs font-700 uppercase tracking-wider text-gold-soft">
-              <span className="h-2 w-2 rounded-full bg-gold" /> Important · act now
+      {/* tab toggle */}
+      <div className="flex gap-1 rounded-2xl border border-line bg-white/[0.02] p-1">
+        {([
+          { key: "important", label: "Important", count: important.length, dot: "bg-gold" },
+          { key: "info", label: "Informational", count: info.length, dot: "bg-ink-faint" },
+        ] as const).map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={cn(
+              "relative flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-600 transition-all",
+              tab === t.key ? "bg-gold/15 text-gold-soft shadow-[inset_0_0_0_1px_rgba(212,163,115,0.3)]" : "text-ink-soft hover:text-ink",
+            )}
+          >
+            <span className={cn("h-2 w-2 rounded-full", t.dot)} /> {t.label}
+            {t.count > 0 && <span className="grid h-5 min-w-5 place-items-center rounded-full bg-gold/20 px-1 text-[10px] font-700 text-gold-soft">{t.count}</span>}
+          </button>
+        ))}
+      </div>
+
+      <div className="space-y-2">
+        {list.length ? list.map((n, i) => row(n, i, tab === "important")) : (
+          <Card>
+            <div className="flex flex-col items-center gap-3 py-12 text-center text-ink-faint">
+              <BellOff className="h-9 w-9" />
+              <div className="text-base font-700 text-ink">{tab === "important" ? "Nothing urgent 🎉" : "Nothing here"}</div>
+              <div className="text-sm">{tab === "important" ? "No approvals or failures need you right now." : "No informational updates at the moment."}</div>
             </div>
-            <div className="space-y-2">
-              {important.length ? important.map((n, i) => row(n, i, true)) : <p className="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-ink-faint">Nothing urgent.</p>}
-            </div>
-          </div>
-          <div>
-            <div className="mb-2 flex items-center gap-2 text-xs font-700 uppercase tracking-wider text-ink-soft">
-              <span className="h-2 w-2 rounded-full bg-ink-faint" /> Informational
-            </div>
-            <div className="space-y-2">
-              {info.length ? info.map((n, i) => row(n, i, false)) : <p className="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-ink-faint">Nothing here.</p>}
-            </div>
-          </div>
-        </>
-      )}
+          </Card>
+        )}
+      </div>
     </div>
   );
 }

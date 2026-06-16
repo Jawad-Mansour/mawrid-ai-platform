@@ -199,6 +199,14 @@ _PART_TERMS = (
     "pcb", "circuit board", "drain", "heating element", "exploded", "diagram", "schematic",
     "door handle", "knob", "bearing", " parts ",
 )
+# Authoritative sources (manufacturers + major retailers) — their product photos are
+# far more likely to be the correct item than a random marketplace re-upload.
+_GOOD_IMG_DOMAINS = (
+    "amazon", "carrefour", "xcite", "choice", "currys", "ao.com", "manua.ls", "icecat",
+    "candy", "hoover", "bosch", "lg.com", "samsung", "teka", "whirlpool", "noon",
+    "sharafdg", "extra.com", "jarir", "mediamarkt", "darty", "ldlc", "boulanger",
+    "manufacturer", "/dam/", "officialsite",
+)
 
 
 def _pick_product_image(
@@ -242,6 +250,9 @@ def _pick_product_image(
                 score += 0.5
         if any(h in low for h in ("/media", "catalog", "/product", "/dam/", "/images")):
             score += 0.5
+        # authoritative source boost — trust manufacturer/major-retailer photos
+        if any(d in low for d in _GOOD_IMG_DOMAINS):
+            score += 2.5
 
         if score > best_score:
             best_score = score
