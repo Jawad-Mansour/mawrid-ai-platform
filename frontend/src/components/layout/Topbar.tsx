@@ -1,25 +1,17 @@
-// Feature: Layout — top bar (search, tenant, HITL bell, user)
-import { useQuery } from "@tanstack/react-query";
-import { Bell, LogOut, Search, Palette } from "lucide-react";
-import { apiGet } from "@/lib/api";
+// Feature: Layout — top bar (search, theme, notifications, user)
+import { Search, Palette } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { THEMES, useThemeStore } from "@/stores/theme";
-import type { DashboardSummary } from "@/lib/types";
+import { Notifications } from "@/components/Notifications";
 
 export function Topbar() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { theme, setTheme } = useThemeStore();
   const cycleTheme = () => {
     const avail = THEMES.filter((t) => t.available);
     const i = avail.findIndex((t) => t.key === theme);
     setTheme(avail[(i + 1) % avail.length].key);
   };
-  const { data } = useQuery({
-    queryKey: ["summary-bell"],
-    queryFn: () => apiGet<DashboardSummary>("/admin/summary"),
-    refetchInterval: 30_000,
-  });
-  const pending = data?.pending_hitl_count ?? 0;
 
   return (
     <header className="glass sticky top-0 z-20 flex items-center gap-4 rounded-none border-x-0 border-t-0 px-6 py-3">
@@ -37,20 +29,9 @@ export function Topbar() {
         <Palette className="h-[18px] w-[18px] text-ink-soft" />
       </button>
 
-      <a
-        href="/approvals"
-        className="relative grid h-10 w-10 place-items-center rounded-xl border border-line bg-white/[0.02] hover:bg-white/[0.06]"
-        title="HITL approvals"
-      >
-        <Bell className="h-[18px] w-[18px] text-ink-soft" />
-        {pending > 0 && (
-          <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-gold px-1 text-[10px] font-700 text-bg">
-            {pending}
-          </span>
-        )}
-      </a>
+      <Notifications />
 
-      <div className="flex items-center gap-3 rounded-xl border border-line bg-white/[0.02] py-1.5 pl-3 pr-1.5">
+      <div className="flex items-center gap-3 rounded-xl border border-line bg-white/[0.02] py-1.5 pl-3 pr-3">
         <div className="hidden text-right sm:block">
           <div className="max-w-[160px] truncate text-sm font-600 text-ink">{user?.email ?? "—"}</div>
           <div className="text-[11px] uppercase tracking-wider text-ink-faint">{user?.role ?? ""}</div>
@@ -58,13 +39,6 @@ export function Topbar() {
         <div className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-grape to-gold font-700 text-bg">
           {(user?.email ?? "M")[0]?.toUpperCase()}
         </div>
-        <button
-          onClick={logout}
-          title="Sign out"
-          className="grid h-8 w-8 place-items-center rounded-lg text-ink-faint hover:bg-white/[0.06] hover:text-danger"
-        >
-          <LogOut className="h-4 w-4" />
-        </button>
       </div>
     </header>
   );

@@ -21,12 +21,13 @@ export function ProductModal({ product, onClose }: { product: Product; onClose: 
   const [imgOk, setImgOk] = useState(true);
   const specs = Object.entries(product.specifications ?? {});
 
-  async function ask() {
-    if (!q.trim() || busy) return;
+  async function ask(question?: string) {
+    const text = (question ?? q).trim();
+    if (!text || busy) return;
     setBusy(true);
     setAnswer(null);
     try {
-      const r = await apiPost<AskProductResponse>(`/catalog/products/${product.product_id}/ask`, { question: q });
+      const r = await apiPost<AskProductResponse>(`/catalog/products/${product.product_id}/ask`, { question: text });
       setAnswer(r);
     } catch (e) {
       setAnswer({ product_id: product.product_id, answer: apiErr(e, "Could not reach the research agent."), sources: [] });
@@ -119,35 +120,54 @@ export function ProductModal({ product, onClose }: { product: Product; onClose: 
               </div>
             )}
 
-            {/* ask the agent */}
-            <div className="rounded-xl border border-gold/30 bg-gold/5 p-4">
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <span className="flex items-center gap-2 text-sm font-600 text-ink"><Sparkles className="h-4 w-4 text-gold" /> Ask about this product</span>
+            {/* ask the agent — a focused mini-chat about this product */}
+            <div className="overflow-hidden rounded-2xl border border-gold/30 bg-gold/[0.06]">
+              <div className="flex items-center justify-between gap-2 border-b border-gold/20 px-4 py-2.5">
+                <span className="flex items-center gap-2 text-sm font-700 text-ink">
+                  <span className="grid h-6 w-6 place-items-center rounded-lg bg-gradient-to-br from-gold to-grape"><Sparkles className="h-3.5 w-3.5 text-bg" /></span>
+                  Ask about this product
+                </span>
                 <button
                   onClick={() => navigate("/intelligence", { state: { seed: `Tell me more about the ${product.product_name}${product.sku ? ` (${product.sku})` : ""}.`, product_name: product.product_name } })}
                   className="chip border-grape/40 bg-grape/10 text-grape-soft hover:bg-grape/20"
                 >
-                  <MessageSquare className="h-3 w-3" /> Continue in AI Assistant
+                  <MessageSquare className="h-3 w-3" /> Open in AI Assistant
                 </button>
               </div>
-              <form onSubmit={(e) => { e.preventDefault(); ask(); }} className="flex gap-2">
-                <input className="input" placeholder="e.g. Is it inverter? What's the warranty?" value={q} onChange={(e) => setQ(e.target.value)} />
-                <button type="submit" disabled={busy || !q.trim()} className="btn-gold !px-3.5">{busy ? <Spinner className="h-4 w-4" /> : <Send className="h-4 w-4" />}</button>
-              </form>
-              {answer && (
-                <div className="mt-3 rounded-lg bg-black/20 p-3">
-                  <Markdown>{answer.answer}</Markdown>
-                  {answer.sources.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {answer.sources.map((s, i) => (
-                        <a key={i} href={s.url} target="_blank" rel="noreferrer" className="chip border-line bg-white/[0.03] text-ink-faint hover:text-ink">
-                          <ExternalLink className="h-3 w-3" /> {s.title}
-                        </a>
-                      ))}
+
+              <div className="space-y-3 p-4">
+                {/* answer bubble */}
+                {answer ? (
+                  <div className="flex gap-2.5">
+                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-grape/20 text-grape-soft"><Sparkles className="h-3.5 w-3.5" /></span>
+                    <div className="min-w-0 flex-1 rounded-2xl rounded-tl-sm border border-line bg-bg-soft px-3.5 py-2.5">
+                      <Markdown>{answer.answer}</Markdown>
+                      {answer.sources.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {answer.sources.map((s, i) => (
+                            <a key={i} href={s.url} target="_blank" rel="noreferrer" className="chip border-line bg-white/[0.03] text-ink-faint hover:text-ink">
+                              <ExternalLink className="h-3 w-3" /> {s.title}
+                            </a>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              )}
+                  </div>
+                ) : busy ? (
+                  <div className="flex items-center gap-2 text-sm text-ink-soft"><Spinner className="h-4 w-4" /> Researching the web…</div>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {["Is it inverter?", "What's the warranty?", "Energy rating?", "Dimensions?"].map((s) => (
+                      <button key={s} onClick={() => { setQ(s); ask(s); }} className="chip border-line bg-white/[0.03] text-ink-soft hover:border-gold/40 hover:text-ink">{s}</button>
+                    ))}
+                  </div>
+                )}
+
+                <form onSubmit={(e) => { e.preventDefault(); ask(); }} className="flex gap-2">
+                  <input className="input" placeholder="Ask anything about this product…" value={q} onChange={(e) => setQ(e.target.value)} />
+                  <button type="submit" disabled={busy || !q.trim()} className="btn-gold !px-3.5">{busy ? <Spinner className="h-4 w-4" /> : <Send className="h-4 w-4" />}</button>
+                </form>
+              </div>
             </div>
           </div>
         </motion.div>

@@ -178,5 +178,8 @@ class WorkerSettings:
     on_shutdown = shutdown
     redis_settings = RedisSettings.from_dsn(os.environ.get("REDIS_URL", "redis://localhost:6379/0"))
     job_timeout = 300
-    max_jobs = 10
+    # Enrich a couple at a time, not 10 — deep per-product web/image search would
+    # otherwise hammer SearXNG and the image lookups fail under load (products end up
+    # with no image). Low concurrency = the accurate, "one-by-one" behaviour we want.
+    max_jobs = 2
     max_tries = 3

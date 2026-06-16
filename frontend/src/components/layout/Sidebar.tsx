@@ -3,11 +3,12 @@ import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard, CheckSquare, Boxes, ScanLine, ClipboardList,
   Store, Banknote, BrainCircuit, Settings, ChevronLeft, Users, Sparkles, UploadCloud,
-  History, ShieldQuestion,
+  History, ShieldQuestion, LogOut,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth";
+import { useAuth } from "@/hooks/useAuth";
 import type { OperationalMode } from "@/lib/types";
 
 interface Item {
@@ -50,8 +51,17 @@ const SECTIONS: Section[] = [
   ]},
 ];
 
+const navItemCls = (active: boolean) =>
+  cn(
+    "group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-500 transition-all",
+    active
+      ? "bg-gold/15 text-gold-soft shadow-[inset_0_0_0_1px_rgba(212,163,115,0.3)]"
+      : "text-ink-soft hover:bg-white/[0.05] hover:text-ink",
+  );
+
 export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   const mode = useAuthStore((s) => s.user?.operational_mode);
+  const { logout } = useAuth();
 
   return (
     <aside
@@ -109,6 +119,14 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
             </div>
           );
         })}
+
+        {/* Sign out — lives under Settings, as an action (not a route) */}
+        <div className="pt-1">
+          <button onClick={logout} title="Sign out" className={navItemCls(false) + " hover:!bg-danger/10 hover:!text-danger"}>
+            <LogOut className="h-[18px] w-[18px] shrink-0" />
+            {!collapsed && <span className="truncate">Sign out</span>}
+          </button>
+        </div>
       </nav>
 
       <button

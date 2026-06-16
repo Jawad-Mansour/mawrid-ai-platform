@@ -3,10 +3,10 @@
 import { motion } from "framer-motion";
 import { Sparkles, Globe, FileText, ImageIcon, ListChecks } from "lucide-react";
 
-const S = 120; // box size (px)
+const S = 104; // box size (px)
 const H = S / 2;
 const faceBase =
-  "absolute rounded-xl border border-gold/40 bg-gradient-to-br from-gold/20 to-grape/20 shadow-glow backdrop-blur-sm";
+  "absolute rounded-lg border border-gold/50 bg-gradient-to-br from-gold/30 to-grape/30 shadow-glow backdrop-blur-sm";
 
 /** A 3D box. phase "open" = lid up + sparkles rising; "enriching" = lid closed + spinning. */
 export function EnrichBox({ phase }: { phase: "open" | "enriching" }) {
@@ -14,7 +14,7 @@ export function EnrichBox({ phase }: { phase: "open" | "enriching" }) {
   const faceStyle = { width: S, height: S, left: "50%", top: "50%", marginLeft: -H, marginTop: -H } as const;
 
   return (
-    <div className="relative grid h-44 w-full place-items-center" style={{ perspective: 900 }}>
+    <div className="relative grid h-52 w-full place-items-center" style={{ perspective: 900 }}>
       {/* sparkles rising out of the open box */}
       {phase === "open" &&
         [0, 1, 2, 3, 4].map((i) => (
@@ -54,7 +54,7 @@ export function EnrichBox({ phase }: { phase: "open" | "enriching" }) {
           <motion.div
             className={`${faceBase} grid place-items-center`}
             style={{ width: S, height: S, transformOrigin: "top" }}
-            animate={{ rotateX: phase === "open" ? -118 : 0 }}
+            animate={{ rotateX: phase === "open" ? -78 : 0 }}
             transition={{ type: "spring", stiffness: 120, damping: 14 }}
           >
             <Sparkles className="h-7 w-7 text-grape-soft" />
