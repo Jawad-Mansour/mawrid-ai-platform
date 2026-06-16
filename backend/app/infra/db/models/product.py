@@ -42,6 +42,8 @@ class Product(TenantMixin, Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     specifications: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     image_path: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Reference links gathered during enrichment (AI-overview style "sources" block)
+    source_urls: Mapped[list[Any] | None] = mapped_column(JSON, nullable=True)
     enrichment_source: Mapped[str | None] = mapped_column(Text, nullable=True)
     enrichment_confidence: Mapped[str | None] = mapped_column(Text, nullable=True)
     currency: Mapped[str | None] = mapped_column(Text, nullable=True)

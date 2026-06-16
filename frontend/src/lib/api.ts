@@ -70,9 +70,12 @@ export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
 export async function apiDelete<T>(path: string): Promise<T> {
   return (await apiClient.delete<T>(path)).data;
 }
-export async function apiUpload<T>(path: string, file: File): Promise<T> {
+export async function apiUpload<T>(path: string, file: File, fields?: Record<string, string>): Promise<T> {
   const form = new FormData();
   form.append("file", file);
+  for (const [k, v] of Object.entries(fields ?? {})) {
+    if (v) form.append(k, v);
+  }
   return (await apiClient.post<T>(path, form, { headers: { "Content-Type": "multipart/form-data" } })).data;
 }
 

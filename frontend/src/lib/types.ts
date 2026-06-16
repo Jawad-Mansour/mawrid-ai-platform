@@ -55,6 +55,8 @@ export interface N8nStatusResponse {
   workflows: WorkflowStatus[];
 }
 
+export interface SourceLink { title: string; url: string }
+
 export interface Product {
   product_id: string;
   product_name: string;
@@ -69,9 +71,17 @@ export interface Product {
   storefront_status: string;
   qty_in_stock?: number;
   storefront_qty?: number;
+  price?: number | null;
   retail_price?: number | null;
   currency?: string | null;
   image_url?: string | null;
+  source_urls?: SourceLink[] | null;
+}
+
+export interface AskProductResponse {
+  product_id: string;
+  answer: string;
+  sources: SourceLink[];
 }
 
 export interface HITLAction {

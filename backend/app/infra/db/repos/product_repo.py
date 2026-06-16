@@ -50,6 +50,8 @@ class ProductRepository(TenantRepository):
                 existing.specifications = product.specifications
             if product.image_path is not None:
                 existing.image_path = product.image_path
+            if product.source_urls is not None:
+                existing.source_urls = product.source_urls
             if product.enrichment_source is not None:
                 existing.enrichment_source = product.enrichment_source
             if product.enrichment_confidence is not None:

@@ -79,6 +79,7 @@ class EnrichmentOutput:
     image_url: str | None
     enrichment_source: str
     enrichment_confidence: str
+    source_urls: list[dict[str, str]] = field(default_factory=list)
 
 
 # ── Real network clients ──────────────────────────────────────────────────────
@@ -156,20 +157,50 @@ class SearxngClient:
             return []
 
 
+def _extract_og_image(html: str, base_url: str) -> str | None:
+    """Pull the primary product image (og:image / twitter:image) from page HTML."""
+    import re  # noqa: PLC0415
+    from urllib.parse import urljoin  # noqa: PLC0415
+
+    patterns = [
+        r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image["\']',
+        r'<meta[^>]+name=["\']twitter:image["\'][^>]+content=["\']([^"\']+)["\']',
+    ]
+    for pat in patterns:
+        m = re.search(pat, html, re.IGNORECASE)
+        if m:
+            url = m.group(1).strip()
+            if url.startswith("//"):
+                url = "https:" + url
+            elif url.startswith("/"):
+                url = urljoin(base_url, url)
+            if url.startswith("http"):
+                return url
+    return None
+
+
 class WebFetcher:
-    """Fetches a URL and returns cleaned plaintext via trafilatura."""
+    """Fetches a URL and returns cleaned plaintext via trafilatura, plus the
+    page's primary image (og:image) for the AI-overview style product image."""
 
     async def fetch_and_clean(self, url: str) -> str:
+        text, _ = await self.fetch_page(url)
+        return text
+
+    async def fetch_page(self, url: str) -> tuple[str, str | None]:
+        """Return (cleaned_text, og_image_url)."""
         try:
             async with httpx.AsyncClient(timeout=_HTTPX_TIMEOUT, follow_redirects=True) as client:
                 resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0"})
                 if resp.status_code >= 400:  # noqa: PLR2004
-                    return ""
-                text = trafilatura.extract(resp.text) or ""
-                return text[:_MAX_WEB_CHARS]
+                    return "", None
+                text = (trafilatura.extract(resp.text) or "")[:_MAX_WEB_CHARS]
+                image = _extract_og_image(resp.text, str(resp.url))
+                return text, image
         except Exception as exc:
             logger.warning("web_fetch_failed", url=url, error=str(exc))
-            return ""
+            return "", None
 
 
 # ── Icecat response parsing ───────────────────────────────────────────────────
@@ -307,6 +338,7 @@ class SequentialEnrichmentPipeline:
         image_url: str | None = None
         confidence = "partial"
         source = "web"
+        source_urls: list[dict[str, str]] = []
 
         # ── Step 1: Icecat ────────────────────────────────────────────────────
         icecat_data: dict[str, object] | None = None
@@ -327,6 +359,7 @@ class SequentialEnrichmentPipeline:
             icecat_specs, image_url, spec_count, confidence = _parse_icecat(icecat_data, matched_by)
             specs.update(icecat_specs)
             source = "icecat"
+            source_urls.append({"title": "Icecat product database", "url": "https://icecat.biz"})
             logger.info(
                 "icecat_hit",
                 product=inp.product_name,
@@ -335,24 +368,31 @@ class SequentialEnrichmentPipeline:
                 confidence=confidence,
             )
 
-        # Skip web search if Icecat already gave us high confidence
+        # Skip web search if Icecat already gave us a high-confidence record AND an image.
         web_text = ""
-        if confidence != "high":
+        if confidence != "high" or image_url is None:
             # ── Step 2: SearXNG ───────────────────────────────────────────────
             query = f"{inp.product_name} {inp.sku or ''} specifications datasheet".strip()
             urls = await self._searxng.search(query)
 
-            # ── Step 3: httpx + trafilatura ───────────────────────────────────
+            # ── Step 3: httpx + trafilatura (+ og:image for the product photo) ─
             page_texts: list[str] = []
+            _fetch_page = getattr(self._fetcher, "fetch_page", None)
             for url in urls:
-                text = await self._fetcher.fetch_and_clean(url)
+                if _fetch_page is not None:
+                    text, page_image = await _fetch_page(url)
+                else:  # fakes that only implement fetch_and_clean
+                    text, page_image = await self._fetcher.fetch_and_clean(url), None
                 if text:
                     page_texts.append(text)
+                    from urllib.parse import urlparse  # noqa: PLC0415
+
+                    source_urls.append({"title": urlparse(url).netloc or url, "url": url})
+                if image_url is None and page_image:
+                    image_url = page_image  # first real product image wins
             web_text = "\n\n---\n\n".join(page_texts)
 
-            if source == "icecat":
-                source = "icecat"  # stays icecat even if we augment with web
-            elif web_text:
+            if source != "icecat" and web_text:
                 source = "web"
 
         # ── Steps 4 & 5: GPT-4o spec fill + description ───────────────────────
@@ -373,6 +413,7 @@ class SequentialEnrichmentPipeline:
             image_url=image_url,
             enrichment_source=source,
             enrichment_confidence=confidence,
+            source_urls=source_urls,
         )
 
 

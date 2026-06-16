@@ -20,7 +20,7 @@ import uuid
 from typing import Any
 
 import structlog
-from fastapi import APIRouter, BackgroundTasks, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Form, HTTPException, UploadFile, status
 
 from app.api.deps import CurrentUser, SessionDep
 from app.api.schemas import StrictModel
@@ -33,7 +33,7 @@ from app.infra.db.models.product import Product
 from app.infra.db.repos.document_repo import DocumentRepository
 from app.infra.db.repos.product_repo import ProductRepository
 from app.infra.db.repos.review_queue_repo import ReviewQueueRepository
-from app.infra.storage.minio import upload_document
+from app.infra.storage.minio import get_presigned_url, split_object_path, upload_document
 
 logger = structlog.get_logger(__name__)
 
@@ -76,6 +76,88 @@ class ProductSummary(StrictModel):
     enrichment_source: str | None
 
 
+class ProductCard(StrictModel):
+    """Full catalog card — everything the listing/order pages render."""
+
+    product_id: str
+    product_name: str
+    sku: str | None
+    barcode: str | None
+    description: str | None
+    specifications: dict[str, Any] | None
+    image_url: str | None
+    source_urls: list[dict[str, str]] | None
+    price: float | None
+    currency: str | None
+    retail_price: float | None
+    qty_in_stock: int
+    enrichment_status: str
+    inventory_status: str
+    storefront_status: str
+    enrichment_confidence: str | None
+    enrichment_source: str | None
+
+
+class AskProductRequest(StrictModel):
+    question: str
+
+
+class AskProductResponse(StrictModel):
+    product_id: str
+    answer: str
+    sources: list[dict[str, str]]
+
+
+async def _resolve_image_url(tenant_id: str, image_path: str | None) -> str | None:
+    """An enriched image is either a direct http(s) URL (Icecat/web og:image) or a
+    MinIO object path; return something the browser can load directly."""
+    if not image_path:
+        return None
+    if image_path.startswith("http://") or image_path.startswith("https://"):
+        return image_path
+    try:
+        bucket, obj = split_object_path(image_path)
+        return await get_presigned_url(bucket, obj)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("image_presign_failed", path=image_path, error=str(exc))
+        return None
+
+
+def _latest_price(product: Product) -> float | None:
+    history = product.price_history or []
+    if not history:
+        return None
+    last = history[-1]
+    if isinstance(last, dict) and last.get("price") is not None:
+        try:
+            return float(last["price"])
+        except (TypeError, ValueError):
+            return None
+    return None
+
+
+async def _to_card(tenant_id: str, p: Product) -> ProductCard:
+    return ProductCard(
+        product_id=p.product_id,
+        product_name=p.product_name,
+        sku=p.sku,
+        barcode=p.barcode,
+        description=p.description,
+        specifications=p.specifications,
+        image_url=await _resolve_image_url(tenant_id, p.image_path),
+        source_urls=p.source_urls,
+        price=_latest_price(p),
+        currency=p.currency,
+        retail_price=float(p.retail_price) if p.retail_price is not None else None,
+        qty_in_stock=p.qty_in_stock,
+        enrichment_status=p.enrichment_status,
+        inventory_status=p.inventory_status,
+        storefront_status=p.storefront_status,
+        enrichment_confidence=p.enrichment_confidence,
+        enrichment_source=p.enrichment_source,
+    )
+
+
 class ReviewQueueItemResponse(StrictModel):
     id: str
     document_id: str
@@ -98,6 +180,8 @@ async def upload_supplier_document(
     background_tasks: BackgroundTasks,
     current_user: CurrentUser,
     session: SessionDep,
+    supplier_name: str | None = Form(default=None),
+    supplier_location: str | None = Form(default=None),
 ) -> DocumentUploadResponse:
     """
     Upload a PDF or Excel supplier catalog. Idempotent on document content:
@@ -182,6 +266,21 @@ async def upload_supplier_document(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"Document parsing failed: {exc}",
         ) from exc
+
+    # Capture the supplier (name + location) provided at upload time.
+    if supplier_name and supplier_name.strip():
+        from app.infra.db.repos.supplier_repo import SupplierRepository  # noqa: PLC0415
+
+        sup_repo = SupplierRepository(session, tenant_id)
+        existing_sup = await sup_repo.find_by_name_exact(supplier_name.strip())
+        if existing_sup is None:
+            await sup_repo.create(
+                supplier_id=uuid.uuid4().hex,
+                name=supplier_name.strip(),
+                location=(supplier_location.strip() if supplier_location else None),
+            )
+        elif supplier_location and supplier_location.strip():
+            await sup_repo.update(existing_sup.supplier_id, location=supplier_location.strip())
 
     await session.commit()
 
@@ -448,25 +547,105 @@ async def retry_product_enrichment(
 
 @router.get(
     "/products",
-    response_model=list[ProductSummary],
-    summary="List internal catalog products (not storefront — use /storefront for published)",
+    response_model=list[ProductCard],
+    summary="List internal catalog products with full enrichment (image, specs, sources, price)",
 )
 async def list_catalog_products(
     current_user: CurrentUser,
     session: SessionDep,
-    limit: int = 50,
-) -> list[ProductSummary]:
+    limit: int = 200,
+) -> list[ProductCard]:
     product_repo = ProductRepository(session, current_user.tenant_id)
     products = await product_repo.list_all(limit=limit)
-    return [
-        ProductSummary(
-            product_id=p.product_id,
-            product_name=p.product_name,
-            sku=p.sku,
-            enrichment_status=p.enrichment_status,
-            storefront_status=p.storefront_status,
-            enrichment_confidence=p.enrichment_confidence,
-            enrichment_source=p.enrichment_source,
-        )
-        for p in products
-    ]
+    return [await _to_card(current_user.tenant_id, p) for p in products]
+
+
+@router.get(
+    "/products/{product_id}",
+    response_model=ProductCard,
+    summary="Get one product with full enrichment detail",
+)
+async def get_catalog_product(
+    product_id: str,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> ProductCard:
+    product_repo = ProductRepository(session, current_user.tenant_id)
+    product = await product_repo.get_by_id(product_id)
+    if product is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found.")
+    return await _to_card(current_user.tenant_id, product)
+
+
+@router.post(
+    "/products/{product_id}/ask",
+    response_model=AskProductResponse,
+    summary="Ask the enrichment agent a follow-up question about a specific product",
+)
+async def ask_about_product(
+    product_id: str,
+    body: AskProductRequest,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> AskProductResponse:
+    """Grounded Q&A about one product: the agent searches the web by the product's
+    code/name for fresh detail and answers the importer's follow-up question."""
+    product_repo = ProductRepository(session, current_user.tenant_id)
+    product = await product_repo.get_by_id(product_id)
+    if product is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found.")
+
+    from app.core.config import get_settings  # noqa: PLC0415
+    from app.core.catalog.enrichment_pipeline import WebFetcher  # noqa: PLC0415
+    from app.infra.llm.openai import chat_completion  # noqa: PLC0415
+    from app.infra.secrets.vault import get_secrets  # noqa: PLC0415
+
+    settings = get_settings()
+    sources: list[dict[str, str]] = list(product.source_urls or [])
+    web_text = ""
+    try:
+        from app.core.catalog.enrichment_pipeline import SearxngClient  # noqa: PLC0415
+
+        searx = SearxngClient(settings.searxng_base_url)
+        fetcher = WebFetcher()
+        code = product.sku or product.barcode or product.product_name
+        urls = await searx.search(f"{product.product_name} {code} {body.question}")
+        from urllib.parse import urlparse  # noqa: PLC0415
+
+        for url in urls[:3]:
+            text, _ = await fetcher.fetch_page(url)
+            if text:
+                web_text += text[:3000] + "\n\n"
+                sources.append({"title": urlparse(url).netloc or url, "url": url})
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("ask_product_web_failed", product_id=product_id, error=str(exc))
+
+    _ = get_secrets()  # ensure secrets are loaded for the LLM call
+    context = {
+        "product_name": product.product_name,
+        "sku": product.sku,
+        "specifications": product.specifications or {},
+        "known_description": product.description or "",
+        "fresh_web_research": web_text[:6000],
+    }
+    import json as _json  # noqa: PLC0415
+
+    answer = await chat_completion(
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "You are a product research assistant for an importer. Answer the user's "
+                    "question about this specific product using the provided product data and "
+                    "web research. Be concrete and concise. If you are unsure, say so plainly."
+                ),
+            },
+            {"role": "user", "content": f"Question: {body.question}\n\nProduct data:\n{_json.dumps(context, ensure_ascii=False)}"},
+        ],
+        temperature=0.2,
+        max_tokens=400,
+    )
+    # de-dup sources by url
+    seen: set[str] = set()
+    uniq = [s for s in sources if s.get("url") and not (s["url"] in seen or seen.add(s["url"]))]
+    return AskProductResponse(product_id=product_id, answer=answer.strip(), sources=uniq[:6])

@@ -28,6 +28,7 @@ class SupplierRepository(TenantRepository):
         phone: str | None = None,
         language: str = "en",
         currency: str = "USD",
+        location: str | None = None,
     ) -> Supplier:
         supplier = Supplier(
             supplier_id=supplier_id,
@@ -37,6 +38,7 @@ class SupplierRepository(TenantRepository):
             phone=phone,
             language=language,
             currency=currency,
+            location=location,
         )
         self._session.add(supplier)
         await self._session.flush()
@@ -62,7 +64,7 @@ class SupplierRepository(TenantRepository):
         supplier_id: str,
         **kwargs: Any,
     ) -> None:
-        allowed = {"name", "email", "phone", "language", "currency", "score", "embedding"}
+        allowed = {"name", "email", "phone", "language", "currency", "score", "embedding", "location"}
         values = {k: v for k, v in kwargs.items() if k in allowed}
         if values:
             await self._session.execute(

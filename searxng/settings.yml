@@ -1,61 +1,33 @@
 # SearXNG configuration — Mawrid AI Platform (Phase 2 enrichment)
-# Self-hosted meta search aggregating Google, Bing, DuckDuckGo.
-# JSON output only — UI disabled. Used exclusively by the enrichment pipeline.
+# Inherit SearXNG's shipped defaults and override only what we need. This keeps us
+# compatible across image updates (new required keys come from the defaults).
+use_default_settings: true
 
 general:
   instance_name: mawrid-searxng
   debug: false
-  donation_url: false
-  contact_url: false
   enable_metrics: false
 
 search:
   safe_search: 0
   autocomplete: ""
   default_lang: "en"
+  # JSON is what the enrichment pipeline consumes; html kept so the limiter/UI work.
   formats:
     - json
-  max_page: 1
+    - html
 
 server:
   secret_key: "mawrid-searxng-dev-secret-change-in-prod"
   base_url: http://searxng:8080
-  port: 8080
   bind_address: "0.0.0.0"
   image_proxy: false
-  http_protocol_version: "1.1"
-
-ui:
-  static_use_hash: false
-  default_locale: en
-  query_in_title: false
-  infinite_scroll: false
-  center_alignment: false
-  results_on_new_tab: false
-  simple_style: auto
-  default_theme: simple
-  theme_args:
-    simple_style: light
-
-# Only enable engines needed for product specification research
-engines:
-  - name: google
-    engine: google
-    shortcut: g
-    use_mobile_ui: false
-
-  - name: bing
-    engine: bing
-    shortcut: b
-
-  - name: duckduckgo
-    engine: duckduckgo
-    shortcut: d
+  # Disable the bot limiter so the pipeline's programmatic JSON requests aren't blocked.
+  limiter: false
+  public_instance: false
 
 outgoing:
   request_timeout: 10.0
   max_request_timeout: 15.0
-  useragent_suffix: ""
   pool_connections: 100
   pool_maxsize: 20
-  enable_http2: true

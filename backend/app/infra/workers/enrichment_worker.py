@@ -82,21 +82,38 @@ async def enrich_product(
 
         product.description = enriched.description or None
         product.specifications = enriched.specifications or None
+        product.image_path = enriched.image_url or product.image_path
+        product.source_urls = enriched.source_urls or product.source_urls
         product.enrichment_source = enriched.enrichment_source
         product.enrichment_confidence = enriched.enrichment_confidence
-        product.currency = enriched.currency
-        product.enrichment_status = "enriched"
+        product.currency = enriched.currency or product.currency
 
-        # Atomic: outbox event written in the same transaction as product update
-        await outbox_repo.create(
-            event_type="embedding_requested",
-            payload={"product_id": product_id, "tenant_id": tenant_id},
+        # Human-in-the-loop gate: anything we couldn't confidently enrich (no
+        # description, or no image, or only a partial match) goes to a human
+        # instead of being shown as a confident catalog entry.
+        is_uncertain = (
+            not enriched.description
+            or enriched.image_url is None
+            or enriched.enrichment_confidence == "partial"
         )
+        product.enrichment_status = "needs_review" if is_uncertain else "enriched"
+
+        # Only enriched (confident) products get embedded for semantic search.
+        if product.enrichment_status == "enriched":
+            await outbox_repo.create(
+                event_type="embedding_requested",
+                payload={"product_id": product_id, "tenant_id": tenant_id},
+            )
 
         await session.flush()
 
-    logger.info("enrich_job_complete", product_id=product_id)
-    return {"status": "success"}
+    logger.info(
+        "enrich_job_complete",
+        product_id=product_id,
+        status=product.enrichment_status,
+        has_image=enriched.image_url is not None,
+    )
+    return {"status": "success", "enrichment_status": product.enrichment_status}
 
 
 # ── Idempotent enqueue ────────────────────────────────────────────────────────
