@@ -2,7 +2,8 @@
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard, CheckSquare, Boxes, ScanLine, ClipboardList,
-  Store, Banknote, BrainCircuit, Settings, ChevronLeft, type LucideIcon,
+  Store, Banknote, BrainCircuit, Settings, ChevronLeft, Users, Sparkles,
+  type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth";
@@ -30,12 +31,14 @@ const SECTIONS: Section[] = [
   ]},
   { title: "Procurement", items: [
     { to: "/procurement", label: "Order Drafts", icon: ClipboardList },
+    { to: "/suppliers", label: "Suppliers", icon: Users },
     { to: "/publishing", label: "Storefront Publishing", icon: Store, modes: ["hybrid", "retail_only"] },
   ]},
   { title: "Financial", items: [
     { to: "/dunning", label: "Dunning Engine", icon: Banknote },
   ]},
   { title: "Intelligence", items: [
+    { to: "/intelligence", label: "AI Assistant", icon: Sparkles },
     { to: "/ai-health", label: "AI Model Health", icon: BrainCircuit },
   ]},
   { title: "Settings", items: [

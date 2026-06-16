@@ -1,5 +1,8 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useBootstrapAuth } from "@/hooks/useAuth";
+import { useApplyTheme } from "@/stores/theme";
+import { Intelligence } from "@/pages/Intelligence";
+import { Suppliers } from "@/pages/Suppliers";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ChooseMode } from "@/pages/auth/ChooseMode";
 import { Signup } from "@/pages/auth/Signup";
@@ -16,6 +19,7 @@ import { Settings } from "@/pages/Settings";
 
 export default function App() {
   useBootstrapAuth();
+  useApplyTheme();
   return (
     <Routes>
       <Route path="/choose-mode" element={<ChooseMode />} />
@@ -29,6 +33,8 @@ export default function App() {
         <Route path="/procurement" element={<Procurement />} />
         <Route path="/publishing" element={<Publishing />} />
         <Route path="/dunning" element={<Dunning />} />
+        <Route path="/suppliers" element={<Suppliers />} />
+        <Route path="/intelligence" element={<Intelligence />} />
         <Route path="/barcode" element={<Barcode />} />
         <Route path="/ai-health" element={<AiHealth />} />
         <Route path="/settings" element={<Settings />} />

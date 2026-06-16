@@ -10,7 +10,8 @@ import {
 } from "recharts";
 import { apiGet } from "@/lib/api";
 import { Card, SectionTitle, StatusBadge } from "@/components/ui";
-import { SupplierGlobe } from "@/components/SupplierGlobe";
+import { Globe3D } from "@/components/Globe3D";
+import { useThemeStore } from "@/stores/theme";
 import type { DashboardSummary, AIHealthResponse, HITLAction, DunningSequence } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
@@ -42,6 +43,7 @@ function Metric({ icon: Icon, label, value, accent, to, delta }: {
 }
 
 export function Dashboard() {
+  const theme = useThemeStore((s) => s.theme);
   const summary = useQuery({ queryKey: ["summary"], queryFn: () => apiGet<DashboardSummary>("/admin/summary"), refetchInterval: 30_000 });
   const health = useQuery({ queryKey: ["ai-health"], queryFn: () => apiGet<AIHealthResponse>("/admin/ai-health") });
   const hitl = useQuery({ queryKey: ["hitl-pending"], queryFn: () => apiGet<unknown>("/hitl/actions?status=pending") });
@@ -82,8 +84,9 @@ export function Dashboard() {
       {/* Globe + funnel */}
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-1">
-          <SectionTitle title="Supplier Network" subtitle="Active sourcing locations" />
-          <SupplierGlobe />
+          <SectionTitle title="Supplier Network" subtitle="Live sourcing locations"
+            right={<Link to="/suppliers" className="text-sm font-600 text-gold-soft hover:underline">Compare</Link>} />
+          <Globe3D themeKey={theme} />
           <div className="mt-4 grid grid-cols-3 gap-3 text-center">
             <div><div className="metric-num text-xl">{s?.active_shipments ?? 0}</div><div className="text-xs text-ink-faint">Shipments</div></div>
             <div><div className="metric-num text-xl">{s?.low_stock_count ?? 0}</div><div className="text-xs text-ink-faint">Low stock</div></div>

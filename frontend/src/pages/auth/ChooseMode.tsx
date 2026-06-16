@@ -1,5 +1,5 @@
 // Feature: Onboarding — role carousel (one card in focus, neighbors faded)
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -51,6 +51,20 @@ export function ChooseMode() {
   const [active, setActive] = useState(0);
   const go = (dir: number) => setActive((a) => (a + dir + ROLES.length) % ROLES.length);
 
+  // Laptop arrow keys navigate the carousel; Enter selects an available role.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "ArrowLeft") go(-1);
+      else if (e.key === "ArrowRight") go(1);
+      else if (e.key === "Enter") {
+        const r = ROLES[active];
+        if (r.available && r.to) navigate(r.to);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [active, navigate]);
+
   return (
     <div className="relative grid min-h-screen place-items-center overflow-hidden bg-radial-fade px-6 py-12">
       {/* drifting ambient orbs */}
@@ -79,14 +93,16 @@ export function ChooseMode() {
                 key={r.key}
                 className="absolute left-1/2 top-1/2"
                 animate={{
-                  x: `calc(-50% + ${offset * 300}px)`,
+                  x: `calc(-50% + ${offset * 296}px)`,
                   y: "-50%",
-                  scale: offset === 0 ? 1 : 0.82,
-                  opacity: visible ? (offset === 0 ? 1 : 0.32) : 0,
+                  scale: offset === 0 ? 1 : 0.8,
+                  rotateY: offset * -14,
+                  opacity: visible ? (offset === 0 ? 1 : 0.3) : 0,
+                  filter: offset === 0 ? "blur(0px)" : "blur(2px)",
                   zIndex: 10 - abs,
                 }}
-                transition={{ type: "spring", stiffness: 120, damping: 20 }}
-                style={{ pointerEvents: offset === 0 ? "auto" : "none" }}
+                transition={{ type: "spring", stiffness: 90, damping: 18, mass: 0.9 }}
+                style={{ pointerEvents: offset === 0 ? "auto" : "none", transformStyle: "preserve-3d", perspective: 1000 }}
               >
                 <div
                   className={`card relative flex h-[440px] w-[360px] flex-col overflow-hidden p-7 ${

@@ -1,12 +1,19 @@
 // Feature: Layout — top bar (search, tenant, HITL bell, user)
 import { useQuery } from "@tanstack/react-query";
-import { Bell, LogOut, Search } from "lucide-react";
+import { Bell, LogOut, Search, Palette } from "lucide-react";
 import { apiGet } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
+import { THEMES, useThemeStore } from "@/stores/theme";
 import type { DashboardSummary } from "@/lib/types";
 
 export function Topbar() {
   const { user, logout } = useAuth();
+  const { theme, setTheme } = useThemeStore();
+  const cycleTheme = () => {
+    const avail = THEMES.filter((t) => t.available);
+    const i = avail.findIndex((t) => t.key === theme);
+    setTheme(avail[(i + 1) % avail.length].key);
+  };
   const { data } = useQuery({
     queryKey: ["summary-bell"],
     queryFn: () => apiGet<DashboardSummary>("/admin/summary"),
@@ -21,6 +28,14 @@ export function Topbar() {
         <input className="input pl-9" placeholder="Search products, orders, suppliers…" />
       </div>
       <div className="flex-1 md:hidden" />
+
+      <button
+        onClick={cycleTheme}
+        className="grid h-10 w-10 place-items-center rounded-xl border border-line bg-white/[0.02] hover:bg-white/[0.06]"
+        title="Switch theme"
+      >
+        <Palette className="h-[18px] w-[18px] text-ink-soft" />
+      </button>
 
       <a
         href="/approvals"
