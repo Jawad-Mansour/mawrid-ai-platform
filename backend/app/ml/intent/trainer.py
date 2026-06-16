@@ -124,7 +124,9 @@ def train_tier1() -> float:
 
     # MLflow logging (best-effort — skipped if server unavailable)
     try:
-        mlflow.set_tracking_uri("http://localhost:5000")
+        import os  # noqa: PLC0415
+
+        mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI", "http://localhost:5000"))
         with mlflow.start_run(run_name="intent_tier1"):
             mlflow.log_param("model", "TF-IDF+LR")
             mlflow.log_param("C", 5.0)

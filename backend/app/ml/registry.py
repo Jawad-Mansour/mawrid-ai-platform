@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -110,7 +111,7 @@ def champion_challenger_gate(
 
 def get_mlflow_production_model(
     name: str,
-    tracking_uri: str = "http://localhost:5000",
+    tracking_uri: str = os.environ.get("MLFLOW_TRACKING_URI", "http://localhost:5000"),
 ) -> ModelRecord | None:
     """
     Fetch the Production stage model record from the MLflow model registry.
@@ -148,7 +149,7 @@ def promote_model(
     version: str,
     new_metrics: dict[str, float],
     metric_key: str,
-    tracking_uri: str = "http://localhost:5000",
+    tracking_uri: str = os.environ.get("MLFLOW_TRACKING_URI", "http://localhost:5000"),
     higher_is_better: bool = True,
 ) -> bool:
     """

@@ -87,6 +87,9 @@ services:
       AWS_ACCESS_KEY_ID: minioadmin
       AWS_SECRET_ACCESS_KEY: minioadmin
       MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+      # Allow in-cluster clients (host header "mlflow:5000") — MLflow 3.x blocks
+      # non-localhost Host headers by default as DNS-rebinding protection.
+      MLFLOW_SERVER_ALLOWED_HOSTS: "*"
     ports:
       - "5000:5000"
     depends_on:
@@ -122,6 +125,11 @@ services:
       REDIS_URL: redis://redis:6379/0
       VAULT_ADDR: http://vault:8200
       VAULT_TOKEN: root
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      # MLflow uploads model artifacts client-side to MinIO (s3://mlflow/).
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
       # Must be a SendGrid-verified sender (Single Sender Verification) or sends are rejected.
       SENDGRID_FROM_EMAIL: mansourmohamadeljawad113@gmail.com
       SENDGRID_FROM_NAME: Mawrid Platform
@@ -152,6 +160,7 @@ services:
       REDIS_URL: redis://redis:6379/0
       VAULT_ADDR: http://vault:8200
       VAULT_TOKEN: root
+      MLFLOW_TRACKING_URI: http://mlflow:5000
     volumes:
       - ./backend:/app
     depends_on:
@@ -188,6 +197,7 @@ services:
       REDIS_URL: redis://redis:6379/0
       VAULT_ADDR: http://vault:8200
       VAULT_TOKEN: root
+      MLFLOW_TRACKING_URI: http://mlflow:5000
     volumes:
       - ./backend:/app
     depends_on:

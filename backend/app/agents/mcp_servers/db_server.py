@@ -210,15 +210,23 @@ async def _list_overdue_invoices(tenant_id: str, limit: int) -> list[dict[str, A
 
         async with session_factory() as session:
             repo = InvoiceRepository(session, tenant_id)
-            invoices = await repo.list_overdue_b2b_receivables(date.today())
+            # All unpaid receivables already past their due date (general "overdue"),
+            # not just the dunning trigger days (7/14/21).
+            today = date.today()
+            unpaid = await repo.list_all(limit=10000, direction="receivable", status="unpaid")
+            overdue = sorted(
+                (inv for inv in unpaid if inv.due_date < today),
+                key=lambda i: i.due_date,
+            )
             return [
                 {
                     "invoice_id": inv.invoice_id,
                     "amount": float(inv.amount_due),
                     "due_date": str(inv.due_date),
+                    "days_overdue": (today - inv.due_date).days,
                     "status": inv.status,
                 }
-                for inv in invoices[:limit]
+                for inv in overdue[:limit]
             ]
     finally:
         await engine.dispose()

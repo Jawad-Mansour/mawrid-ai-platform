@@ -205,7 +205,29 @@ async def _handle_direct_query(
         tools = get_tool_functions()
 
         if intent == "stock_check":
-            # Extract product name from query (simple heuristic)
+            # Overview questions ("how many products", "what's in my catalog") get a
+            # real catalog summary instead of a product-name lookup.
+            ql = query.lower()
+            overview_terms = (
+                "how many", "how much", "count", "total", "all product", "catalog",
+                "inventory", "items", "products do i", "products are there",
+            )
+            if any(t in ql for t in overview_terms):
+                from app.infra.db.repos.product_repo import ProductRepository  # noqa: PLC0415
+
+                repo = ProductRepository(session, tenant_id)  # type: ignore[arg-type]
+                prods = await repo.list_all(limit=10000)
+                total = len(prods)
+                if total == 0:
+                    return "Your catalog is empty right now. Upload a supplier sheet on the Enrichment page to get started."
+                in_stock = sum(1 for p in prods if (p.qty_in_stock or 0) > 0)
+                published = sum(1 for p in prods if p.storefront_status == "published")
+                enriched = sum(1 for p in prods if p.enrichment_status == "enriched")
+                return (
+                    f"You have {total} product(s) in your catalog: {enriched} enriched, "
+                    f"{published} published to the storefront, and {in_stock} currently in stock."
+                )
+            # Otherwise: product-name lookup
             results = await tools["check_stock"](query, tenant_id)
             if not results or (isinstance(results, list) and results and "error" in results[0]):
                 return "No products matching your query were found in the catalog."

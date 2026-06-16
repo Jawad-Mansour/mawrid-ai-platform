@@ -85,7 +85,9 @@ def train() -> None:
 
     bundle = {"scaler": scaler, "ridge": ridge, "feature_order": FEATURE_ORDER}
 
-    mlflow.set_tracking_uri("http://localhost:5000")
+    import os  # noqa: PLC0415
+
+    mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI", "http://localhost:5000"))
     with mlflow.start_run(run_name="supplier_scorer"):
         mlflow.log_param("model", "Ridge")
         mlflow.log_param("alpha", 1.0)

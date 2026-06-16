@@ -114,7 +114,9 @@ def train() -> None:
     bundle = {"scaler": scaler, "clf": clf, "label_map": _LABEL_MAP, "segment_map": _SEGMENT_MAP}
 
     # MLflow logging
-    mlflow.set_tracking_uri("http://localhost:5000")
+    import os  # noqa: PLC0415
+
+    mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI", "http://localhost:5000"))
     with mlflow.start_run(run_name="tone_classifier") as run:
         mlflow.log_param("model", "GradientBoostingClassifier")
         mlflow.log_param("n_estimators", 200)

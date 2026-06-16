@@ -75,7 +75,12 @@ async def classify(text: str) -> ClassificationResult:
     t1_result = tier1.predict(text)
     total_t1_ms = t1_result.latency_ms
 
-    if not t1_result.escalate:
+    # Safety net against false rejections: a confident-but-wrong Tier 1 must never
+    # reject a real business question on its own. We never trust an out_of_scope
+    # verdict from the cheap tiers — always escalate it to GPT-4o (the scope authority).
+    t1_trustworthy = not t1_result.escalate and t1_result.intent != "out_of_scope"
+
+    if t1_trustworthy:
         return ClassificationResult(
             intent=t1_result.intent,
             confidence=t1_result.confidence,
@@ -89,7 +94,8 @@ async def classify(text: str) -> ClassificationResult:
     t2_result = tier2.predict(text)
     if t2_result is not None:
         total_t2_ms = t2_result.latency_ms
-        if not t2_result.escalate:
+        t2_trustworthy = not t2_result.escalate and t2_result.intent != "out_of_scope"
+        if t2_trustworthy:
             return ClassificationResult(
                 intent=t2_result.intent,
                 confidence=t2_result.confidence,
@@ -153,10 +159,19 @@ async def _tier3_classify(text: str) -> tuple[str, float, float]:
 
     from app.infra.llm.openai import chat_completion  # noqa: PLC0415
 
-    classes_str = ", ".join(INTENT_CLASSES)
     system_prompt = (
-        "You are an intent classifier for a B2B commerce platform.\n"
-        f"Classify the user message into exactly one of: {classes_str}\n"
+        "You are an intent classifier for an importer/distributor operations platform.\n"
+        "Classify the user message into exactly ONE of these classes:\n"
+        "- product_search: find products, product details, specs, recommendations\n"
+        "- stock_check: inventory and quantities — 'how many products/items', stock levels, what's in the catalog\n"
+        "- order_status: status of a purchase order to a supplier\n"
+        "- shipment_status: tracking shipments, deliveries, ETAs\n"
+        "- invoice_query: invoices, payments, amounts owed, overdue, receivables/payables\n"
+        "- dunning_action: payment reminders, collections, chasing late payers\n"
+        "- complex_task: multi-step requests (draft a PO, contact a supplier, run enrichment)\n"
+        "- out_of_scope: greetings, small talk, or anything unrelated to the business\n"
+        "If the message relates to the business's products, inventory, orders, suppliers, "
+        "invoices or shipments, prefer the closest in-scope class over out_of_scope.\n"
         "Reply with ONLY the class name and nothing else."
     )
 

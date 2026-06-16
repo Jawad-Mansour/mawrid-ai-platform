@@ -39,23 +39,36 @@ export function Catalog() {
     refetchInterval: 8000,
   });
 
-  const upload = useMutation({
-    mutationFn: (file: File) => apiUpload<{ document_id: string; rows_extracted: number }>("/catalog/documents/upload", file),
-    onSuccess: (r) => {
-      setLastDoc(r.document_id);
-      toast.success(`Parsed ${r.rows_extracted} row(s). Ready to enrich.`);
-    },
-    onError: (e) => toast.error(apiErr(e, "Upload failed")),
-  });
-
   const enrich = useMutation({
     mutationFn: (docId: string) => apiPost<{ jobs_submitted: number; failed_rows: number }>(`/catalog/documents/${docId}/enrich`, {}),
     onSuccess: (r) => {
-      toast.success(`${r.jobs_submitted} enrichment job(s) queued`);
+      toast.success(`${r.jobs_submitted} product(s) queued for AI enrichment`);
       qc.invalidateQueries({ queryKey: ["catalog"] });
     },
     onError: (e) => toast.error(apiErr(e, "Enrichment failed")),
   });
+
+  const upload = useMutation({
+    mutationFn: (file: File) => apiUpload<{ document_id: string; rows_extracted: number }>("/catalog/documents/upload", file),
+    onSuccess: (r) => {
+      setLastDoc(r.document_id);
+      toast.success(`Parsed ${r.rows_extracted} row(s) — enriching now…`);
+      qc.invalidateQueries({ queryKey: ["catalog"] });
+      // Auto-enrich: no second click needed, and progress is tracked server-side
+      // (the products query below polls), so it survives switching tabs.
+      enrich.mutate(r.document_id);
+    },
+    onError: (e) => toast.error(apiErr(e, "Upload failed")),
+  });
+
+  const all = useMemo(() => asList(products.data), [products.data]);
+  const counts = useMemo(() => ({
+    total: all.length,
+    pending: all.filter((p) => p.enrichment_status === "pending").length,
+    enriched: all.filter((p) => p.enrichment_status === "enriched").length,
+    failed: all.filter((p) => p.enrichment_status === "failed").length,
+  }), [all]);
+  const enriching = counts.pending > 0;
 
   const rows = useMemo(() => {
     let list = asList(products.data);
@@ -99,19 +112,25 @@ export function Catalog() {
             </div>
           </div>
 
-          {lastDoc && (
-            <div className="mt-4 rounded-xl border border-line bg-white/[0.02] p-4">
-              <div className="flex items-center gap-2 text-sm text-ink">
-                <FileSpreadsheet className="h-4 w-4 text-emerald-soft" />
-                Document parsed
+          {/* Live enrichment progress — server-backed (polls every 8s), survives tab switches */}
+          {(enriching || enrich.isPending || (lastDoc && counts.total > 0)) && (
+            <div className="mt-4 rounded-xl border border-gold/30 bg-gold/5 p-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="flex items-center gap-2 font-600 text-ink">
+                  {enriching || enrich.isPending ? <Sparkles className="h-4 w-4 animate-pulse text-gold" /> : <FileSpreadsheet className="h-4 w-4 text-emerald-soft" />}
+                  {enriching ? "Enriching with AI…" : enrich.isPending ? "Queuing…" : "Catalog ready"}
+                </span>
+                <span className="font-mono text-xs text-ink-soft">{counts.enriched}/{counts.total} done</span>
               </div>
-              <button
-                onClick={() => enrich.mutate(lastDoc)}
-                disabled={enrich.isPending}
-                className="btn-gold mt-3 w-full"
-              >
-                <Sparkles className="h-4 w-4" /> {enrich.isPending ? "Queuing…" : "Enrich products"}
-              </button>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
+                <div className="h-full rounded-full bg-gold transition-all duration-700" style={{ width: `${counts.total ? (counts.enriched / counts.total) * 100 : 0}%` }} />
+              </div>
+              {counts.pending > 0 && <p className="mt-2 text-xs text-ink-faint">{counts.pending} product(s) running Icecat → web → GPT-4o. This keeps going if you switch tabs.</p>}
+              {lastDoc && (
+                <button onClick={() => enrich.mutate(lastDoc)} disabled={enrich.isPending} className="btn-ghost mt-3 w-full !py-2 text-xs">
+                  <RefreshCw className="h-3.5 w-3.5" /> Re-run enrichment
+                </button>
+              )}
             </div>
           )}
 
