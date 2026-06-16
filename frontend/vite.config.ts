@@ -16,6 +16,14 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    host: true,
+    // Windows Docker bind-mounts don't forward inotify events to the Linux
+    // container, so native file-watching misses edits and HMR never fires
+    // (the UI looks "stuck" on old code). Polling makes the watcher reliable.
+    watch: {
+      usePolling: true,
+      interval: 300,
+    },
     proxy: {
       "/api": {
         target: "http://localhost:8000",
