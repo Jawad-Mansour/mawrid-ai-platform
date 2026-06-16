@@ -47,9 +47,47 @@ export function Background() {
           transition={{ rotate: { duration: s.dur, repeat: Infinity, ease: "linear" }, y: { duration: s.dur / 3, repeat: Infinity, ease: "easeInOut" } }}
         />
       ))}
+      {/* Mawrid motif: a supplier network — a hub matching & connecting suppliers */}
+      <SupplierNetwork />
+
       {/* soft top + bottom glows for depth */}
       <div className="absolute inset-x-0 top-0 h-64 bg-gradient-to-b from-gold/[0.06] to-transparent" />
       <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-grape/[0.05] to-transparent" />
     </div>
+  );
+}
+
+// Faint animated graph: a central Mawrid hub linked to surrounding supplier nodes.
+function SupplierNetwork() {
+  const hub = { x: 78, y: 42 };
+  const nodes = [
+    { x: 60, y: 20 }, { x: 92, y: 24 }, { x: 96, y: 52 },
+    { x: 88, y: 74 }, { x: 64, y: 70 }, { x: 54, y: 46 }, { x: 72, y: 90 },
+  ];
+  return (
+    <svg className="absolute inset-0 h-full w-full opacity-[0.5]" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" style={{ color: "rgb(var(--accent))" }}>
+      {/* matching connections */}
+      {nodes.map((n, i) => (
+        <motion.line
+          key={`l${i}`} x1={hub.x} y1={hub.y} x2={n.x} y2={n.y}
+          stroke="currentColor" strokeWidth="0.18" strokeOpacity="0.12"
+          animate={{ strokeOpacity: [0.05, 0.2, 0.05] }}
+          transition={{ duration: 3 + i, repeat: Infinity, ease: "easeInOut" }}
+        />
+      ))}
+      {/* supplier nodes (small boxes = product suppliers) */}
+      {nodes.map((n, i) => (
+        <motion.rect
+          key={`n${i}`} x={n.x - 0.9} y={n.y - 0.9} width="1.8" height="1.8" rx="0.4"
+          fill="currentColor" fillOpacity="0.18"
+          animate={{ y: [n.y - 0.9, n.y - 1.6, n.y - 0.9], fillOpacity: [0.12, 0.28, 0.12] }}
+          transition={{ duration: 4 + i, repeat: Infinity, ease: "easeInOut" }}
+        />
+      ))}
+      {/* the Mawrid hub */}
+      <motion.circle cx={hub.x} cy={hub.y} r="2.4" fill="currentColor" fillOpacity="0.22"
+        animate={{ r: [2.2, 2.8, 2.2], fillOpacity: [0.18, 0.32, 0.18] }} transition={{ duration: 3, repeat: Infinity }} />
+      <circle cx={hub.x} cy={hub.y} r="1.1" fill="currentColor" fillOpacity="0.5" />
+    </svg>
   );
 }

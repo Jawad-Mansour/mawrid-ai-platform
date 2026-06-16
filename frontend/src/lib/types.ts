@@ -76,6 +76,7 @@ export interface Product {
   currency?: string | null;
   image_url?: string | null;
   source_urls?: SourceLink[] | null;
+  supplier_names?: string[] | null;
 }
 
 export interface AskProductResponse {

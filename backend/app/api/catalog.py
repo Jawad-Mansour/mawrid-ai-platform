@@ -87,6 +87,7 @@ class ProductCard(StrictModel):
     specifications: dict[str, Any] | None
     image_url: str | None
     source_urls: list[dict[str, str]] | None
+    supplier_names: list[str] | None
     price: float | None
     currency: str | None
     retail_price: float | None
@@ -146,6 +147,7 @@ async def _to_card(tenant_id: str, p: Product) -> ProductCard:
         specifications=p.specifications,
         image_url=await _resolve_image_url(tenant_id, p.image_path),
         source_urls=p.source_urls,
+        supplier_names=[str(s) for s in (p.supplier_names or [])] or None,
         price=_latest_price(p),
         currency=p.currency,
         retail_price=float(p.retail_price) if p.retail_price is not None else None,
@@ -239,6 +241,7 @@ async def upload_supplier_document(
         mime_type=mime_type,
         file_size_bytes=len(file_bytes),
         status="processing",
+        supplier_name=(supplier_name.strip() if supplier_name else None),
     )
     await doc_repo.upsert(doc)
 
@@ -351,6 +354,8 @@ async def enrich_document(
             detail="Document has no parsed rows. Re-upload the file.",
         )
 
+    supplier_for_doc = (doc.supplier_name or "").strip() or None
+
     # Step 1: GPT-4o extraction — inline (one batch call, fast)
     extraction = await extract_rows(rows)
 
@@ -392,6 +397,15 @@ async def enrich_document(
             if price_entry and existing.price_history is not None:
                 existing.price_history = [*existing.price_history, price_entry]
             result = existing
+
+        # Tag with this sheet's supplier (per-supplier catalogues). A product that
+        # was already enriched from another supplier's sheet just gains the new
+        # supplier here — it is NOT re-enriched.
+        if supplier_for_doc:
+            names = list(result.supplier_names or [])
+            if supplier_for_doc not in names:
+                names.append(supplier_for_doc)
+                result.supplier_names = names
 
         # Skip already-enriched products
         if result.enrichment_status == "enriched":

@@ -28,6 +28,7 @@ class Document(TenantMixin, Base):
     mime_type: Mapped[str] = mapped_column(Text, nullable=False)
     file_size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[str] = mapped_column(Text, nullable=False, default="pending")
+    supplier_name: Mapped[str | None] = mapped_column(Text, nullable=True)
     row_counts: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     parsed_rows: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True)
     uploaded_at: Mapped[datetime] = mapped_column(

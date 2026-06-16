@@ -45,9 +45,12 @@ export function NotificationsPage() {
     <motion.button
       key={n.title} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}
       onClick={() => navigate(n.to)}
-      className="flex w-full items-center gap-3 rounded-xl border border-line bg-white/[0.02] px-4 py-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-gold/30 hover:shadow-glow"
+      className={cn(
+        "flex w-full items-center gap-3 rounded-2xl border bg-bg-card px-4 py-3.5 text-left shadow-glass backdrop-blur transition-all hover:-translate-y-0.5 hover:shadow-glow",
+        important ? "border-gold/30" : "border-line",
+      )}
     >
-      <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/[0.04] ${n.tone}`}><n.icon className="h-5 w-5" /></div>
+      <div className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-line bg-bg-soft shadow-glow ${n.tone}`}><n.icon className="h-5 w-5 drop-shadow-[0_0_6px_currentColor]" /></div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 text-sm font-700 text-ink">{n.title}{important && <span className="h-2 w-2 rounded-full bg-gold" />}</div>
         <div className="text-xs text-ink-soft">{n.detail}</div>

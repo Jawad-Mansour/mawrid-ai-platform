@@ -44,6 +44,8 @@ class Product(TenantMixin, Base):
     image_path: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Reference links gathered during enrichment (AI-overview style "sources" block)
     source_urls: Mapped[list[Any] | None] = mapped_column(JSON, nullable=True)
+    # Supplier(s) whose uploaded sheets include this product (per-supplier catalogues)
+    supplier_names: Mapped[list[Any] | None] = mapped_column(JSON, nullable=True)
     enrichment_source: Mapped[str | None] = mapped_column(Text, nullable=True)
     enrichment_confidence: Mapped[str | None] = mapped_column(Text, nullable=True)
     currency: Mapped[str | None] = mapped_column(Text, nullable=True)

@@ -72,6 +72,12 @@ export function ProductModal({ product, onClose }: { product: Product; onClose: 
               </div>
               <h2 className="text-xl font-800 leading-tight text-ink">{product.product_name}</h2>
               <div className="mt-1 font-mono text-xs text-ink-faint">{product.sku ?? "no sku"}{product.barcode ? ` · ${product.barcode}` : ""}</div>
+              {product.supplier_names && product.supplier_names.length > 0 && (
+                <div className="mt-1.5 flex flex-wrap items-center gap-1 text-[11px] text-ink-faint">
+                  <span>from</span>
+                  {product.supplier_names.map((s) => <span key={s} className="chip border-grape/30 bg-grape/10 text-grape-soft">{s}</span>)}
+                </div>
+              )}
               <div className="mt-3 flex items-baseline gap-3">
                 {product.price != null && <span className="text-lg font-700 text-ink">{formatCurrency(product.price, product.currency ?? "USD")}</span>}
                 <span className="flex items-center gap-1 text-xs text-ink-faint"><Package className="h-3.5 w-3.5" /> {product.qty_in_stock ?? 0} in stock</span>

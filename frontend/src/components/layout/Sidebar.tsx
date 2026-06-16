@@ -98,9 +98,11 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
           return (
             <div key={section.title}>
               {!collapsed ? (
-                <button onClick={() => toggleSection(section.title)} className="flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-[10px] font-700 uppercase tracking-[0.18em] text-ink-faint hover:text-ink-soft">
+                <button onClick={() => toggleSection(section.title)} className="group flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-[10px] font-700 uppercase tracking-[0.18em] text-ink-faint transition-colors hover:bg-white/[0.04] hover:text-ink-soft">
                   <span>{section.title}</span>
-                  <ChevronDown className={cn("h-3 w-3 transition-transform", !isOpen && "-rotate-90")} />
+                  <span className="grid h-4 w-4 place-items-center rounded-md border border-line text-ink-soft transition-all group-hover:border-gold/50 group-hover:bg-gold/10 group-hover:text-gold-soft">
+                    <ChevronDown className={cn("h-2.5 w-2.5 transition-transform", !isOpen && "-rotate-90")} />
+                  </span>
                 </button>
               ) : <div className="my-1 h-px bg-line" />}
               <AnimatePresence initial={false}>
@@ -110,8 +112,8 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
                       <NavLink key={it.to} to={it.to} end={it.to === "/"} title={it.label} className={linkCls}>
                         {({ isActive }) => (
                           <>
-                            {isActive && <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-gold" />}
-                            <it.icon className="h-[18px] w-[18px] shrink-0" />
+                            {isActive && <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-gold shadow-glow" />}
+                            <it.icon className={cn("h-[18px] w-[18px] shrink-0 transition-all", isActive ? "drop-shadow-[0_0_8px_currentColor]" : "group-hover:drop-shadow-[0_0_6px_currentColor]")} />
                             {!collapsed && <span className="flex-1 truncate">{it.label}</span>}
                             {!!it.badge && it.badge > 0 && (
                               <span className={cn("grid h-5 min-w-5 place-items-center rounded-full bg-gold px-1 text-[10px] font-700 text-bg", collapsed && "absolute right-1 top-1")}>{it.badge}</span>

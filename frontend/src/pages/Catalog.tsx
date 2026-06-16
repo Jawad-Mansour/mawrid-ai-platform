@@ -43,15 +43,24 @@ export function Catalog() {
   const basket = useBasket();
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["key"]>("all");
   const [search, setSearch] = useState("");
+  const [supplier, setSupplier] = useState("all");
   const [open, setOpen] = useState<Product | null>(null);
   const [editing, setEditing] = useState<Product | null>(null);
 
   const products = useQuery({ queryKey: ["catalog"], queryFn: () => apiGet<unknown>("/catalog/products?limit=300"), refetchInterval: 8000 });
   const all = useMemo(() => asList(products.data), [products.data]);
 
+  // distinct suppliers across the catalogue (each sheet's supplier)
+  const suppliers = useMemo(() => {
+    const set = new Set<string>();
+    all.forEach((p) => (p.supplier_names ?? []).forEach((s) => set.add(s)));
+    return [...set].sort();
+  }, [all]);
+
   const rows = useMemo(() => {
     let list = all;
     if (filter !== "all") list = list.filter((p) => p.enrichment_status === filter);
+    if (supplier !== "all") list = list.filter((p) => (p.supplier_names ?? []).includes(supplier));
     const q = search.trim().toLowerCase();
     if (q) {
       list = list.filter((p) =>
@@ -60,7 +69,7 @@ export function Catalog() {
         JSON.stringify(p.specifications ?? {}).toLowerCase().includes(q));
     }
     return list;
-  }, [all, filter, search]);
+  }, [all, filter, search, supplier]);
 
   return (
     <div className="space-y-6">
@@ -78,6 +87,12 @@ export function Catalog() {
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
           <input className="input pl-9" placeholder="Search products, specs & descriptions…" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
+        {suppliers.length > 0 && (
+          <select className="input !w-auto !py-2.5" value={supplier} onChange={(e) => setSupplier(e.target.value)} title="Filter by supplier">
+            <option value="all">All suppliers ({all.length})</option>
+            {suppliers.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        )}
         <button onClick={() => products.refetch()} className="btn-ghost !py-2.5" title="Refresh"><RefreshCw className="h-4 w-4" /></button>
         <div className="flex flex-wrap gap-2">
           {FILTERS.map((f) => (
