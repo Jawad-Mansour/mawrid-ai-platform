@@ -114,7 +114,7 @@ export function EnrichLoader({ done, total }: { done: number; total: number }) {
   const pct = total ? Math.round((done / total) * 100) : 0;
   return (
     <div className="flex flex-col items-center gap-5 py-4">
-      <EnrichOrbit />
+      <EnrichBox phase="enriching" />
       <div className="text-center">
         <div className="text-lg font-800 text-ink">Enriching your catalogue…</div>
         <div className="mt-1 text-sm text-ink-faint">Each product is researched one-by-one for its real image, description &amp; specs.</div>
