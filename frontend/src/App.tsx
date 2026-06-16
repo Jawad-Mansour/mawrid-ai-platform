@@ -10,6 +10,8 @@ import { Signup } from "@/pages/auth/Signup";
 import { Login } from "@/pages/auth/Login";
 import { Dashboard } from "@/pages/Dashboard";
 import { UploadPage } from "@/pages/UploadPage";
+import { UploadHistory } from "@/pages/UploadHistory";
+import { NeedsReview } from "@/pages/NeedsReview";
 import { Catalog } from "@/pages/Catalog";
 import { Approvals } from "@/pages/Approvals";
 import { Procurement } from "@/pages/Procurement";
@@ -33,7 +35,9 @@ export default function App() {
       <Route element={<AppLayout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/upload" element={<UploadPage />} />
+        <Route path="/uploads" element={<UploadHistory />} />
         <Route path="/catalog" element={<Catalog />} />
+        <Route path="/needs-review" element={<NeedsReview />} />
         <Route path="/approvals" element={<Approvals />} />
         <Route path="/procurement" element={<Procurement />} />
         <Route path="/publishing" element={<Publishing />} />

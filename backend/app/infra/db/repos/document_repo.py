@@ -29,6 +29,16 @@ class DocumentRepository(TenantRepository):
         )
         return result.scalar_one_or_none()
 
+    async def list_recent(self, limit: int = 100) -> list[Document]:
+        """All uploaded sheets for this tenant, newest first (upload history)."""
+        result = await self._session.execute(
+            select(Document)
+            .where(self._tenant_filter(Document))
+            .order_by(Document.uploaded_at.desc())
+            .limit(limit)
+        )
+        return list(result.scalars().all())
+
     async def upsert(self, document: Document) -> Document:
         existing = await self.get_by_id(document.document_id)
         if existing is not None:

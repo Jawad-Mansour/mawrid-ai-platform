@@ -84,6 +84,14 @@ export interface AskProductResponse {
   sources: SourceLink[];
 }
 
+export interface DocumentHistoryItem {
+  document_id: string;
+  filename: string;
+  status: string;
+  rows_extracted: number;
+  uploaded_at: string;
+}
+
 export interface HITLAction {
   action_id: string;
   action_type: string;

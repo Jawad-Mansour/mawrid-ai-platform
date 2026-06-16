@@ -420,6 +420,38 @@ async def enrich_document(
     )
 
 
+class DocumentHistoryItem(StrictModel):
+    document_id: str
+    filename: str
+    status: str
+    rows_extracted: int
+    uploaded_at: str
+
+
+@router.get(
+    "/documents",
+    response_model=list[DocumentHistoryItem],
+    summary="Upload history — all supplier sheets uploaded by this tenant (newest first)",
+)
+async def list_documents(
+    current_user: CurrentUser,
+    session: SessionDep,
+    limit: int = 100,
+) -> list[DocumentHistoryItem]:
+    doc_repo = DocumentRepository(session, current_user.tenant_id)
+    docs = await doc_repo.list_recent(limit=limit)
+    return [
+        DocumentHistoryItem(
+            document_id=d.document_id,
+            filename=d.filename,
+            status=d.status,
+            rows_extracted=int((d.row_counts or {}).get("extracted", 0)),
+            uploaded_at=d.uploaded_at.isoformat(),
+        )
+        for d in docs
+    ]
+
+
 @router.get(
     "/documents/{document_id}",
     response_model=DocumentStatusResponse,
@@ -543,6 +575,34 @@ async def retry_product_enrichment(
     )
     logger.info("enrichment_retried", product_id=product_id)
     return {"product_id": product_id, "status": "queued"}
+
+
+@router.post(
+    "/products/{product_id}/approve",
+    summary="Approve a needs_review product — mark it enriched and index it",
+)
+async def approve_reviewed_product(
+    product_id: str,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> dict[str, str]:
+    """Human confirms a needs_review product is good → promote to enriched and queue
+    it for embedding so it appears in semantic search."""
+    product_repo = ProductRepository(session, current_user.tenant_id)
+    product = await product_repo.get_by_id(product_id)
+    if product is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found.")
+    product.enrichment_status = "enriched"
+    from app.infra.db.repos.outbox_repo import OutboxRepository  # noqa: PLC0415
+
+    outbox = OutboxRepository(session, current_user.tenant_id)
+    await outbox.create(
+        event_type="embedding_requested",
+        payload={"product_id": product_id, "tenant_id": current_user.tenant_id},
+    )
+    await session.commit()
+    logger.info("product_review_approved", product_id=product_id)
+    return {"product_id": product_id, "status": "enriched"}
 
 
 @router.get(

@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard, CheckSquare, Boxes, ScanLine, ClipboardList,
   Store, Banknote, BrainCircuit, Settings, ChevronLeft, Users, Sparkles, UploadCloud,
+  History, ShieldQuestion,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -27,7 +28,9 @@ const SECTIONS: Section[] = [
   ]},
   { title: "Catalog", items: [
     { to: "/upload", label: "Upload Sheet", icon: UploadCloud },
+    { to: "/uploads", label: "Upload History", icon: History },
     { to: "/catalog", label: "Catalogue", icon: Boxes },
+    { to: "/needs-review", label: "Needs Review", icon: ShieldQuestion },
     { to: "/barcode", label: "Barcode Scanner", icon: ScanLine },
   ]},
   { title: "Procurement", items: [

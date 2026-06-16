@@ -49,6 +49,8 @@ class _IcecatClient(Protocol):
 class _SearxngClient(Protocol):
     async def search(self, query: str) -> list[str]: ...
 
+    async def search_images(self, query: str) -> list[dict[str, str]]: ...
+
 
 class _WebFetcher(Protocol):
     async def fetch_and_clean(self, url: str) -> str: ...
@@ -155,6 +157,98 @@ class SearxngClient:
         except Exception as exc:
             logger.warning("searxng_search_failed", query=query, error=str(exc))
             return []
+
+    async def search_images(self, query: str) -> list[dict[str, str]]:
+        """Return image results (img_src, title, resolution, source) for picking the
+        real product photo — far more reliable than scraping the first og:image."""
+        try:
+            async with httpx.AsyncClient(timeout=_SEARXNG_TIMEOUT) as client:
+                resp = await client.get(
+                    f"{self._base_url}/search",
+                    params={"q": query, "format": "json", "categories": "images"},
+                )
+                if resp.status_code != 200:  # noqa: PLR2004
+                    return []
+                results = resp.json().get("results", [])
+                out: list[dict[str, str]] = []
+                if isinstance(results, list):
+                    for r in results:
+                        if isinstance(r, dict) and r.get("img_src"):
+                            out.append(
+                                {
+                                    "img_src": str(r.get("img_src", "")),
+                                    "title": str(r.get("title", "")),
+                                    "resolution": str(r.get("resolution", "")),
+                                    "source": str(r.get("source", "")),
+                                    "url": str(r.get("url", "")),
+                                }
+                            )
+                return out
+        except Exception as exc:
+            logger.warning("searxng_image_search_failed", query=query, error=str(exc))
+            return []
+
+
+# Image hosts/terms that are never a real product photo, and spare-part terms.
+_IMG_REJECT = (
+    ".svg", "devicon", "lucide", "jsdelivr", "placeholder", "sprite", "/logo", "icon-",
+    "pexels.com", "unsplash.com", "artic.edu", "pagesjaunes", "gravatar", "wikimedia/commons/thumb/.*/l-",
+)
+_PART_TERMS = (
+    "motor", "pump", "spare", "replacement part", " seal", "gasket", "hose", "belt",
+    "pcb", "circuit board", "drain", "heating element", "exploded", "diagram", "schematic",
+    "door handle", "knob", "bearing", " parts ",
+)
+
+
+def _pick_product_image(
+    images: list[dict[str, str]], brand: str, model: str, product_name: str
+) -> str | None:
+    """Score image-search results and return the best real product photo, or None."""
+    import re  # noqa: PLC0415
+
+    name_tokens = {t for t in re.findall(r"[a-z0-9]+", product_name.lower()) if len(t) > 2}
+    model_l = re.sub(r"[^a-z0-9]", "", (model or "").lower())
+    brand_l = (brand or "").lower().strip()
+    best: str | None = None
+    best_score = 0.0
+
+    for im in images[:30]:
+        src = im.get("img_src", "")
+        low = src.lower()
+        title = im.get("title", "").lower()
+        if not low.startswith("http"):
+            continue
+        if any(b in low for b in _IMG_REJECT):
+            continue
+        if any(p in title for p in _PART_TERMS):
+            continue
+
+        score = 0.0
+        title_tokens = {t for t in re.findall(r"[a-z0-9]+", title) if len(t) > 2}
+        score += len(name_tokens & title_tokens)
+        norm = re.sub(r"[^a-z0-9]", "", low + " " + title)
+        if model_l and len(model_l) >= 5 and model_l in norm:  # noqa: PLR2004
+            score += 6
+        if brand_l and brand_l in (low + " " + title):
+            score += 1.5
+        res = im.get("resolution", "")
+        nums = re.findall(r"(\d{2,4})", res)
+        if len(nums) >= 2:  # noqa: PLR2004
+            w = int(nums[0])
+            if w >= 400:  # noqa: PLR2004
+                score += 1
+            if w >= 800:  # noqa: PLR2004
+                score += 0.5
+        if any(h in low for h in ("/media", "catalog", "/product", "/dam/", "/images")):
+            score += 0.5
+
+        if score > best_score:
+            best_score = score
+            best = src
+
+    # Require a meaningful match so we don't attach a random photo.
+    return best if best_score >= 2 else None  # noqa: PLR2004
 
 
 def _extract_og_image(html: str, base_url: str) -> str | None:
@@ -268,10 +362,18 @@ Return ONLY valid JSON (no markdown fences) with exactly these keys:
   "description": "<rich Markdown description, see structure below>"
 }
 
+FIRST, identify the EXACT product. Many appliances are combos or have a precise type
+(e.g. a "washer-dryer combo", not just a "washing machine"). Read the web content
+carefully and state the true type and ALL key figures — for a washer-dryer that means
+BOTH the wash capacity AND the dry capacity (e.g. "10 kg wash / 6 kg dry"). Do not
+under-describe: if the sources say it is a freestanding front-load washer-dryer with
+smart Wi-Fi and a 39-minute rapid cycle, say exactly that.
+
 The "description" MUST be detailed Markdown with these sections (omit a section only
 if there is genuinely no information for it):
 
-<one-sentence summary of what the product is and who it's for>
+<a precise 1-2 sentence summary naming the exact product type and headline figures
+ (capacities, key feature), and who it's for>
 
 ## Core Specifications
 - **<Spec name>:** <value>
@@ -393,14 +495,42 @@ class SequentialEnrichmentPipeline:
                 confidence=confidence,
             )
 
-        # Skip web search if Icecat already gave us a high-confidence record AND an image.
-        web_text = ""
-        if confidence != "high" or image_url is None:
-            # ── Step 2: SearXNG ───────────────────────────────────────────────
-            query = f"{inp.product_name} {inp.sku or ''} specifications datasheet".strip()
-            urls = await self._searxng.search(query)
+        # ── Step 2: Image search (once) — pick the correct product photo AND
+        #    harvest the retailer/product pages + listing titles it appears on. ────
+        image_pages: list[str] = []
+        listing_titles: list[str] = []
+        _search_images = getattr(self._searxng, "search_images", None)
+        if _search_images is not None and (image_url is None or confidence != "high"):
+            brand = str(inp.specifications.get("Brand", "")) or (
+                inp.product_name.split()[0] if inp.product_name else ""
+            )
+            try:
+                imgs = await _search_images(inp.product_name)
+                searched = _pick_product_image(imgs, brand, inp.sku or "", inp.product_name)
+                if searched:
+                    image_url = searched
+                image_pages = [
+                    str(im.get("url"))
+                    for im in imgs[:8]
+                    if im.get("url") and str(im.get("url")).startswith("http")
+                ]
+                listing_titles = [str(im.get("title", "")).strip() for im in imgs[:10] if im.get("title")]
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("image_search_failed", product=inp.product_name, error=str(exc))
 
-            # ── Step 3: httpx + trafilatura (+ og:image for the product photo) ─
+        # ── Step 3: Web research — general search + the product pages from image
+        #    search (those carry the true type & capacities). Scrape & clean. ──────
+        web_text = ""
+        if confidence != "high":
+            from urllib.parse import urlparse  # noqa: PLC0415
+
+            q_specs = f"{inp.product_name} {inp.sku or ''} specifications".strip()
+            urls_a = await self._searxng.search(q_specs)
+            urls_b = await self._searxng.search(inp.product_name)
+            seen_u: set[str] = set()
+            ordered = [*image_pages[:3], *urls_a, *urls_b, *image_pages[3:]]
+            urls = [u for u in ordered if not (u in seen_u or seen_u.add(u))][:7]
+
             page_texts: list[str] = []
             _fetch_page = getattr(self._fetcher, "fetch_page", None)
             for url in urls:
@@ -410,17 +540,25 @@ class SequentialEnrichmentPipeline:
                     text, page_image = await self._fetcher.fetch_and_clean(url), None
                 if text:
                     page_texts.append(text)
-                    from urllib.parse import urlparse  # noqa: PLC0415
-
                     source_urls.append({"title": urlparse(url).netloc or url, "url": url})
                 if image_url is None and page_image:
-                    image_url = page_image  # first real product image wins
+                    image_url = page_image  # final fallback for the photo
             web_text = "\n\n---\n\n".join(page_texts)
-
             if source != "icecat" and web_text:
                 source = "web"
 
+        # de-dup source links by url
+        _seen_src: set[str] = set()
+        source_urls = [s for s in source_urls if not (s["url"] in _seen_src or _seen_src.add(s["url"]))]
+
         # ── Steps 4 & 5: GPT-4o spec fill + description ───────────────────────
+        # Retailer listing titles often name the exact type (e.g. "10/6 kg Washer
+        # Dryer") — give them to the model so it doesn't under-describe the product.
+        if listing_titles:
+            titles_blob = "Retailer/product listing titles (authoritative for the exact product type and capacities):\n" + "\n".join(
+                f"- {t}" for t in listing_titles[:10]
+            )
+            web_text = f"{titles_blob}\n\n{web_text}"
         merged_specs, description = await _gpt4o_enrich(inp.product_name, specs, web_text)
 
         # If confidence is still partial but we got decent specs now, bump it

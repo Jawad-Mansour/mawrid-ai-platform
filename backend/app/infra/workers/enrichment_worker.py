@@ -88,12 +88,15 @@ async def enrich_product(
         product.enrichment_confidence = enriched.enrichment_confidence
         product.currency = enriched.currency or product.currency
 
-        # Human-in-the-loop gate: anything we couldn't confidently enrich (no
-        # description, or no image, or only a partial match) goes to a human
-        # instead of being shown as a confident catalog entry.
+        # Human-in-the-loop gate: anything we couldn't confidently enrich goes to a
+        # human instead of being shown as a confident catalog entry. We require a real
+        # image, a substantial description, and enough specifications.
+        desc = enriched.description or ""
+        spec_count = len(enriched.specifications or {})
         is_uncertain = (
-            not enriched.description
-            or enriched.image_url is None
+            enriched.image_url is None
+            or len(desc) < 220  # noqa: PLR2004
+            or spec_count < 5  # noqa: PLR2004
             or enriched.enrichment_confidence == "partial"
         )
         product.enrichment_status = "needs_review" if is_uncertain else "enriched"

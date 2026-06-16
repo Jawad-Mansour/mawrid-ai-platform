@@ -14,14 +14,15 @@ export const apiClient = axios.create({
   withCredentials: true,
 });
 
-// localStorage so the session survives a page refresh AND new tabs (the refresh
-// cookie renews it after the 15-min access-token expiry).
+// sessionStorage (per-tab): a page refresh keeps you signed in, but opening the site
+// fresh (new tab / reopened browser) shows the login screen instead of silently
+// auto-logging-in. Bootstrap only resumes when a token is present here.
 export function setToken(token: string | null) {
-  if (token) localStorage.setItem("access_token", token);
-  else localStorage.removeItem("access_token");
+  if (token) sessionStorage.setItem("access_token", token);
+  else sessionStorage.removeItem("access_token");
 }
 export function getToken(): string | null {
-  return localStorage.getItem("access_token");
+  return sessionStorage.getItem("access_token");
 }
 
 apiClient.interceptors.request.use((config) => {

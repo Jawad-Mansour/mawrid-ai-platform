@@ -9,7 +9,7 @@ import { UploadCloud, FileSpreadsheet, Sparkles, ArrowRight, CheckCircle2, Build
 import { toast } from "sonner";
 import { apiGet, apiPost, apiUpload, apiErr } from "@/lib/api";
 import { Card, SectionTitle } from "@/components/ui";
-import { EnrichLoader } from "@/components/EnrichLoader";
+import { EnrichLoader, EnrichBox } from "@/components/EnrichLoader";
 import type { Product } from "@/lib/types";
 
 function asList(d: unknown): Product[] {
@@ -143,6 +143,7 @@ export function UploadPage() {
               </div>
             </div>
 
+            {step === "parsed" && doc && <EnrichBox phase="open" />}
             {step === "parsed" && doc && (
               <div className="mt-4 flex flex-col items-center gap-3 rounded-xl border border-gold/30 bg-gold/5 p-4 sm:flex-row sm:justify-between">
                 <div className="flex items-center gap-3">
