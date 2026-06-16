@@ -411,13 +411,14 @@ async def enrich_document(
         if result.enrichment_status == "enriched":
             continue
 
-        # Stable job id => ARQ de-duplicates: re-submitting the same product while
-        # a job is still queued/running is a no-op (no duplicate enrichment).
+        # No _job_id de-dupe: duplicate enrichment is already prevented at the DB
+        # level (the worker skips products that are already 'enriched'), and a stable
+        # job id would otherwise block re-queuing a product whose job was lost on a
+        # worker restart — leaving it stuck 'pending' forever.
         await arq_pool.enqueue_job(
             "enrich_product",
             tenant_id=tenant_id,
             product_id=result.product_id,
-            _job_id=f"enrich:{tenant_id}:{product_hash}",
         )
         jobs_submitted += 1
 

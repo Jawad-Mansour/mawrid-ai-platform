@@ -158,7 +158,34 @@ async def startup(ctx: dict[str, object]) -> None:
     load_secrets(settings)
     engine: AsyncEngine = create_async_engine(settings.database_url, echo=False, pool_pre_ping=True)
     ctx["engine"] = engine
-    ctx["session_factory"] = async_sessionmaker(engine, expire_on_commit=False)
+    session_factory = async_sessionmaker(engine, expire_on_commit=False)
+    ctx["session_factory"] = session_factory
+
+    # Recover orphaned 'pending' products whose jobs were lost (e.g. on a previous
+    # restart) — re-enqueue them so they never get stuck enriching forever.
+    try:
+        redis = ctx.get("redis")
+        if redis is not None:
+            from sqlalchemy import select  # noqa: PLC0415
+
+            from app.infra.db.models.product import Product  # noqa: PLC0415
+
+            async with session_factory() as session:
+                result = await session.execute(
+                    select(Product.product_id, Product.tenant_id).where(
+                        Product.enrichment_status == "pending"
+                    )
+                )
+                rows = result.all()
+            for product_id, tenant_id in rows:
+                await redis.enqueue_job(  # type: ignore[attr-defined]
+                    "enrich_product", tenant_id=tenant_id, product_id=product_id
+                )
+            if rows:
+                logger.info("recovered_pending_products", count=len(rows))
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("pending_recovery_failed", error=str(exc))
+
     logger.info("enrichment_worker_started")
 
 
