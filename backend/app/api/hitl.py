@@ -140,6 +140,25 @@ async def approve_hitl_action(
 
     # Notify n8n when a PO is approved so WF-04 can create the shipment record
     if action.action_type == "purchase_order_send":
+        # Mark the PO sent and log the outbound message in its thread (Screen 3).
+        po_id = action.payload.get("po_id")
+        if po_id and result.status == "approved":
+            from datetime import UTC, datetime  # noqa: PLC0415
+
+            from app.infra.db.repos.order_repo import OrderRepository  # noqa: PLC0415
+
+            order_repo = OrderRepository(session, current_user.tenant_id)
+            await order_repo.mark_po_sent(
+                str(po_id),
+                {
+                    "direction": "outbound",
+                    "sender": "You",
+                    "body": str(action.payload.get("body", "")),
+                    "at": datetime.now(UTC).isoformat(),
+                },
+            )
+            await session.commit()
+
         from app.infra.n8n.client import fire_event  # noqa: PLC0415
 
         background_tasks.add_task(

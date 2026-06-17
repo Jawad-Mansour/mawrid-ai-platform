@@ -155,3 +155,23 @@ class OrderRepository(TenantRepository):
             )
             .values(status=new_status)
         )
+
+    async def append_po_message(self, po_id: str, message: dict[str, Any]) -> None:
+        """Append one message to the PO email thread."""
+        po = await self.get_po_by_id(po_id)
+        if po is None:
+            return
+        po.messages = [*(po.messages or []), message]
+        await self._session.flush()
+
+    async def mark_po_sent(self, po_id: str, outbound: dict[str, Any]) -> None:
+        """Mark a PO as sent (status + sent_at) and log the outbound message."""
+        from datetime import UTC, datetime  # noqa: PLC0415
+
+        po = await self.get_po_by_id(po_id)
+        if po is None:
+            return
+        po.status = "sent"
+        po.sent_at = datetime.now(UTC)  # type: ignore[assignment]
+        po.messages = [*(po.messages or []), outbound]
+        await self._session.flush()

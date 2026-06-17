@@ -1,7 +1,7 @@
 // Feature: Procurement — Purchase Orders: PO drafts awaiting review/send + sent POs.
 // API:     GET /hitl/actions?action_type=purchase_order_send · GET /procurement/purchase-orders
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ClipboardList, Send, ArrowRight, Plus } from "lucide-react";
 import { apiGet } from "@/lib/api";
 import { Card, SectionTitle, Loading, EmptyState, StatusBadge } from "@/components/ui";
@@ -11,6 +11,7 @@ interface HITLAction { action_id: string; status: string; payload: Record<string
 interface PO { po_id: string; po_number: string; supplier_id: string; status: string; total_amount: number | null; currency: string; created_at: string }
 
 export function PurchaseOrders() {
+  const navigate = useNavigate();
   const pending = useQuery({ queryKey: ["po-pending"], queryFn: () => apiGet<HITLAction[]>("/hitl/actions?action_type=purchase_order_send"), refetchInterval: 10_000 });
   const pos = useQuery({ queryKey: ["purchase-orders"], queryFn: () => apiGet<PO[]>("/procurement/purchase-orders"), refetchInterval: 12_000 });
 
@@ -58,8 +59,8 @@ export function PurchaseOrders() {
               </tr></thead>
               <tbody>
                 {poList.map((p) => (
-                  <tr key={p.po_id} className="table-row">
-                    <td className="py-3 pr-3 font-mono text-xs text-ink">{p.po_number}</td>
+                  <tr key={p.po_id} className="table-row cursor-pointer" onClick={() => navigate(`/purchase-orders/${p.po_id}`)}>
+                    <td className="py-3 pr-3 font-mono text-xs text-gold-soft underline-offset-2 hover:underline">{p.po_number}</td>
                     <td className="px-3 text-ink-soft">{p.total_amount != null ? formatCurrency(p.total_amount, p.currency) : "—"}</td>
                     <td className="px-3"><StatusBadge status={p.status} /></td>
                     <td className="px-3 text-ink-faint">{formatRelativeDate(p.created_at)}</td>

@@ -503,6 +503,182 @@ async def list_purchase_orders(
     ]
 
 
+# ── PO email thread (response tracking — Screen 3) ──────────────────────────────
+
+
+class PODetailResponse(StrictModel):
+    po_id: str
+    po_number: str
+    supplier_id: str
+    supplier_name: str | None
+    supplier_email: str | None
+    status: str
+    total_amount: float | None
+    currency: str
+    po_text: str | None
+    line_items: list[Any]
+    sent_at: str | None
+    created_at: str
+    messages: list[dict[str, Any]]
+
+
+@router.get(
+    "/purchase-orders/{po_id}",
+    response_model=PODetailResponse,
+    summary="Purchase order detail with the supplier email thread",
+)
+async def get_purchase_order(
+    po_id: str,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> PODetailResponse:
+    order_repo = OrderRepository(session, current_user.tenant_id)
+    po = await order_repo.get_po_by_id(po_id)
+    if po is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Purchase order not found.")
+    supplier_repo = SupplierRepository(session, current_user.tenant_id)
+    sup = await supplier_repo.get_by_id(po.supplier_id)
+    return PODetailResponse(
+        po_id=po.po_id,
+        po_number=po.po_number,
+        supplier_id=po.supplier_id,
+        supplier_name=sup.name if sup else None,
+        supplier_email=sup.email if sup else None,
+        status=po.status,
+        total_amount=float(po.total_amount) if po.total_amount is not None else None,
+        currency=po.currency,
+        po_text=po.po_text,
+        line_items=po.line_items or [],
+        sent_at=str(po.sent_at) if po.sent_at else None,
+        created_at=str(po.created_at),
+        messages=po.messages or [],
+    )
+
+
+class LogMessageRequest(StrictModel):
+    body: str
+    sender: str = "Supplier"
+    direction: str = "inbound"
+
+
+@router.post(
+    "/purchase-orders/{po_id}/messages",
+    summary="Log a message in the PO thread (e.g. a supplier reply received by email)",
+)
+async def log_po_message(
+    po_id: str,
+    body: LogMessageRequest,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> dict[str, str]:
+    order_repo = OrderRepository(session, current_user.tenant_id)
+    if await order_repo.get_po_by_id(po_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Purchase order not found.")
+    await order_repo.append_po_message(
+        po_id,
+        {
+            "direction": body.direction,
+            "sender": body.sender,
+            "body": body.body,
+            "at": datetime.now(UTC).isoformat(),
+        },
+    )
+    if body.direction == "inbound":
+        await order_repo.set_po_status(po_id, "replied")
+    await session.commit()
+    return {"po_id": po_id, "status": "logged"}
+
+
+class DraftReplyResponse(StrictModel):
+    reply: str
+
+
+@router.post(
+    "/purchase-orders/{po_id}/draft-reply",
+    response_model=DraftReplyResponse,
+    summary="AI-draft the next reply to the supplier, based on the thread so far",
+)
+async def draft_po_reply(
+    po_id: str,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> DraftReplyResponse:
+    order_repo = OrderRepository(session, current_user.tenant_id)
+    po = await order_repo.get_po_by_id(po_id)
+    if po is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Purchase order not found.")
+    supplier_repo = SupplierRepository(session, current_user.tenant_id)
+    sup = await supplier_repo.get_by_id(po.supplier_id)
+    lang = sup.language if sup else "en"
+    thread = "\n\n".join(
+        f"[{m.get('direction')}] {m.get('sender')}: {m.get('body')}" for m in (po.messages or [])
+    )
+    reply = await chat_completion(
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    f"You are a procurement officer for the importer. Write a concise, professional "
+                    f"reply to the supplier in {lang}, continuing the email thread for purchase order "
+                    f"{po.po_number}. Address their latest message directly. Output only the email body."
+                ),
+            },
+            {"role": "user", "content": f"Email thread so far:\n{thread or '(no replies yet)'}\n\nDraft our next reply."},
+        ],
+        temperature=0.3,
+        max_tokens=700,
+    )
+    return DraftReplyResponse(reply=reply.strip())
+
+
+class SendReplyRequest(StrictModel):
+    body: str
+    subject: str | None = None
+
+
+@router.post(
+    "/purchase-orders/{po_id}/reply",
+    summary="Send a reply to the supplier and log it in the thread",
+)
+async def send_po_reply(
+    po_id: str,
+    body: SendReplyRequest,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> dict[str, str]:
+    order_repo = OrderRepository(session, current_user.tenant_id)
+    po = await order_repo.get_po_by_id(po_id)
+    if po is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Purchase order not found.")
+    supplier_repo = SupplierRepository(session, current_user.tenant_id)
+    sup = await supplier_repo.get_by_id(po.supplier_id)
+    if sup is None or not sup.email:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Supplier has no email on file.",
+        )
+
+    from app.infra.email.sender import send_email  # noqa: PLC0415
+
+    await send_email(
+        to=sup.email,
+        subject=body.subject or f"Re: Purchase Order {po.po_number}",
+        body=body.body,
+    )
+    await order_repo.append_po_message(
+        po_id,
+        {
+            "direction": "outbound",
+            "sender": "You",
+            "body": body.body,
+            "at": datetime.now(UTC).isoformat(),
+        },
+    )
+    await session.commit()
+    logger.info("po_reply_sent", po_id=po_id)
+    return {"po_id": po_id, "status": "sent"}
+
+
 # ── Shipments ──────────────────────────────────────────────────────────────────
 
 

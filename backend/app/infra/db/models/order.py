@@ -44,6 +44,8 @@ class PurchaseOrder(TenantMixin, Base):
     requested_delivery_date: Mapped[str | None] = mapped_column(Date, nullable=True)
     po_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     hitl_action_id: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Email thread: list of {direction, sender, body, at}
+    messages: Mapped[list[Any] | None] = mapped_column(JSON, nullable=True)
     sent_at: Mapped[str | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[str] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
