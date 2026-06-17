@@ -50,6 +50,7 @@ class SupplierCreate(StrictModel):
     location: str | None = None
     description: str | None = None
     rating: float | None = None
+    moq: int | None = None
 
 
 class SupplierUpdate(StrictModel):
@@ -61,6 +62,7 @@ class SupplierUpdate(StrictModel):
     location: str | None = None
     description: str | None = None
     rating: float | None = None
+    moq: int | None = None
 
 
 class SupplierMatchRequest(StrictModel):
@@ -83,6 +85,7 @@ class SupplierResponse(StrictModel):
     location: str | None = None
     description: str | None = None
     rating: float | None = None
+    moq: int | None = None
     score: float | None
 
 
@@ -97,6 +100,7 @@ def _supplier_response(s: Any) -> "SupplierResponse":
         location=getattr(s, "location", None),
         description=getattr(s, "description", None),
         rating=float(s.rating) if getattr(s, "rating", None) is not None else None,
+        moq=getattr(s, "moq", None),
         score=float(s.score) if s.score is not None else None,
     )
 
@@ -134,6 +138,7 @@ async def create_supplier(
         location=body.location,
         description=body.description,
         rating=body.rating,
+        moq=body.moq,
     )
     await session.commit()
     logger.info("supplier_created", supplier_id=supplier.supplier_id, name=supplier.name)

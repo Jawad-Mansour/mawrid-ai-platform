@@ -7,7 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   LayoutDashboard, CheckSquare, Boxes, ScanLine, ClipboardList,
   Store, Banknote, BrainCircuit, Settings, ChevronLeft, ChevronDown, Users, Sparkles, UploadCloud,
-  History, ShieldQuestion, LogOut, Bell, Palette,
+  History, ShieldQuestion, LogOut, Bell, Palette, PackageCheck,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -51,6 +51,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
     ]},
     { title: "Procurement", items: [
       { to: "/procurement", label: "Create Order", icon: ClipboardList },
+      { to: "/purchase-orders", label: "Purchase Orders", icon: PackageCheck },
       { to: "/suppliers", label: "Suppliers", icon: Users },
       { to: "/publishing", label: "Storefront Publishing", icon: Store, modes: ["hybrid", "retail_only"] },
     ]},

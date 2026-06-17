@@ -19,7 +19,7 @@ from typing import Any
 
 import structlog
 import yaml
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Response, status
 from sqlalchemy import update
 
 from app.api.deps import CurrentUser, SessionDep
@@ -84,7 +84,7 @@ async def _draft_po_text(
             f"Items: {line_items}. Delivery by: {delivery_date or 'TBD'}."
         )
 
-    return await chat_completion(
+    text = await chat_completion(
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
@@ -92,6 +92,10 @@ async def _draft_po_text(
         temperature=0.1,
         max_tokens=2048,
     )
+    import re  # noqa: PLC0415
+
+    # Strip any markdown code fences the model may wrap the letter in.
+    return re.sub(r"^```[a-zA-Z]*\s*|\s*```$", "", text.strip()).strip()
 
 
 # ── Order Drafts ───────────────────────────────────────────────────────────────
@@ -103,6 +107,45 @@ class DraftLineItem(StrictModel):
     quantity: int
     unit_price: float
     currency: str = "USD"
+    sku: str | None = None
+
+
+_XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+
+def _order_excel(
+    line_items: list[dict[str, Any]], supplier_name: str, po_number: str, currency: str
+) -> bytes:
+    """Build the order request spreadsheet (codes · quantities · sum)."""
+    from io import BytesIO  # noqa: PLC0415
+
+    from openpyxl import Workbook  # noqa: PLC0415
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Order"
+    ws.append([f"Purchase Order {po_number}"])
+    ws.append([f"Supplier: {supplier_name}"])
+    ws.append([])
+    ws.append(["Code", "Product", "Quantity", "Unit Price", "Line Total"])
+    total = 0.0
+    for it in line_items:
+        qty = int(it.get("quantity", 0))
+        unit = float(it.get("unit_price", 0) or 0)
+        line_total = round(qty * unit, 2)
+        total += line_total
+        ws.append([
+            str(it.get("sku") or it.get("product_id", "")),
+            str(it.get("product_name", "")),
+            qty,
+            unit,
+            line_total,
+        ])
+    ws.append([])
+    ws.append(["", "", "", f"TOTAL ({currency})", round(total, 2)])
+    buf = BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
 
 
 class CreateDraftRequest(StrictModel):
@@ -265,6 +308,31 @@ async def update_order_draft(
     )
 
 
+@router.get(
+    "/orders/{order_id}/excel",
+    summary="Download the order request spreadsheet (codes · quantities · sum)",
+)
+async def download_order_excel(
+    order_id: str,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> Response:
+    order_repo = OrderRepository(session, current_user.tenant_id)
+    draft = await order_repo.get_draft_by_id(order_id)
+    if draft is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found.")
+    supplier_repo = SupplierRepository(session, current_user.tenant_id)
+    supplier = await supplier_repo.get_by_id(draft.supplier_id)
+    name = supplier.name if supplier else "Supplier"
+    currency = supplier.currency if supplier else "USD"
+    xlsx = _order_excel(draft.line_items or [], name, order_id[:8].upper(), currency)
+    return Response(
+        content=xlsx,
+        media_type=_XLSX_MIME,
+        headers={"Content-Disposition": f'attachment; filename="order-{order_id[:8]}.xlsx"'},
+    )
+
+
 @router.post(
     "/orders/{order_id}/submit",
     summary="Submit an order draft (locks it — no more edits)",
@@ -340,6 +408,12 @@ async def place_order(
         notes=draft.notes,
     )
 
+    # Build the order Excel (codes · quantities · sum) and attach it to the PO email.
+    import base64 as _b64  # noqa: PLC0415
+
+    xlsx_bytes = _order_excel(line_items, supplier.name, po_number, supplier.currency)
+    xlsx_name = f"{po_number}.xlsx"
+
     hitl_action_id = uuid.uuid4().hex
     action = await hitl_repo.create(
         action_id=hitl_action_id,
@@ -347,13 +421,18 @@ async def place_order(
         payload={
             "po_id": po_id,
             "po_number": po_number,
+            "order_id": order_id,
             "supplier_name": supplier.name,
             "to": supplier.email or "",
             "subject": f"Purchase Order {po_number}",
             "body": po_text,
             "language": supplier.language,
+            "line_items": line_items,
             "total": total,
             "currency": supplier.currency,
+            "attachment_b64": _b64.b64encode(xlsx_bytes).decode(),
+            "attachment_filename": xlsx_name,
+            "attachment_mime": _XLSX_MIME,
         },
     )
 

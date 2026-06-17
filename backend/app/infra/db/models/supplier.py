@@ -26,6 +26,7 @@ class Supplier(TenantMixin, Base):
     location: Mapped[str | None] = mapped_column(Text, nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     rating: Mapped[float | None] = mapped_column(Numeric(3, 1), nullable=True)
+    moq: Mapped[int | None] = mapped_column(nullable=True)
     language: Mapped[str] = mapped_column(Text, nullable=False, server_default="en")
     currency: Mapped[str] = mapped_column(Text, nullable=False, server_default="USD")
     score: Mapped[float | None] = mapped_column(Numeric(5, 2), nullable=True)

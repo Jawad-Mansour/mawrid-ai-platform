@@ -10,7 +10,20 @@ export interface BasketItem {
   image_url: string | null;
   price: number | null;
   currency: string | null;
+  available: number | null; // max orderable, from the supplier sheet QTY
   qty: number;
+}
+
+// The sheet quantity lands in specifications under varying keys — find a number.
+function readAvailable(p: Product): number | null {
+  const specs = p.specifications ?? {};
+  for (const k of Object.keys(specs)) {
+    if (/qty|quantity/i.test(k)) {
+      const n = parseInt(String(specs[k]).replace(/[^0-9]/g, ""), 10);
+      if (!Number.isNaN(n) && n > 0) return n;
+    }
+  }
+  return null;
 }
 
 interface BasketStore {
@@ -40,6 +53,7 @@ export const useBasket = create<BasketStore>()(
                     image_url: p.image_url ?? null,
                     price: p.price ?? p.retail_price ?? null,
                     currency: p.currency ?? "USD",
+                    available: readAvailable(p),
                     qty: 1,
                   },
                 ],

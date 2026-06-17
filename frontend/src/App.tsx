@@ -17,6 +17,8 @@ import { Profile } from "@/pages/Profile";
 import { Catalog } from "@/pages/Catalog";
 import { Approvals } from "@/pages/Approvals";
 import { Procurement } from "@/pages/Procurement";
+import { OrderReview } from "@/pages/OrderReview";
+import { PurchaseOrders } from "@/pages/PurchaseOrders";
 import { Publishing } from "@/pages/Publishing";
 import { Dunning } from "@/pages/Dunning";
 import { Barcode } from "@/pages/Barcode";
@@ -43,6 +45,8 @@ export default function App() {
         <Route path="/approvals" element={<Approvals />} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/procurement" element={<Procurement />} />
+        <Route path="/procurement/review/:actionId" element={<OrderReview />} />
+        <Route path="/purchase-orders" element={<PurchaseOrders />} />
         <Route path="/publishing" element={<Publishing />} />
         <Route path="/dunning" element={<Dunning />} />
         <Route path="/suppliers" element={<Suppliers />} />

@@ -123,6 +123,7 @@ export interface Supplier {
   location?: string | null;
   description?: string | null;
   rating?: number | null;
+  moq?: number | null;
   score?: number | null;
 }
 

@@ -35,12 +35,28 @@ async def approve_action(
     payload: dict[str, Any],
     email_sender: _EmailSender,
 ) -> ActionResult:
-    """Approve a HITL action. Sends email if payload contains 'to' and 'subject'."""
+    """Approve a HITL action. Sends email if payload contains 'to' and 'subject'.
+    If the payload carries a base64 attachment (e.g. a purchase-order Excel), it is
+    attached to the email."""
     to = payload.get("to", "")
     subject = payload.get("subject", "")
     body = payload.get("body", "")
     if to and subject:
-        await email_sender.send(to=str(to), subject=str(subject), body=str(body))
+        kwargs: dict[str, Any] = {}
+        att_b64 = payload.get("attachment_b64")
+        if att_b64:
+            import base64  # noqa: PLC0415
+
+            try:
+                kwargs["attachment_bytes"] = base64.b64decode(str(att_b64))
+                kwargs["attachment_filename"] = str(payload.get("attachment_filename") or "attachment.xlsx")
+                kwargs["attachment_mime"] = str(
+                    payload.get("attachment_mime")
+                    or "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+            except Exception:  # noqa: BLE001
+                pass
+        await email_sender.send(to=str(to), subject=str(subject), body=str(body), **kwargs)
     return ActionResult(action_id=action_id, status=HITLStatus.APPROVED, payload=payload)
 
 
