@@ -88,6 +88,7 @@ class ProductCard(StrictModel):
     image_url: str | None
     source_urls: list[dict[str, str]] | None
     supplier_names: list[str] | None
+    document_ids: list[str] | None
     price: float | None
     currency: str | None
     retail_price: float | None
@@ -148,6 +149,7 @@ async def _to_card(tenant_id: str, p: Product) -> ProductCard:
         image_url=await _resolve_image_url(tenant_id, p.image_path),
         source_urls=p.source_urls,
         supplier_names=[str(s) for s in (p.supplier_names or [])] or None,
+        document_ids=[str(d) for d in (p.document_ids or [])] or None,
         price=_latest_price(p),
         currency=p.currency,
         retail_price=float(p.retail_price) if p.retail_price is not None else None,
@@ -407,6 +409,12 @@ async def enrich_document(
                 names.append(supplier_for_doc)
                 result.supplier_names = names
 
+        # Tag with this sheet/document (per-sheet catalogues)
+        doc_ids = list(result.document_ids or [])
+        if document_id not in doc_ids:
+            doc_ids.append(document_id)
+            result.document_ids = doc_ids
+
         # Skip already-enriched products
         if result.enrichment_status == "enriched":
             continue
@@ -442,6 +450,7 @@ class DocumentHistoryItem(StrictModel):
     document_id: str
     filename: str
     status: str
+    supplier_name: str | None
     rows_extracted: int
     uploaded_at: str
 
@@ -463,6 +472,7 @@ async def list_documents(
             document_id=d.document_id,
             filename=d.filename,
             status=d.status,
+            supplier_name=d.supplier_name,
             rows_extracted=int((d.row_counts or {}).get("extracted", 0)),
             uploaded_at=d.uploaded_at.isoformat(),
         )

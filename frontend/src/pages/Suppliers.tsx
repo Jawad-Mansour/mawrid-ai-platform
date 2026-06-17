@@ -1,7 +1,7 @@
 // Feature: Supplier Intelligence — list, add, score & compare
 import { useMemo, useState } from "react";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Users, Plus, BarChart3, Mail, Phone, X, Trophy } from "lucide-react";
+import { Users, Plus, BarChart3, Mail, Phone, X, Trophy, Star, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { apiGet, apiPost, apiErr } from "@/lib/api";
 import { Card, SectionTitle, Loading, EmptyState } from "@/components/ui";
@@ -24,17 +24,23 @@ export function Suppliers() {
   const qc = useQueryClient();
   const [selected, setSelected] = useState<string[]>([]);
   const [adding, setAdding] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", language: "en", currency: "USD" });
+  const blank = { name: "", email: "", phone: "", location: "", description: "", rating: "", language: "en", currency: "USD" };
+  const [form, setForm] = useState(blank);
 
   const list = useQuery({ queryKey: ["suppliers"], queryFn: () => apiGet<unknown>("/suppliers") });
   const suppliers = useMemo(() => asList(list.data), [list.data]);
 
   const create = useMutation({
-    mutationFn: () => apiPost("/suppliers", { ...form, email: form.email || null, phone: form.phone || null }),
+    mutationFn: () => apiPost("/suppliers", {
+      name: form.name, language: form.language, currency: form.currency,
+      email: form.email || null, phone: form.phone || null,
+      location: form.location || null, description: form.description || null,
+      rating: form.rating ? Number(form.rating) : null,
+    }),
     onSuccess: () => {
       toast.success("Supplier added");
       setAdding(false);
-      setForm({ name: "", email: "", phone: "", language: "en", currency: "USD" });
+      setForm(blank);
       qc.invalidateQueries({ queryKey: ["suppliers"] });
     },
     onError: (e) => toast.error(apiErr(e, "Could not add supplier")),
@@ -70,6 +76,7 @@ export function Suppliers() {
             <div><label className="label">Name</label><input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Acme Supplies" /></div>
             <div><label className="label">Email</label><input className="input" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="sales@acme.com" /></div>
             <div><label className="label">Phone</label><input className="input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+961…" /></div>
+            <div><label className="label">Location</label><input className="input" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Brugherio, Italy" /></div>
             <div><label className="label">Language</label>
               <select className="input" value={form.language} onChange={(e) => setForm({ ...form, language: e.target.value })}>
                 <option value="en">English</option><option value="fr">French</option><option value="ar">Arabic</option>
@@ -80,6 +87,10 @@ export function Suppliers() {
                 <option>USD</option><option>EUR</option><option>LBP</option>
               </select>
             </div>
+            <div><label className="label">Rating (0–5)</label><input className="input" type="number" min={0} max={5} step={0.5} value={form.rating} onChange={(e) => setForm({ ...form, rating: e.target.value })} placeholder="4.5" /></div>
+          </div>
+          <div className="mt-3"><label className="label">Description / notes</label>
+            <textarea className="input min-h-[80px] resize-y" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="What they supply, terms, contacts, notes…" />
           </div>
           <button className="btn-gold mt-4" disabled={!form.name || create.isPending} onClick={() => create.mutate()}>Save supplier</button>
         </Card>
@@ -98,15 +109,20 @@ export function Suppliers() {
                   return (
                     <button key={s.supplier_id} onClick={() => toggle(s.supplier_id)}
                       className={`card p-4 text-left transition-all ${on ? "ring-1 ring-gold/50 shadow-glow" : "hover:bg-white/[0.04]"}`}>
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-2">
                         <span className="truncate font-700 text-ink">{s.name}</span>
-                        <span className={`grid h-5 w-5 place-items-center rounded-md border ${on ? "border-gold bg-gold text-bg" : "border-line"}`}>
-                          {on && <BarChart3 className="h-3 w-3" />}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          {s.rating != null && <span className="flex items-center gap-0.5 text-xs font-700 text-gold-soft"><Star className="h-3 w-3 fill-current" /> {Number(s.rating).toFixed(1)}</span>}
+                          <span className={`grid h-5 w-5 place-items-center rounded-md border ${on ? "border-gold bg-gold text-bg" : "border-line"}`}>
+                            {on && <BarChart3 className="h-3 w-3" />}
+                          </span>
+                        </div>
                       </div>
                       <div className="mt-2 space-y-1 text-xs text-ink-faint">
+                        {s.location && <div className="flex items-center gap-1.5"><MapPin className="h-3 w-3" /> {s.location}</div>}
                         {s.email && <div className="flex items-center gap-1.5"><Mail className="h-3 w-3" /> {s.email}</div>}
                         {s.phone && <div className="flex items-center gap-1.5"><Phone className="h-3 w-3" /> {s.phone}</div>}
+                        {s.description && <div className="line-clamp-2 pt-0.5 text-ink-soft">{s.description}</div>}
                         <div className="flex gap-2 pt-1">
                           <span className="chip border-line bg-white/[0.02] uppercase">{s.language ?? "en"}</span>
                           <span className="chip border-line bg-white/[0.02]">{s.currency ?? "USD"}</span>

@@ -4,8 +4,8 @@
 // API:     GET /catalog/products
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, RefreshCw, ImageOff, ShoppingBag, Check, ExternalLink, FileSpreadsheet, ArrowRight, UploadCloud, Pencil } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Search, RefreshCw, ImageOff, ShoppingBag, Check, ExternalLink, FileSpreadsheet, ArrowRight, UploadCloud, Pencil, X, Building2 } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
 import { apiGet } from "@/lib/api";
 import { SectionTitle, StatusBadge, Loading, EmptyState } from "@/components/ui";
 import { ProductModal } from "@/components/ProductModal";
@@ -46,9 +46,13 @@ export function Catalog() {
   const [supplier, setSupplier] = useState("all");
   const [open, setOpen] = useState<Product | null>(null);
   const [editing, setEditing] = useState<Product | null>(null);
+  const [params, setParams] = useSearchParams();
+  const docId = params.get("doc");
 
   const products = useQuery({ queryKey: ["catalog"], queryFn: () => apiGet<unknown>("/catalog/products?limit=300"), refetchInterval: 8000 });
+  const docs = useQuery({ queryKey: ["documents"], queryFn: () => apiGet<{ document_id: string; filename: string; supplier_name?: string | null; uploaded_at: string; rows_extracted: number }[]>("/catalog/documents") });
   const all = useMemo(() => asList(products.data), [products.data]);
+  const activeSheet = docId ? (docs.data ?? []).find((d) => d.document_id === docId) : null;
 
   // distinct suppliers across the catalogue (each sheet's supplier)
   const suppliers = useMemo(() => {
@@ -59,6 +63,7 @@ export function Catalog() {
 
   const rows = useMemo(() => {
     let list = all;
+    if (docId) list = list.filter((p) => (p.document_ids ?? []).includes(docId));
     if (filter !== "all") list = list.filter((p) => p.enrichment_status === filter);
     if (supplier !== "all") list = list.filter((p) => (p.supplier_names ?? []).includes(supplier));
     const q = search.trim().toLowerCase();
@@ -69,7 +74,9 @@ export function Catalog() {
         JSON.stringify(p.specifications ?? {}).toLowerCase().includes(q));
     }
     return list;
-  }, [all, filter, search, supplier]);
+  }, [all, filter, search, supplier, docId]);
+
+  function clearSheet() { const p = new URLSearchParams(params); p.delete("doc"); setParams(p, { replace: true }); }
 
   return (
     <div className="space-y-6">
@@ -80,6 +87,24 @@ export function Catalog() {
             {basket.items.length > 0 && <Link to="/procurement" className="btn-gold !py-2"><ShoppingBag className="h-4 w-4" /> {basket.items.length} noted <ArrowRight className="h-4 w-4" /></Link>}
           </div>
         } />
+
+      {/* per-sheet catalogue header */}
+      {activeSheet && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gold/30 bg-gold/[0.06] p-4">
+          <div className="flex items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-gold/15 text-gold-soft"><FileSpreadsheet className="h-5 w-5" /></div>
+            <div>
+              <div className="text-sm font-700 text-ink">{activeSheet.filename}</div>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-ink-soft">
+                {activeSheet.supplier_name && <span className="flex items-center gap-1"><Building2 className="h-3 w-3" /> {activeSheet.supplier_name}</span>}
+                <span>{new Date(activeSheet.uploaded_at).toLocaleString()}</span>
+                <span>{rows.length} product(s)</span>
+              </div>
+            </div>
+          </div>
+          <button onClick={clearSheet} className="chip border-line bg-white/[0.03] text-ink-soft hover:text-ink"><X className="h-3 w-3" /> View whole catalogue</button>
+        </div>
+      )}
 
       {/* search + filters */}
       <div className="flex flex-wrap items-center gap-3">

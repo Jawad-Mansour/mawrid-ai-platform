@@ -77,6 +77,7 @@ export interface Product {
   image_url?: string | null;
   source_urls?: SourceLink[] | null;
   supplier_names?: string[] | null;
+  document_ids?: string[] | null;
 }
 
 export interface AskProductResponse {
@@ -89,6 +90,7 @@ export interface DocumentHistoryItem {
   document_id: string;
   filename: string;
   status: string;
+  supplier_name: string | null;
   rows_extracted: number;
   uploaded_at: string;
 }
@@ -118,6 +120,9 @@ export interface Supplier {
   phone: string | null;
   language: string | null;
   currency: string | null;
+  location?: string | null;
+  description?: string | null;
+  rating?: number | null;
   score?: number | null;
 }
 

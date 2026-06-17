@@ -2,7 +2,7 @@
 // API:     GET /catalog/documents
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { FileSpreadsheet, UploadCloud, RefreshCw } from "lucide-react";
+import { FileSpreadsheet, UploadCloud, RefreshCw, Boxes } from "lucide-react";
 import { apiGet } from "@/lib/api";
 import { Card, SectionTitle, Loading, EmptyState, StatusBadge } from "@/components/ui";
 import { formatRelativeDate } from "@/lib/utils";
@@ -32,9 +32,11 @@ export function UploadHistory() {
               <thead>
                 <tr className="border-b border-line text-left text-xs uppercase tracking-wider text-ink-faint">
                   <th className="py-2.5 pr-3 font-600">Sheet</th>
+                  <th className="px-3 font-600">Supplier</th>
                   <th className="px-3 font-600">Rows</th>
                   <th className="px-3 font-600">Status</th>
                   <th className="px-3 font-600">Uploaded</th>
+                  <th className="px-3 font-600"></th>
                 </tr>
               </thead>
               <tbody>
@@ -46,9 +48,13 @@ export function UploadHistory() {
                         <span className="truncate font-600 text-ink">{d.filename}</span>
                       </div>
                     </td>
+                    <td className="px-3 text-ink-soft">{d.supplier_name ?? "—"}</td>
                     <td className="px-3 font-mono text-ink-soft">{d.rows_extracted}</td>
                     <td className="px-3"><StatusBadge status={d.status} /></td>
                     <td className="px-3 text-ink-faint">{formatRelativeDate(d.uploaded_at)}</td>
+                    <td className="px-3 text-right">
+                      <Link to={`/catalog?doc=${d.document_id}`} className="btn-ghost !py-1.5 text-xs"><Boxes className="h-3.5 w-3.5" /> Catalogue</Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>

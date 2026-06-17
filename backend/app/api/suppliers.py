@@ -47,6 +47,9 @@ class SupplierCreate(StrictModel):
     phone: str | None = None
     language: str = "en"
     currency: str = "USD"
+    location: str | None = None
+    description: str | None = None
+    rating: float | None = None
 
 
 class SupplierUpdate(StrictModel):
@@ -55,6 +58,9 @@ class SupplierUpdate(StrictModel):
     phone: str | None = None
     language: str | None = None
     currency: str | None = None
+    location: str | None = None
+    description: str | None = None
+    rating: float | None = None
 
 
 class SupplierMatchRequest(StrictModel):
@@ -74,7 +80,25 @@ class SupplierResponse(StrictModel):
     phone: str | None
     language: str
     currency: str
+    location: str | None = None
+    description: str | None = None
+    rating: float | None = None
     score: float | None
+
+
+def _supplier_response(s: Any) -> "SupplierResponse":
+    return SupplierResponse(
+        supplier_id=s.supplier_id,
+        name=s.name,
+        email=s.email,
+        phone=s.phone,
+        language=s.language,
+        currency=s.currency,
+        location=getattr(s, "location", None),
+        description=getattr(s, "description", None),
+        rating=float(s.rating) if getattr(s, "rating", None) is not None else None,
+        score=float(s.score) if s.score is not None else None,
+    )
 
 
 class ScoreResponse(StrictModel):
@@ -107,18 +131,13 @@ async def create_supplier(
         phone=body.phone,
         language=body.language,
         currency=body.currency,
+        location=body.location,
+        description=body.description,
+        rating=body.rating,
     )
     await session.commit()
     logger.info("supplier_created", supplier_id=supplier.supplier_id, name=supplier.name)
-    return SupplierResponse(
-        supplier_id=supplier.supplier_id,
-        name=supplier.name,
-        email=supplier.email,
-        phone=supplier.phone,
-        language=supplier.language,
-        currency=supplier.currency,
-        score=float(supplier.score) if supplier.score is not None else None,
-    )
+    return _supplier_response(supplier)
 
 
 @router.get(
@@ -132,18 +151,7 @@ async def list_suppliers(
 ) -> list[SupplierResponse]:
     repo = SupplierRepository(session, current_user.tenant_id)
     suppliers = await repo.list_all()
-    return [
-        SupplierResponse(
-            supplier_id=s.supplier_id,
-            name=s.name,
-            email=s.email,
-            phone=s.phone,
-            language=s.language,
-            currency=s.currency,
-            score=float(s.score) if s.score is not None else None,
-        )
-        for s in suppliers
-    ]
+    return [_supplier_response(s) for s in suppliers]
 
 
 @router.get(
@@ -160,15 +168,7 @@ async def get_supplier(
     supplier = await repo.get_by_id(supplier_id)
     if supplier is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Supplier not found.")
-    return SupplierResponse(
-        supplier_id=supplier.supplier_id,
-        name=supplier.name,
-        email=supplier.email,
-        phone=supplier.phone,
-        language=supplier.language,
-        currency=supplier.currency,
-        score=float(supplier.score) if supplier.score is not None else None,
-    )
+    return _supplier_response(supplier)
 
 
 @router.put(
@@ -194,15 +194,7 @@ async def update_supplier(
 
     updated = await repo.get_by_id(supplier_id)
     assert updated is not None
-    return SupplierResponse(
-        supplier_id=updated.supplier_id,
-        name=updated.name,
-        email=updated.email,
-        phone=updated.phone,
-        language=updated.language,
-        currency=updated.currency,
-        score=float(updated.score) if updated.score is not None else None,
-    )
+    return _supplier_response(updated)
 
 
 @router.post(
