@@ -74,6 +74,7 @@ export interface Product {
   price?: number | null;
   retail_price?: number | null;
   currency?: string | null;
+  available_qty?: number | null;
   image_url?: string | null;
   source_urls?: SourceLink[] | null;
   supplier_names?: string[] | null;
@@ -125,6 +126,10 @@ export interface Supplier {
   rating?: number | null;
   moq?: number | null;
   score?: number | null;
+  relationship?: string | null;
+  condition?: string | null;
+  category?: string | null;
+  website?: string | null;
 }
 
 export interface OrderDraft {

@@ -37,9 +37,11 @@ async def send_email(
     attachment_bytes: bytes | None = None,
     attachment_filename: str | None = None,
     attachment_mime: str = "application/pdf",
-) -> None:
+    reply_to: str | None = None,
+) -> str | None:
     """
-    Send an email via SendGrid REST API. Raises on non-2xx status.
+    Send an email via SendGrid REST API. Raises on non-2xx status. Returns the
+    SendGrid X-Message-Id (proof of acceptance) or None.
     The from-address defaults to the configured verified sender
     (SENDGRID_FROM_EMAIL) — SendGrid rejects unverified senders.
     """
@@ -60,6 +62,10 @@ async def send_email(
         "from": {"email": from_email, "name": from_name},
         "content": content,
     }
+    # Reply-To lets recipients answer to the real operator inbox even though the
+    # verified send-from is the SendGrid sender.
+    if reply_to:
+        payload["reply_to"] = {"email": reply_to}
 
     if attachment_bytes and attachment_filename:
         payload["attachments"] = [
@@ -88,11 +94,13 @@ async def send_email(
         )
         response.raise_for_status()
 
-    logger.info("email_sent", to=to, subject=subject)
+    message_id: str | None = response.headers.get("X-Message-Id")
+    logger.info("email_sent", to=to, subject=subject, message_id=message_id)
+    return message_id
 
 
 class EmailSender:
     """Protocol-compatible wrapper around send_email. Usable as a dependency."""
 
-    async def send(self, to: str, subject: str, body: str, **kwargs: Any) -> None:
-        await send_email(to=to, subject=subject, body=body, **kwargs)
+    async def send(self, to: str, subject: str, body: str, **kwargs: Any) -> str | None:
+        return await send_email(to=to, subject=subject, body=body, **kwargs)

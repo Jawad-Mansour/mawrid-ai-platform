@@ -16,6 +16,7 @@ HITL:     None — enrichment is internal. Publishing is in procurement.py.
 from __future__ import annotations
 
 import hashlib
+import re
 import uuid
 from typing import Any
 
@@ -93,6 +94,8 @@ class ProductCard(StrictModel):
     currency: str | None
     retail_price: float | None
     qty_in_stock: int
+    storefront_qty: int
+    available_qty: int | None  # supplier sheet quantity (what can be ordered)
     enrichment_status: str
     inventory_status: str
     storefront_status: str
@@ -138,6 +141,23 @@ def _latest_price(product: Product) -> float | None:
     return None
 
 
+def _available_qty(product: Product) -> int | None:
+    """The orderable quantity the supplier offered, captured from the sheet into
+    specifications under a quantity-like key (Quantity / QTY / Stock / Available)."""
+    specs = product.specifications or {}
+    for key, value in specs.items():
+        if re.search(r"qty|quantit|stock|available|on.?hand", str(key), re.IGNORECASE):
+            digits = re.sub(r"[^0-9]", "", str(value))
+            if digits:
+                try:
+                    n = int(digits)
+                except ValueError:
+                    continue
+                if n > 0:
+                    return n
+    return None
+
+
 async def _to_card(tenant_id: str, p: Product) -> ProductCard:
     return ProductCard(
         product_id=p.product_id,
@@ -154,6 +174,8 @@ async def _to_card(tenant_id: str, p: Product) -> ProductCard:
         currency=p.currency,
         retail_price=float(p.retail_price) if p.retail_price is not None else None,
         qty_in_stock=p.qty_in_stock,
+        storefront_qty=p.storefront_qty,
+        available_qty=_available_qty(p),
         enrichment_status=p.enrichment_status,
         inventory_status=p.inventory_status,
         storefront_status=p.storefront_status,
@@ -186,6 +208,7 @@ async def upload_supplier_document(
     session: SessionDep,
     supplier_name: str | None = Form(default=None),
     supplier_location: str | None = Form(default=None),
+    supplier_email: str | None = Form(default=None),
 ) -> DocumentUploadResponse:
     """
     Upload a PDF or Excel supplier catalog. Idempotent on document content:
@@ -283,9 +306,16 @@ async def upload_supplier_document(
                 supplier_id=uuid.uuid4().hex,
                 name=supplier_name.strip(),
                 location=(supplier_location.strip() if supplier_location else None),
+                email=(supplier_email.strip() if supplier_email else None),
             )
-        elif supplier_location and supplier_location.strip():
-            await sup_repo.update(existing_sup.supplier_id, location=supplier_location.strip())
+        else:
+            sup_updates: dict[str, Any] = {}
+            if supplier_location and supplier_location.strip():
+                sup_updates["location"] = supplier_location.strip()
+            if supplier_email and supplier_email.strip():
+                sup_updates["email"] = supplier_email.strip()
+            if sup_updates:
+                await sup_repo.update(existing_sup.supplier_id, **sup_updates)
 
     await session.commit()
 
@@ -314,6 +344,13 @@ async def upload_supplier_document(
     )
 
 
+class EnrichRequest(StrictModel):
+    # Per-sheet supplier details supplied at enrich time (upload no longer gates them).
+    supplier_name: str | None = None
+    supplier_email: str | None = None
+    supplier_location: str | None = None
+
+
 @router.post(
     "/documents/{document_id}/enrich",
     response_model=EnrichResponse,
@@ -324,6 +361,7 @@ async def enrich_document(
     document_id: str,
     current_user: CurrentUser,
     session: SessionDep,
+    body: EnrichRequest | None = None,
 ) -> EnrichResponse:
     """
     Trigger async enrichment for a parsed document.
@@ -356,7 +394,34 @@ async def enrich_document(
             detail="Document has no parsed rows. Re-upload the file.",
         )
 
-    supplier_for_doc = (doc.supplier_name or "").strip() or None
+    # Per-sheet supplier details provided at enrich time → persist to the doc + upsert
+    # the supplier, and mark them ACTIVE (a sheet we enrich = a supplier we do business with).
+    b = body or EnrichRequest()
+    name = (b.supplier_name or doc.supplier_name or "").strip() or None
+    if name:
+        from app.infra.db.repos.supplier_repo import SupplierRepository  # noqa: PLC0415
+
+        if b.supplier_name and b.supplier_name.strip() and b.supplier_name.strip() != (doc.supplier_name or ""):
+            doc.supplier_name = b.supplier_name.strip()
+        sup_repo = SupplierRepository(session, tenant_id)
+        existing_sup = await sup_repo.find_by_name_exact(name)
+        if existing_sup is None:
+            await sup_repo.create(
+                supplier_id=uuid.uuid4().hex,
+                name=name,
+                email=(b.supplier_email.strip() if b.supplier_email else None),
+                location=(b.supplier_location.strip() if b.supplier_location else None),
+                relationship="active",
+            )
+        else:
+            sup_updates: dict[str, Any] = {"relationship": "active"}
+            if b.supplier_email and b.supplier_email.strip():
+                sup_updates["email"] = b.supplier_email.strip()
+            if b.supplier_location and b.supplier_location.strip():
+                sup_updates["location"] = b.supplier_location.strip()
+            await sup_repo.update(existing_sup.supplier_id, **sup_updates)
+
+    supplier_for_doc = name
 
     # Step 1: GPT-4o extraction — inline (one batch call, fast)
     extraction = await extract_rows(rows)
@@ -391,6 +456,11 @@ async def enrich_document(
                 sku=extracted.sku,
                 barcode=extracted.barcode,
                 enrichment_status="pending",
+                # Persist the extracted specs (incl. the supplier Quantity) so the
+                # worker can carry the orderable stock through web enrichment, and so
+                # available_qty is correct. Also seed the price currency.
+                specifications=dict(extracted.specifications) or None,
+                currency=(extracted.currency or "USD") if extracted.price is not None else None,
                 price_history=[price_entry] if price_entry else [],
             )
             result = await product_repo.upsert(product)
@@ -398,6 +468,13 @@ async def enrich_document(
             # Already exists — update price history if new price
             if price_entry and existing.price_history is not None:
                 existing.price_history = [*existing.price_history, price_entry]
+            # Carry the latest supplier quantity into the existing product's specs
+            existing_specs = dict(existing.specifications or {})
+            for k, v in (extracted.specifications or {}).items():
+                if re.search(r"qty|quantit|stock|available|on.?hand", k, re.IGNORECASE):
+                    existing_specs[k] = v
+            if existing_specs:
+                existing.specifications = existing_specs
             result = existing
 
         # Tag with this sheet's supplier (per-supplier catalogues). A product that
@@ -656,6 +733,57 @@ async def edit_product(
 
 
 @router.post(
+    "/products/{product_id}/image",
+    response_model=ProductCard,
+    summary="Upload a product image (drag-drop / browse) — stored in MinIO",
+)
+async def upload_product_image(
+    product_id: str,
+    file: UploadFile,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> ProductCard:
+    """Accept an image file from the Edit modal, store it in MinIO under
+    {tenant}/images/{uuid}.{ext}, point the product at it, and return the updated
+    card with a freshly presigned image_url."""
+    tenant_id = current_user.tenant_id
+    product_repo = ProductRepository(session, tenant_id)
+    product = await product_repo.get_by_id(product_id)
+    if product is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found.")
+
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Empty image.")
+    content_type = (file.content_type or "").lower()
+    if not content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="File must be an image (PNG, JPG, WEBP…).",
+        )
+
+    ext = {"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/gif": "gif"}.get(
+        content_type, "png"
+    )
+    from app.infra.storage.minio import upload_image  # noqa: PLC0415
+
+    object_name = f"images/{uuid.uuid4().hex}.{ext}"
+    try:
+        path = await upload_image(tenant_id, object_name, data)
+    except Exception as exc:  # noqa: BLE001
+        logger.error("product_image_upload_failed", product_id=product_id, error=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Image storage is unavailable right now.",
+        ) from exc
+
+    product.image_path = path
+    await session.commit()
+    logger.info("product_image_uploaded", product_id=product_id, path=path)
+    return await _to_card(tenant_id, product)
+
+
+@router.post(
     "/products/{product_id}/approve",
     summary="Approve a needs_review product — mark it enriched and index it",
 )
@@ -733,8 +861,8 @@ async def ask_about_product(
     if product is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found.")
 
-    from app.core.config import get_settings  # noqa: PLC0415
     from app.core.catalog.enrichment_pipeline import WebFetcher  # noqa: PLC0415
+    from app.core.config import get_settings  # noqa: PLC0415
     from app.infra.llm.openai import chat_completion  # noqa: PLC0415
     from app.infra.secrets.vault import get_secrets  # noqa: PLC0415
 
@@ -768,22 +896,37 @@ async def ask_about_product(
     }
     import json as _json  # noqa: PLC0415
 
+    product_label = f"{product.product_name}" + (f" (model {product.sku})" if product.sku else "")
     answer = await chat_completion(
         messages=[
             {
                 "role": "system",
                 "content": (
-                    "You are a product research assistant for an importer. Answer the user's "
-                    "question about this specific product using the provided product data and "
-                    "web research. Be concrete and concise. If you are unsure, say so plainly."
+                    f"You are a product research assistant for an importer. You are answering "
+                    f"ONLY about this one specific product: {product_label}. Use the provided "
+                    f"product data and web research for THIS exact model — do not answer about a "
+                    f"different model or a generic category. Begin your answer by naming the model "
+                    f"so it is unambiguous. Be concrete and concise. If the data does not contain "
+                    f"the answer for this exact model, say so plainly rather than guessing."
                 ),
             },
-            {"role": "user", "content": f"Question: {body.question}\n\nProduct data:\n{_json.dumps(context, ensure_ascii=False)}"},
+            {
+                "role": "user",
+                "content": (
+                    f"Product: {product_label}\nQuestion: {body.question}\n\n"
+                    f"Product data (authoritative for this model):\n{_json.dumps(context, ensure_ascii=False)}"
+                ),
+            },
         ],
         temperature=0.2,
         max_tokens=400,
     )
     # de-dup sources by url
     seen: set[str] = set()
-    uniq = [s for s in sources if s.get("url") and not (s["url"] in seen or seen.add(s["url"]))]
+    uniq: list[dict[str, str]] = []
+    for s in sources:
+        s_url = s.get("url")
+        if s_url and s_url not in seen:
+            seen.add(s_url)
+            uniq.append(s)
     return AskProductResponse(product_id=product_id, answer=answer.strip(), sources=uniq[:6])

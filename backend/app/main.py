@@ -23,6 +23,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import (
     admin,
+    assistant,
     auth,
     catalog,
     chat,
@@ -30,6 +31,8 @@ from app.api import (
     dunning,
     hitl,
     invoices,
+    network,
+    notifications,
     procurement,
     search,
     storefront,
@@ -111,6 +114,9 @@ def create_app() -> FastAPI:
         suppliers.router,
         customers.router,
         hitl.router,
+        network.router,
+        notifications.router,
+        assistant.router,
         search.router,
         chat.router,
         storefront.router,

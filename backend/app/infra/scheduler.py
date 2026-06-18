@@ -115,10 +115,123 @@ async def _run_track4() -> None:
             )
 
 
+async def _run_network_refresh() -> None:
+    """Each morning, keep the Supplier Network map fresh: geocode any saved/discovered
+    suppliers that still lack coordinates so they appear as real map pins. Best-effort
+    per tenant — one failure never blocks others."""
+    from sqlalchemy import select  # noqa: PLC0415
+
+    from app.infra.db.models.supplier import Supplier  # noqa: PLC0415
+    from app.infra.db.repos.tenant_repo import TenantRepo  # noqa: PLC0415
+    from app.infra.db.session import get_session_factory  # noqa: PLC0415
+    from app.infra.geo.geocode import geocode  # noqa: PLC0415
+
+    factory = get_session_factory()
+    async with factory() as session:
+        tenant_ids = await TenantRepo(session).list_active_tenant_ids()
+
+    for tenant_id in tenant_ids:
+        try:
+            async with factory() as session, session.begin():
+                rows = (
+                    await session.execute(
+                        select(Supplier).where(
+                            Supplier.tenant_id == tenant_id,
+                            Supplier.latitude.is_(None),
+                            Supplier.location.is_not(None),
+                        )
+                    )
+                ).scalars().all()
+                geocoded = 0
+                for s in rows:
+                    coords = await geocode(s.location)
+                    if coords:
+                        s.latitude, s.longitude = coords
+                        s.region = s.region or "europe"
+                        geocoded += 1
+                # Logo agent: fill missing logos from websites (cheap, reliable).
+                logo_rows = (
+                    await session.execute(
+                        select(Supplier).where(
+                            Supplier.tenant_id == tenant_id,
+                            Supplier.logo_url.is_(None),
+                            Supplier.website.is_not(None),
+                        )
+                    )
+                ).scalars().all()
+                logos = 0
+                for s in logo_rows:
+                    dom = (s.website or "").replace("https://", "").replace("http://", "").split("/")[0]
+                    if dom:
+                        s.logo_url = f"https://logo.clearbit.com/{dom}"
+                        logos += 1
+                _log.info("scheduler_network_refresh", extra={"tenant_id": tenant_id, "geocoded": geocoded, "logos": logos})
+        except Exception as exc:
+            _log.error("scheduler_network_refresh_error", extra={"tenant_id": tenant_id, "error": str(exc)})
+
+
+async def _run_arrival_check() -> None:
+    """Each morning, notify on shipments arriving within the next 3 days so the importer
+    can be ready to receive the container."""
+    from datetime import timedelta  # noqa: PLC0415
+
+    from sqlalchemy import select  # noqa: PLC0415
+
+    from app.infra.db.models.order import Shipment  # noqa: PLC0415
+    from app.infra.db.repos.notification_repo import record_event  # noqa: PLC0415
+    from app.infra.db.repos.tenant_repo import TenantRepo  # noqa: PLC0415
+    from app.infra.db.session import get_session_factory  # noqa: PLC0415
+
+    today = date.today()
+    soon = today + timedelta(days=3)
+    factory = get_session_factory()
+    async with factory() as session:
+        tenant_ids = await TenantRepo(session).list_active_tenant_ids()
+    for tenant_id in tenant_ids:
+        try:
+            async with factory() as session, session.begin():
+                rows = (
+                    await session.execute(
+                        select(Shipment).where(
+                            Shipment.tenant_id == tenant_id,
+                            Shipment.expected_arrival_date.is_not(None),
+                            Shipment.expected_arrival_date <= soon,
+                            Shipment.status != "arrived",
+                        )
+                    )
+                ).scalars().all()
+                for s in rows:
+                    await record_event(
+                        session, tenant_id, kind="arrival_due",
+                        title="Container arriving soon",
+                        body=f"A shipment is due by {s.expected_arrival_date}. Get ready to receive it.",
+                        link="/inventory/shipments",
+                    )
+        except Exception as exc:
+            _log.error("scheduler_arrival_check_error", extra={"tenant_id": tenant_id, "error": str(exc)})
+
+
 def start_scheduler() -> None:
     """Start the APScheduler. Called from app lifespan startup."""
     global _scheduler
     _scheduler = _make_scheduler()
+
+    _scheduler.add_job(
+        _run_network_refresh,
+        CronTrigger(hour=6, minute=30),
+        id="network_refresh_daily",
+        replace_existing=True,
+        max_instances=1,
+        misfire_grace_time=3600,
+    )
+    _scheduler.add_job(
+        _run_arrival_check,
+        CronTrigger(hour=6, minute=45),
+        id="arrival_check_daily",
+        replace_existing=True,
+        max_instances=1,
+        misfire_grace_time=3600,
+    )
 
     _scheduler.add_job(
         _run_track1,
@@ -146,7 +259,7 @@ def start_scheduler() -> None:
     )
 
     _scheduler.start()
-    logger.info("dunning_scheduler_started", jobs=3)
+    logger.info("dunning_scheduler_started", jobs=4)
 
 
 def stop_scheduler() -> None:

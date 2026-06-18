@@ -14,6 +14,7 @@ HITL:     None — enrichment is internal.
 from __future__ import annotations
 
 import os
+import re
 
 import structlog
 from arq.connections import ArqRedis, RedisSettings
@@ -81,7 +82,14 @@ async def enrich_product(
         )
 
         product.description = enriched.description or None
-        product.specifications = enriched.specifications or None
+        # Web enrichment rewrites the spec sheet — but the supplier's available
+        # quantity (and internal code) come from the uploaded sheet and the web does
+        # not know them. Carry them across so the order flow keeps a real stock cap.
+        final_specs: dict[str, str] = dict(enriched.specifications or {})
+        for key, value in existing_specs.items():
+            if re.search(r"qty|quantit|stock|available|on.?hand|supplier code", key, re.IGNORECASE):
+                final_specs[key] = value
+        product.specifications = final_specs or None
         product.image_path = enriched.image_url or product.image_path
         product.source_urls = enriched.source_urls or product.source_urls
         product.enrichment_source = enriched.enrichment_source
@@ -106,6 +114,24 @@ async def enrich_product(
             await outbox_repo.create(
                 event_type="embedding_requested",
                 payload={"product_id": product_id, "tenant_id": tenant_id},
+            )
+
+        # Log a real activity event (best-effort, same transaction).
+        from app.infra.db.repos.notification_repo import record_event  # noqa: PLC0415
+
+        if product.enrichment_status == "needs_review":
+            await record_event(
+                session, tenant_id, kind="needs_review",
+                title="Product needs review",
+                body=f"'{product.product_name}' couldn't be auto-confirmed.",
+                link="/needs-review",
+            )
+        else:
+            await record_event(
+                session, tenant_id, kind="enrichment_done",
+                title="Product enriched",
+                body=f"'{product.product_name}' is ready in your catalogue.",
+                link="/catalog",
             )
 
         await session.flush()

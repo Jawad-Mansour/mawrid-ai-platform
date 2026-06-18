@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import { MessageCircle, X, Send, Sparkles } from "lucide-react";
 import { apiPost, apiErr } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import type { ChatResponse } from "@/lib/types";
 import { Spinner } from "@/components/ui";
 
 interface Msg {
@@ -47,11 +46,8 @@ export function Chatbot() {
     setQ("");
     setBusy(true);
     try {
-      const r = await apiPost<ChatResponse>("/chat/admin", { query, session_id: sessionId.current });
-      setMsgs((m) => [
-        ...m,
-        { role: "bot", text: r.answer, meta: { route: r.route, intent: r.intent, sources: r.sources?.length } },
-      ]);
+      const r = await apiPost<{ answer: string }>("/assistant/chat", { role: "command_center", message: query, lang: "en" });
+      setMsgs((m) => [...m, { role: "bot", text: r.answer }]);
     } catch (e) {
       setMsgs((m) => [...m, { role: "bot", text: apiErr(e, "I couldn't reach the assistant.") }]);
     } finally {

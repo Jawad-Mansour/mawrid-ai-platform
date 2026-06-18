@@ -100,6 +100,47 @@
   color-scheme: light;
 }
 
+[data-theme="crimson"] {
+  --bg: 22 12 16; --bg-soft: 30 16 22; --bg-card: rgba(30, 15, 21, 0.72);
+  --line: rgba(235, 90, 120, 0.16);
+  --accent: 235 84 110; --accent-soft: 250 140 162; --accent-deep: 196 52 82; --accent-rgb: 235 84 110;
+  --grape: 196 90 200; --grape-soft: 222 130 224;
+  --emerald: 52 168 110; --emerald-soft: 96 200 145;
+  --danger: 240 92 98; --warn: 232 168 70;
+  --ink: 246 230 234; --ink-soft: 196 160 170; --ink-faint: 140 104 114;
+  --globe-base-rgb: 70 30 42; --globe-glow-rgb: 54 24 34; --page: 22 12 16; color-scheme: dark;
+}
+[data-theme="ocean"] {
+  --bg: 8 20 26; --bg-soft: 12 28 36; --bg-card: rgba(11, 26, 34, 0.72);
+  --line: rgba(56, 189, 198, 0.16);
+  --accent: 56 189 198; --accent-soft: 120 224 230; --accent-deep: 30 140 150; --accent-rgb: 56 189 198;
+  --grape: 110 130 245; --grape-soft: 150 165 255;
+  --emerald: 46 178 132; --emerald-soft: 96 210 162;
+  --danger: 240 92 98; --warn: 232 172 70;
+  --ink: 224 240 244; --ink-soft: 150 185 192; --ink-faint: 92 128 136;
+  --globe-base-rgb: 24 60 72; --globe-glow-rgb: 18 46 56; --page: 8 20 26; color-scheme: dark;
+}
+[data-theme="violet"] {
+  --bg: 16 12 26; --bg-soft: 22 17 36; --bg-card: rgba(22, 16, 36, 0.72);
+  --line: rgba(167, 110, 255, 0.18);
+  --accent: 167 110 255; --accent-soft: 198 158 255; --accent-deep: 128 78 214; --accent-rgb: 167 110 255;
+  --grape: 224 110 200; --grape-soft: 240 150 224;
+  --emerald: 52 168 124; --emerald-soft: 100 205 160;
+  --danger: 240 92 110; --warn: 232 172 70;
+  --ink: 236 230 248; --ink-soft: 178 168 200; --ink-faint: 120 110 145;
+  --globe-base-rgb: 46 36 78; --globe-glow-rgb: 36 28 62; --page: 16 12 26; color-scheme: dark;
+}
+[data-theme="slate"] {
+  --bg: 14 17 22; --bg-soft: 20 24 31; --bg-card: rgba(20, 24, 31, 0.74);
+  --line: rgba(148, 163, 184, 0.16);
+  --accent: 148 163 184; --accent-soft: 192 202 216; --accent-deep: 100 116 139; --accent-rgb: 148 163 184;
+  --grape: 130 140 235; --grape-soft: 165 175 250;
+  --emerald: 52 168 124; --emerald-soft: 100 205 160;
+  --danger: 240 92 98; --warn: 226 168 70;
+  --ink: 232 236 242; --ink-soft: 158 168 184; --ink-faint: 104 114 130;
+  --globe-base-rgb: 40 48 60; --globe-glow-rgb: 30 36 46; --page: 14 17 22; color-scheme: dark;
+}
+
 /* Light theme: the dark-tuned white/black overlay utilities need to flip so
    cards, inputs and hovers stay legible on a bright canvas. */
 [data-theme="light"] .input { background: rgba(20, 40, 80, 0.04); }
@@ -158,3 +199,12 @@ body {
 .font-600 { font-weight: 600; }
 .font-700 { font-weight: 700; }
 .font-800 { font-weight: 800; }
+
+/* Supplier carousels — slow auto-scroll that pauses on hover so cards are easy to read & select */
+@keyframes mawrid-marquee-left { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes mawrid-marquee-right { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+.marquee-track { display: flex; gap: 0.75rem; width: max-content; animation-duration: 90s; animation-timing-function: linear; animation-iteration-count: infinite; will-change: transform; }
+.marquee-left { animation-name: mawrid-marquee-left; }
+.marquee-right { animation-name: mawrid-marquee-right; }
+.marquee-wrap:hover .marquee-track { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .marquee-track { animation: none; } }

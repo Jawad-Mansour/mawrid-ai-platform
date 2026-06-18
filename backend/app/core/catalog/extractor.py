@@ -59,16 +59,28 @@ Rules:
    column labelled "Description", "Model", "MPN" or similar even when the header says
    something else.
 3. barcode = 12-13 digit EAN/UPC only (never the model code).
-4. Normalise any other useful columns to English keys in specifications.
-5. Price is a number only; currency goes in the currency field.
-6. If a row truly has no identifiable product, set product_name=null + _failure_reason.
-7. Return ONLY a valid JSON array — no markdown fences, no extra text.
+4. price = the SUPPLIER'S unit price from the sheet, as a plain number (no currency
+   symbol, no thousands separators). Price columns are labelled many ways across
+   languages: "Price", "Unit Price", "Cost", "PU", "Prix", "Prix Unitaire", "Tarif",
+   "السعر", "ثمن", "Importo", "Precio". If several prices exist (e.g. cost vs RRP),
+   pick the supplier/cost price. If no price is present, use null.
+5. currency = the 3-letter ISO code for that price ("USD", "EUR", "LBP", "AED"…).
+   Infer from a currency symbol ($ → USD, € → EUR, £ → GBP) or a currency column.
+6. ALWAYS capture the available quantity / stock the supplier is offering into
+   specifications under the EXACT English key "Quantity", as a plain integer string.
+   Quantity columns are labelled "QTY", "Qty", "Stock", "Available", "On Hand",
+   "Quantité", "الكمية", "المخزون", "Cantidad". This is what the importer can order.
+7. Normalise any OTHER useful columns to English keys in specifications (Color, Material,
+   Size, Capacity, Power, Dimensions, Weight, etc.) — these power search and the card.
+   Record colour/finish verbatim if given (e.g. "Silver", "Inox", "Anthracite").
+8. If a row truly has no identifiable product, set product_name=null + _failure_reason.
+9. Return ONLY a valid JSON array — no markdown fences, no extra text.
 
 Worked example — input row:
-  {"Product Line":"WASHING","Product Code":"31011482","Product Description":"ROW41066DWMCZ-19","Brand":"CANDY","Product":"WASHING MACHINE","QTY":"272"}
+  {"Product Line":"WASHING","Product Code":"31011482","Product Description":"ROW41066DWMCZ-19","Brand":"CANDY","Product":"WASHING MACHINE","Color":"Silver","Prix":"389.00","QTY":"272"}
 Correct output element:
-  {"product_name":"Candy Washing Machine ROW41066DWMCZ-19","sku":"ROW41066DWMCZ-19","barcode":null,"price":null,"currency":null,
-   "specifications":{"Brand":"Candy","Type":"Washing Machine","Supplier Code":"31011482","Quantity":"272"},"_row_index":0,"_failure_reason":null}
+  {"product_name":"Candy Washing Machine ROW41066DWMCZ-19","sku":"ROW41066DWMCZ-19","barcode":null,"price":389.0,"currency":"USD",
+   "specifications":{"Brand":"Candy","Type":"Washing Machine","Color":"Silver","Supplier Code":"31011482","Quantity":"272"},"_row_index":0,"_failure_reason":null}
 """
 
 

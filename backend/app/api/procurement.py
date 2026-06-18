@@ -13,6 +13,7 @@ HITL:     purchase_order_send, dispute_letter
 
 from __future__ import annotations
 
+import contextlib
 import uuid
 from datetime import UTC, date, datetime
 from typing import Any
@@ -20,7 +21,7 @@ from typing import Any
 import structlog
 import yaml
 from fastapi import APIRouter, HTTPException, Response, status
-from sqlalchemy import update
+from sqlalchemy import func, update
 
 from app.api.deps import CurrentUser, SessionDep
 from app.api.schemas import StrictModel
@@ -61,6 +62,11 @@ async def _draft_po_text(
     notes: str | None,
 ) -> str:
     """Generate PO document text via GPT-4o using purchase_order.yaml template."""
+    items_summary = ", ".join(
+        f"{int(it.get('quantity', 0))}× {it.get('product_name', '')}"
+        f" ({it.get('sku') or 'no code'})"
+        for it in line_items
+    )
     try:
         prompt_data = _load_prompt("purchase_order")
         system_prompt = prompt_data.get("system", "You are a procurement specialist.").format(
@@ -72,16 +78,22 @@ async def _draft_po_text(
             tenant_name=tenant_name,
             po_number=po_number,
             date=date.today().isoformat(),
-            line_items_json=str(line_items),
+            line_items_json=items_summary or str(line_items),
             payment_terms="NET 30",
-            delivery_address="",
+            delivery_address=delivery_date or "at your earliest convenience",
             notes=notes or "",
         )
     except Exception:
-        system_prompt = f"You are a procurement specialist. Language: {language}."
+        system_prompt = (
+            f"You are a procurement officer writing a formal purchase-request email "
+            f"to a supplier. Language: {language}."
+        )
         user_prompt = (
-            f"Draft a purchase order for {supplier_name}. PO #{po_number}. "
-            f"Items: {line_items}. Delivery by: {delivery_date or 'TBD'}."
+            f"Write a short, formal email to {supplier_name} opening with "
+            f"'Dear {supplier_name},' requesting to place purchase order {po_number}. "
+            f"Items: {items_summary}. Say the full codes & quantities are in the attached "
+            f"spreadsheet and ask them to confirm availability, prices and lead time. "
+            f"Sign off as {tenant_name}. Output only the email body."
         )
 
     text = await chat_completion(
@@ -95,7 +107,11 @@ async def _draft_po_text(
     import re  # noqa: PLC0415
 
     # Strip any markdown code fences the model may wrap the letter in.
-    return re.sub(r"^```[a-zA-Z]*\s*|\s*```$", "", text.strip()).strip()
+    body = re.sub(r"^```[a-zA-Z]*\s*|\s*```$", "", text.strip()).strip()
+    # Guarantee a formal salutation addressing the company, even if the model omits it.
+    if not re.match(r"^\s*(dear|hello|hi|to whom|bonjour|cher|عزيز|السلام)", body, re.IGNORECASE):
+        body = f"Dear {supplier_name},\n\n{body}"
+    return body
 
 
 # ── Order Drafts ───────────────────────────────────────────────────────────────
@@ -333,6 +349,36 @@ async def download_order_excel(
     )
 
 
+class OrderExcelRequest(StrictModel):
+    line_items: list[DraftLineItem]
+    supplier_name: str = "Supplier"
+    po_number: str = "ORDER"
+    currency: str = "USD"
+
+
+@router.post(
+    "/order-excel",
+    summary="Build the order spreadsheet from the (possibly edited) line items",
+)
+async def build_order_excel(
+    body: OrderExcelRequest,
+    current_user: CurrentUser,
+) -> Response:
+    """Render the order Excel on demand from whatever line items the review screen
+    currently shows — so edits to quantity/price are reflected in the download."""
+    xlsx = _order_excel(
+        [it.model_dump() for it in body.line_items],
+        body.supplier_name,
+        body.po_number,
+        body.currency,
+    )
+    return Response(
+        content=xlsx,
+        media_type=_XLSX_MIME,
+        headers={"Content-Disposition": f'attachment; filename="{body.po_number}.xlsx"'},
+    )
+
+
 @router.post(
     "/orders/{order_id}/submit",
     summary="Submit an order draft (locks it — no more edits)",
@@ -390,6 +436,10 @@ async def place_order(
     if supplier is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Supplier not found.")
 
+    # Placing an order means we now do business with them → active relationship.
+    if getattr(supplier, "relationship", "active") != "active":
+        await supplier_repo.update(draft.supplier_id, relationship="active")
+
     po_id = uuid.uuid4().hex
     po_number = f"PO-{datetime.now(UTC).strftime('%Y%m%d')}-{po_id[:6].upper()}"
 
@@ -398,9 +448,17 @@ async def place_order(
         int(item.get("quantity", 0)) * float(item.get("unit_price", 0)) for item in line_items
     )
 
+    # Friendly company name for the signature (fall back to the id if missing).
+    tenant_name = tenant_id
+    from app.infra.db.models.tenant import Tenant  # noqa: PLC0415
+
+    tenant_row = await session.get(Tenant, tenant_id)
+    if tenant_row is not None and tenant_row.name:
+        tenant_name = tenant_row.name
+
     po_text = await _draft_po_text(
         supplier_name=supplier.name,
-        tenant_name=tenant_id,
+        tenant_name=tenant_name,
         po_number=po_number,
         line_items=line_items,
         delivery_date=str(draft.desired_delivery_date) if draft.desired_delivery_date else None,
@@ -422,6 +480,7 @@ async def place_order(
             "po_id": po_id,
             "po_number": po_number,
             "order_id": order_id,
+            "supplier_id": draft.supplier_id,
             "supplier_name": supplier.name,
             "to": supplier.email or "",
             "subject": f"Purchase Order {po_number}",
@@ -452,6 +511,15 @@ async def place_order(
     )
 
     await order_repo.set_draft_status(order_id, "pending_hitl")
+
+    from app.infra.db.repos.notification_repo import record_event  # noqa: PLC0415
+
+    await record_event(
+        session, tenant_id, kind="order_created",
+        title="Order created",
+        body=f"{po_number} for {supplier.name} is drafted — review & send it.",
+        link="/purchase-orders",
+    )
     await session.commit()
 
     logger.info("purchase_order_created", po_id=po_id, hitl_action_id=hitl_action_id)
@@ -517,6 +585,8 @@ class PODetailResponse(StrictModel):
     currency: str
     po_text: str | None
     line_items: list[Any]
+    hitl_action_id: str | None
+    arrival_date: str | None
     sent_at: str | None
     created_at: str
     messages: list[dict[str, Any]]
@@ -549,6 +619,8 @@ async def get_purchase_order(
         currency=po.currency,
         po_text=po.po_text,
         line_items=po.line_items or [],
+        hitl_action_id=po.hitl_action_id,
+        arrival_date=str(po.requested_delivery_date) if po.requested_delivery_date else None,
         sent_at=str(po.sent_at) if po.sent_at else None,
         created_at=str(po.created_at),
         messages=po.messages or [],
@@ -585,6 +657,15 @@ async def log_po_message(
     )
     if body.direction == "inbound":
         await order_repo.set_po_status(po_id, "replied")
+        po = await order_repo.get_po_by_id(po_id)
+        from app.infra.db.repos.notification_repo import record_event  # noqa: PLC0415
+
+        await record_event(
+            session, current_user.tenant_id, kind="supplier_reply",
+            title="Supplier replied",
+            body=f"A reply was logged on {po.po_number if po else 'a purchase order'}.",
+            link=f"/purchase-orders/{po_id}",
+        )
     await session.commit()
     return {"po_id": po_id, "status": "logged"}
 
@@ -677,6 +758,83 @@ async def send_po_reply(
     await session.commit()
     logger.info("po_reply_sent", po_id=po_id)
     return {"po_id": po_id, "status": "sent"}
+
+
+class UpdatePORequest(StrictModel):
+    line_items: list[DraftLineItem] | None = None
+    agreed_delivery_date: str | None = None
+    status: str | None = None  # e.g. "confirmed", "cancelled"
+    note: str | None = None
+
+
+@router.patch(
+    "/purchase-orders/{po_id}",
+    response_model=PODetailResponse,
+    summary="Act on a PO after a supplier reply — adjust items, confirm ETA, set status",
+)
+async def update_purchase_order(
+    po_id: str,
+    body: UpdatePORequest,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> PODetailResponse:
+    """After a supplier replies, the importer can revise the order: change or remove
+    line items (total recomputed), confirm an agreed delivery/container date, or set
+    the status (e.g. confirmed). Every change is logged to the thread."""
+    order_repo = OrderRepository(session, current_user.tenant_id)
+    po = await order_repo.get_po_by_id(po_id)
+    if po is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Purchase order not found.")
+
+    changes: list[str] = []
+    if body.line_items is not None:
+        lines = [it.model_dump() for it in body.line_items]
+        po.line_items = lines
+        po.total_amount = sum(
+            int(it.get("quantity", 0) or 0) * float(it.get("unit_price", 0) or 0) for it in lines
+        )
+        changes.append(f"items updated ({len(lines)} line(s), new total {po.total_amount} {po.currency})")
+    if body.agreed_delivery_date:
+        import contextlib  # noqa: PLC0415
+
+        with contextlib.suppress(ValueError):
+            po.requested_delivery_date = date.fromisoformat(body.agreed_delivery_date[:10])  # type: ignore[assignment]
+        changes.append(f"delivery/container date confirmed for {body.agreed_delivery_date}")
+    if body.status:
+        po.status = body.status
+        changes.append(f"status set to {body.status}")
+
+    summary = body.note or ("; ".join(changes) if changes else "order reviewed")
+    await order_repo.append_po_message(
+        po_id,
+        {
+            "direction": "system",
+            "sender": "You",
+            "body": f"Order updated: {summary}.",
+            "at": datetime.now(UTC).isoformat(),
+        },
+    )
+    await session.commit()
+
+    sup = await SupplierRepository(session, current_user.tenant_id).get_by_id(po.supplier_id)
+    logger.info("po_updated", po_id=po_id, changes=changes)
+    return PODetailResponse(
+        po_id=po.po_id,
+        po_number=po.po_number,
+        supplier_id=po.supplier_id,
+        supplier_name=sup.name if sup else None,
+        supplier_email=sup.email if sup else None,
+        status=po.status,
+        total_amount=float(po.total_amount) if po.total_amount is not None else None,
+        currency=po.currency,
+        po_text=po.po_text,
+        line_items=po.line_items or [],
+        hitl_action_id=po.hitl_action_id,
+        arrival_date=str(po.requested_delivery_date) if po.requested_delivery_date else None,
+        sent_at=str(po.sent_at) if po.sent_at else None,
+        created_at=str(po.created_at),
+        messages=po.messages or [],
+    )
 
 
 # ── Shipments ──────────────────────────────────────────────────────────────────
@@ -919,6 +1077,247 @@ async def receive_goods(
         damage_detected=result.damage_detected,
         stock_updates=stock_updates,
     )
+
+
+# ── Goods-Received report + Stock / Restock (Inventory) ─────────────────────────
+
+
+async def _build_receipt(session: Any, tenant_id: str, shipment: Any) -> Any:
+    """Assemble a ReceiptData from a shipment → its PO (ordered) + receiving record."""
+    from app.infra.documents.receipt_pdf import ReceiptData, ReceiptLine  # noqa: PLC0415
+
+    order_repo = OrderRepository(session, tenant_id)
+    supplier_repo = SupplierRepository(session, tenant_id)
+    shipment_repo = ShipmentRepository(session, tenant_id)
+
+    po = await order_repo.get_po_by_id(shipment.po_id) if shipment.po_id else None
+    ordered = {str(li.get("product_id")): li for li in (po.line_items if po else []) or []}
+    receiving = await shipment_repo.get_receiving(shipment.shipment_id)
+    received_map = {str(it.get("product_id")): it for it in (receiving.line_items if receiving else []) or []}
+    sup = await supplier_repo.get_by_id(po.supplier_id) if po else None
+
+    tenant_name = tenant_id
+    from app.infra.db.models.tenant import Tenant  # noqa: PLC0415
+
+    tr = await session.get(Tenant, tenant_id)
+    if tr and tr.name:
+        tenant_name = tr.name
+
+    lines: list[Any] = []
+    for pid, oli in ordered.items():
+        rec = received_map.get(pid, {})
+        lines.append(ReceiptLine(
+            product_name=str(oli.get("product_name", "")), sku=str(oli.get("sku") or ""),
+            ordered=int(oli.get("quantity", 0) or 0),
+            received=int(rec.get("qty_received", 0) or 0), damaged=int(rec.get("qty_damaged", 0) or 0),
+        ))
+    return ReceiptData(
+        po_number=po.po_number if po else shipment.shipment_id[:8].upper(),
+        supplier_name=sup.name if sup else "Supplier", tenant_name=tenant_name,
+        received_on=date.today(), carrier=shipment.carrier or "", container=shipment.tracking_number or "",
+        lines=lines, notes=(receiving.notes if receiving else "") or "",
+    ), (sup, po)
+
+
+@router.get("/shipments/{shipment_id}/receipt-pdf", summary="Download the goods-received report PDF")
+async def shipment_receipt_pdf(
+    shipment_id: str, current_user: CurrentUser, session: SessionDep
+) -> Response:
+    from app.infra.documents.receipt_pdf import generate_receipt_pdf  # noqa: PLC0415
+
+    shipment_repo = ShipmentRepository(session, current_user.tenant_id)
+    shipment = await shipment_repo.get_by_id(shipment_id)
+    if shipment is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shipment not found.")
+    data, _ = await _build_receipt(session, current_user.tenant_id, shipment)
+    pdf = generate_receipt_pdf(data)
+    return Response(content=pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="receipt-{data.po_number}.pdf"'})
+
+
+@router.post("/shipments/{shipment_id}/receipt-email", summary="Email the goods-received report to the supplier")
+async def shipment_receipt_email(
+    shipment_id: str, current_user: CurrentUser, session: SessionDep
+) -> dict[str, str]:
+    from app.infra.documents.receipt_pdf import generate_receipt_pdf  # noqa: PLC0415
+    from app.infra.email.sender import send_email  # noqa: PLC0415
+
+    shipment_repo = ShipmentRepository(session, current_user.tenant_id)
+    shipment = await shipment_repo.get_by_id(shipment_id)
+    if shipment is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shipment not found.")
+    data, (sup, po) = await _build_receipt(session, current_user.tenant_id, shipment)
+    if sup is None or not sup.email:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Supplier has no email on file.")
+    pdf = generate_receipt_pdf(data)
+    good = data.all_good
+    subject = f"Goods received — {data.po_number}" + ("" if good else " (discrepancies noted)")
+    body = (
+        f"Dear {sup.name},\n\nWe have received the goods for {data.po_number}. "
+        + ("Everything arrived in full and in good condition — thank you for the smooth delivery.\n\n"
+           if good else
+           "We found some discrepancies/damage (detailed in the attached report) and may follow up with a formal claim.\n\n")
+        + f"Please find the goods-received report attached.\n\nBest regards,\n{data.tenant_name}"
+    )
+    await send_email(to=sup.email, subject=subject, body=body, attachment_bytes=pdf,
+                     attachment_filename=f"receipt-{data.po_number}.pdf", attachment_mime="application/pdf")
+    from app.infra.db.repos.notification_repo import record_event  # noqa: PLC0415
+
+    await record_event(session, current_user.tenant_id, kind="receipt_sent",
+                       title="Goods-received report sent",
+                       body=f"Report for {data.po_number} emailed to {sup.name}.", link="/inventory/receive")
+    await session.commit()
+    return {"status": "sent", "outcome": "good" if good else "discrepancy"}
+
+
+class LowStockItem(StrictModel):
+    product_id: str
+    product_name: str
+    sku: str | None
+    qty_in_stock: int
+    reorder_threshold: int | None
+    supplier_name: str | None
+    price: float | None
+    currency: str | None
+
+
+@router.get("/stock/low", response_model=list[LowStockItem], summary="Products at/below their reorder point")
+async def low_stock(current_user: CurrentUser, session: SessionDep) -> list[LowStockItem]:
+    from sqlalchemy import or_, select  # noqa: PLC0415
+
+    tenant_id = current_user.tenant_id
+    rows = (
+        await session.execute(
+            select(Product).where(
+                Product.tenant_id == tenant_id,
+                or_(
+                    Product.qty_in_stock <= func.coalesce(Product.reorder_threshold, 5),
+                ),
+                Product.inventory_status == "in_stock",
+            ).order_by(Product.qty_in_stock)
+        )
+    ).scalars().all()
+    out: list[LowStockItem] = []
+    for p in rows:
+        hist = p.price_history or []
+        price: float | None = None
+        if hist and isinstance(hist[-1], dict):
+            pv = hist[-1].get("price")
+            if pv is not None:
+                with contextlib.suppress(TypeError, ValueError):
+                    price = float(pv)
+        out.append(LowStockItem(
+            product_id=p.product_id, product_name=p.product_name, sku=p.sku,
+            qty_in_stock=p.qty_in_stock, reorder_threshold=p.reorder_threshold,
+            supplier_name=(p.supplier_names or [None])[0], price=price, currency=p.currency,
+        ))
+    return out
+
+
+class StockItem(StrictModel):
+    product_id: str
+    product_name: str
+    sku: str | None
+    qty_in_stock: int
+    storefront_qty: int
+    reorder_threshold: int | None
+    low: bool
+    supplier_name: str | None
+    price: float | None
+    currency: str | None
+
+
+@router.get("/stock", response_model=list[StockItem], summary="All in-stock products (with low-stock flag)")
+async def list_stock(current_user: CurrentUser, session: SessionDep) -> list[StockItem]:
+    from sqlalchemy import select  # noqa: PLC0415
+
+    rows = (
+        await session.execute(
+            select(Product).where(
+                Product.tenant_id == current_user.tenant_id, Product.qty_in_stock > 0
+            ).order_by(Product.qty_in_stock)
+        )
+    ).scalars().all()
+    out: list[StockItem] = []
+    for p in rows:
+        hist = p.price_history or []
+        price: float | None = None
+        if hist and isinstance(hist[-1], dict):
+            pv = hist[-1].get("price")
+            if pv is not None:
+                with contextlib.suppress(TypeError, ValueError):
+                    price = float(pv)
+        threshold = p.reorder_threshold
+        out.append(StockItem(
+            product_id=p.product_id, product_name=p.product_name, sku=p.sku,
+            qty_in_stock=p.qty_in_stock, storefront_qty=p.storefront_qty,
+            reorder_threshold=threshold, low=p.qty_in_stock <= (threshold if threshold is not None else 5),
+            supplier_name=(p.supplier_names or [None])[0], price=price, currency=p.currency,
+        ))
+    return out
+
+
+class ThresholdRequest(StrictModel):
+    reorder_threshold: int
+
+
+@router.post("/products/{product_id}/threshold", summary="Set a product's reorder (low-stock) threshold")
+async def set_threshold(
+    product_id: str, body: ThresholdRequest, current_user: CurrentUser, session: SessionDep
+) -> dict[str, str]:
+    await session.execute(
+        update(Product).where(
+            Product.tenant_id == current_user.tenant_id, Product.product_id == product_id
+        ).values(reorder_threshold=max(0, body.reorder_threshold))
+    )
+    await session.commit()
+    return {"status": "ok"}
+
+
+class RestockRequest(StrictModel):
+    quantity: int = 10
+    supplier_id: str | None = None
+
+
+@router.post("/products/{product_id}/restock", summary="Draft a restock PO to the product's supplier (HITL)")
+async def restock_product(
+    product_id: str, body: RestockRequest, current_user: CurrentUser, session: SessionDep
+) -> dict[str, str]:
+    from app.infra.db.repos.product_repo import ProductRepository  # noqa: PLC0415
+
+    tenant_id = current_user.tenant_id
+    product_repo = ProductRepository(session, tenant_id)
+    supplier_repo = SupplierRepository(session, tenant_id)
+    order_repo = OrderRepository(session, tenant_id)
+
+    product = await product_repo.get_by_id(product_id)
+    if product is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found.")
+    supplier = None
+    if body.supplier_id:
+        supplier = await supplier_repo.get_by_id(body.supplier_id)
+    if supplier is None:
+        names = product.supplier_names or []
+        if names:
+            supplier = await supplier_repo.find_by_name_exact(str(names[0]))
+    if supplier is None:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            detail="No source supplier on file for this product — pick one.")
+    hist = product.price_history or []
+    unit = 0.0
+    if hist and isinstance(hist[-1], dict) and hist[-1].get("price") is not None:
+        with contextlib.suppress(TypeError, ValueError):
+            unit = float(hist[-1]["price"])
+    draft = await order_repo.create_draft(
+        order_id=uuid.uuid4().hex, supplier_id=supplier.supplier_id,
+        line_items=[{"product_id": product_id, "product_name": product.product_name,
+                     "sku": product.sku, "quantity": max(1, body.quantity), "unit_price": unit,
+                     "currency": supplier.currency}],
+        notes=f"Restock — low stock ({product.qty_in_stock} left)",
+    )
+    await session.commit()
+    result = await place_order(draft.order_id, current_user, session)
+    return {"order_id": draft.order_id, "hitl_action_id": result.get("hitl_action_id", ""), "status": "drafted"}
 
 
 # ── Storefront Publishing ──────────────────────────────────────────────────────

@@ -19,7 +19,7 @@ from app.core.hitl.models import HITLStatus
 
 
 class _EmailSender(Protocol):
-    async def send(self, to: str, subject: str, body: str, **kwargs: Any) -> None: ...
+    async def send(self, to: str, subject: str, body: str, **kwargs: Any) -> str | None: ...
 
 
 @dataclass

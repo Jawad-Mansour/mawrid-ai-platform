@@ -1,11 +1,11 @@
 // Feature: Catalog — human edit of a product (fill/fix image, description, specs, price).
 // API:     PATCH /catalog/products/{id}
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Plus, Trash2, ImageOff, Save } from "lucide-react";
+import { X, Plus, Trash2, ImageOff, Save, UploadCloud, Link2 } from "lucide-react";
 import { toast } from "sonner";
-import { apiPatch, apiErr } from "@/lib/api";
+import { apiPatch, apiErr, apiUpload } from "@/lib/api";
 import { Spinner } from "@/components/ui";
 import type { Product } from "@/lib/types";
 
@@ -18,12 +18,35 @@ export function EditProductModal({ product, onClose }: { product: Product; onClo
   const [currency, setCurrency] = useState(product.currency ?? "USD");
   const [specs, setSpecs] = useState<[string, string][]>(Object.entries(product.specifications ?? {}).map(([k, v]) => [k, String(v)]));
   const [imgOk, setImgOk] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const [showUrl, setShowUrl] = useState(false);
+  const [urlEdited, setUrlEdited] = useState(false); // only PATCH image_url if the user typed one
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function uploadImage(file: File) {
+    if (!file.type.startsWith("image/")) { toast.error("Please choose an image file"); return; }
+    setUploading(true);
+    try {
+      const card = await apiUpload<Product>(`/catalog/products/${product.product_id}/image`, file);
+      setImage(card.image_url ?? "");
+      setImgOk(true);
+      qc.invalidateQueries({ queryKey: ["catalog"] });
+      toast.success("Image updated");
+    } catch (e) {
+      toast.error(apiErr(e, "Upload failed"));
+    } finally {
+      setUploading(false);
+    }
+  }
 
   const save = useMutation({
     mutationFn: () =>
       apiPatch(`/catalog/products/${product.product_id}`, {
         product_name: name,
-        image_url: image || null,
+        // uploaded images are already saved server-side (and their presigned URL
+        // expires) — only send image_url when the user pasted one manually.
+        ...(urlEdited ? { image_url: image || null } : {}),
         description: description || null,
         specifications: Object.fromEntries(specs.filter(([k]) => k.trim())),
         retail_price: price ? Number(price) : null,
@@ -45,14 +68,36 @@ export function EditProductModal({ product, onClose }: { product: Product; onClo
           <h2 className="mb-1 text-lg font-800 text-ink">Edit product</h2>
           <p className="mb-5 text-sm text-ink-soft">Fill in anything the AI missed — the image, description or specs.</p>
 
-          <div className="grid gap-5 sm:grid-cols-[160px_1fr]">
-            {/* image preview + url */}
+          <div className="grid gap-5 sm:grid-cols-[180px_1fr]">
+            {/* image: drop / browse / url */}
             <div>
-              <div className="grid aspect-square place-items-center overflow-hidden rounded-xl border border-line bg-white">
-                {image && imgOk ? <img src={image} alt="" className="h-full w-full object-contain p-2" onError={() => setImgOk(false)} /> : <ImageOff className="h-7 w-7 text-ink-faint/60" />}
+              <div
+                onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={(e) => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files?.[0]; if (f) uploadImage(f); }}
+                onClick={() => fileRef.current?.click()}
+                title="Drop an image, or click to browse"
+                className={`relative grid aspect-square cursor-pointer place-items-center overflow-hidden rounded-xl border-2 border-dashed transition-colors ${dragging ? "border-gold bg-gold/10" : "border-line bg-white"}`}
+              >
+                {uploading ? (
+                  <div className="flex flex-col items-center gap-2 text-ink-soft"><Spinner className="h-6 w-6" /><span className="text-[11px]">Uploading…</span></div>
+                ) : image && imgOk ? (
+                  <img src={image} alt="" className="h-full w-full object-contain p-2" onError={() => setImgOk(false)} />
+                ) : (
+                  <div className="flex flex-col items-center gap-1.5 text-ink-faint/70"><UploadCloud className="h-7 w-7" /><span className="px-2 text-center text-[11px]">Drop image or click to browse</span></div>
+                )}
+                {image && imgOk && !uploading && (
+                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 rounded-md bg-black/55 px-2 py-0.5 text-[10px] text-white">Click to replace</span>
+                )}
               </div>
-              <label className="label mt-2">Image URL</label>
-              <input className="input" placeholder="https://…/image.jpg" value={image} onChange={(e) => { setImage(e.target.value); setImgOk(true); }} />
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadImage(f); e.target.value = ""; }} />
+              <div className="mt-2 flex gap-2">
+                <button type="button" onClick={() => fileRef.current?.click()} className="btn-ghost flex-1 !py-1.5 text-xs"><UploadCloud className="h-3.5 w-3.5" /> Browse</button>
+                <button type="button" onClick={() => setShowUrl((s) => !s)} title="Paste an image URL" className={`grid h-8 w-9 place-items-center rounded-xl border text-xs ${showUrl ? "border-gold/50 bg-gold/10 text-gold-soft" : "border-line text-ink-soft hover:text-ink"}`}><Link2 className="h-3.5 w-3.5" /></button>
+              </div>
+              {showUrl && (
+                <input className="input mt-2 text-xs" placeholder="https://…/image.jpg" value={image} onChange={(e) => { setImage(e.target.value); setImgOk(true); setUrlEdited(true); }} />
+              )}
             </div>
 
             <div className="space-y-3">

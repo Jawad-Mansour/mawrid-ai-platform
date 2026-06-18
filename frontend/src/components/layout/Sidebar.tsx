@@ -7,7 +7,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   LayoutDashboard, CheckSquare, Boxes, ScanLine, ClipboardList,
   Store, Banknote, BrainCircuit, Settings, ChevronLeft, ChevronDown, Users, Sparkles, UploadCloud,
-  History, ShieldQuestion, LogOut, Bell, Palette, PackageCheck,
+  History, ShieldQuestion, LogOut, Bell, Palette, PackageCheck, MessagesSquare, Activity, Map, GitCompare,
+  Send, Mailbox, Search, Ship, ClipboardCheck, Warehouse, TrendingUp,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -35,12 +36,15 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
 
   const { data: summary } = useQuery({ queryKey: ["summary-bell"], queryFn: () => apiGet<DashboardSummary>("/admin/summary"), refetchInterval: 20_000 });
   const importantCount = (summary?.pending_hitl_count ?? 0) + (summary?.failed_enrichment ?? 0);
+  const { data: activity } = useQuery({ queryKey: ["activity-badge"], queryFn: () => apiGet<{ unread: number }>("/notifications?limit=1"), refetchInterval: 15_000 });
+  const unread = activity?.unread ?? 0;
 
   const sections: Section[] = [
     { title: "Main", items: [
       { to: "/", label: "Dashboard", icon: LayoutDashboard },
       { to: "/approvals", label: "HITL Approvals", icon: CheckSquare },
       { to: "/notifications", label: "Notifications", icon: Bell, badge: importantCount },
+      { to: "/activity", label: "Activity", icon: Activity, badge: unread },
     ]},
     { title: "Catalog", items: [
       { to: "/upload", label: "Upload Sheet", icon: UploadCloud },
@@ -52,10 +56,29 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
     { title: "Procurement", items: [
       { to: "/procurement", label: "Create Order", icon: ClipboardList },
       { to: "/purchase-orders", label: "Purchase Orders", icon: PackageCheck },
-      { to: "/suppliers", label: "Suppliers", icon: Users },
+      { to: "/supplier-replies", label: "Supplier Replies", icon: MessagesSquare },
+    ]},
+    { title: "Suppliers", items: [
+      { to: "/suppliers/network", label: "Network Map", icon: Map },
+      { to: "/suppliers/outreach", label: "Discover & Outreach", icon: Send },
+      { to: "/suppliers/inbox", label: "Outreach Inbox", icon: Mailbox },
+      { to: "/suppliers/compare", label: "Compare", icon: GitCompare },
+      { to: "/suppliers", label: "Our Suppliers", icon: Users },
+      { to: "/suppliers/prospects", label: "Prospects", icon: Search },
+    ]},
+    { title: "Inventory", items: [
+      { to: "/inventory/shipments", label: "Shipments & Arrivals", icon: Ship },
+      { to: "/inventory/receive", label: "Received Goods", icon: ClipboardCheck },
+      { to: "/inventory/stock", label: "Stock Levels", icon: Warehouse },
+      { to: "/inventory/demand", label: "Demand Signals", icon: TrendingUp },
+    ]},
+    { title: "Storefront", items: [
       { to: "/publishing", label: "Storefront Publishing", icon: Store, modes: ["hybrid", "retail_only"] },
     ]},
-    { title: "Financial", items: [{ to: "/dunning", label: "Dunning Engine", icon: Banknote }]},
+    { title: "Financial", items: [
+      { to: "/dunning", label: "Supplier Dunning", icon: Banknote },
+      { to: "/dunning/customer", label: "Customer Dunning", icon: Banknote },
+    ]},
     { title: "Intelligence", items: [
       { to: "/intelligence", label: "AI Assistant", icon: Sparkles },
       { to: "/ai-health", label: "AI Model Health", icon: BrainCircuit },
@@ -77,9 +100,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
     <aside className={cn("glass sticky top-0 z-30 flex h-screen flex-col rounded-none border-y-0 border-l-0 transition-all duration-300", collapsed ? "w-[76px]" : "w-[256px]")}>
       {/* brand */}
       <div className="flex items-center gap-3 px-4 py-5">
-        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-gold to-grape shadow-glow">
-          <span className="text-lg font-800 text-bg">M</span>
-        </div>
+        <img src="/icon.ico" alt="Mawrid" className="h-11 w-11 shrink-0 rounded-2xl shadow-glow" />
         {!collapsed && (
           <div className="min-w-0">
             <div className="truncate text-lg font-800 tracking-tight text-ink">Mawrid</div>

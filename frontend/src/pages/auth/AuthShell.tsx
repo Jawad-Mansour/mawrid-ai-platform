@@ -24,14 +24,13 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
           animate={{ opacity: 1, y: 0 }}
           transition={{ type: "spring", stiffness: 200, damping: 20 }}
         >
-          <motion.div
-            className="grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-gold to-grape shadow-glow"
+          <motion.img
+            src="/icon.ico" alt="Mawrid"
+            className="h-12 w-12 rounded-xl shadow-glow"
             initial={{ scale: 0, rotate: -90 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: "spring", stiffness: 260, damping: 18, delay: 0.1 }}
-          >
-            <span className="text-xl font-800 text-bg">M</span>
-          </motion.div>
+          />
           <div>
             <div className="text-xl font-800 text-ink">Mawrid</div>
             <div className="text-xs uppercase tracking-widest text-ink-faint">AI Operations Platform</div>

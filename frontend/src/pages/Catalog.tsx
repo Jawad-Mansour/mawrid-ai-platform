@@ -4,7 +4,7 @@
 // API:     GET /catalog/products
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, RefreshCw, ImageOff, ShoppingBag, Check, ExternalLink, FileSpreadsheet, ArrowRight, UploadCloud, Pencil, X, Building2 } from "lucide-react";
+import { Search, RefreshCw, ImageOff, ShoppingBag, Check, ExternalLink, FileSpreadsheet, ArrowRight, UploadCloud, Pencil, X, Building2, Layers, Package } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { apiGet } from "@/lib/api";
 import { SectionTitle, StatusBadge, Loading, EmptyState } from "@/components/ui";
@@ -12,7 +12,10 @@ import { ProductModal } from "@/components/ProductModal";
 import { EditProductModal } from "@/components/EditProductModal";
 import { useBasket } from "@/stores/basket";
 import { formatCurrency } from "@/lib/utils";
+import { matchesQuery, highlightTerms } from "@/lib/search";
 import type { Product } from "@/lib/types";
+
+interface SheetDoc { document_id: string; filename: string; supplier_name?: string | null; uploaded_at: string; rows_extracted: number }
 
 function asList(d: unknown): Product[] {
   if (Array.isArray(d)) return d as Product[];
@@ -25,7 +28,8 @@ function plain(md: string | null | undefined): string {
 }
 function Highlight({ text, q }: { text: string; q: string }) {
   if (!q.trim()) return <>{text}</>;
-  const terms = q.trim().split(/\s+/).filter((t) => t.length > 1).map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  // highlight the typed terms AND their synonyms (so a "silver" search lights up "inox")
+  const terms = highlightTerms(q).map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
   if (terms.length === 0) return <>{text}</>;
   const re = new RegExp(`(${terms.join("|")})`, "ig");
   return <>{text.split(re).map((p, i) => (re.test(p) ? <mark key={i} className="rounded bg-gold/30 px-0.5 text-ink">{p}</mark> : <span key={i}>{p}</span>))}</>;
@@ -44,15 +48,17 @@ export function Catalog() {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["key"]>("all");
   const [search, setSearch] = useState("");
   const [supplier, setSupplier] = useState("all");
+  const [groupBySheet, setGroupBySheet] = useState(false);
   const [open, setOpen] = useState<Product | null>(null);
   const [editing, setEditing] = useState<Product | null>(null);
   const [params, setParams] = useSearchParams();
   const docId = params.get("doc");
 
   const products = useQuery({ queryKey: ["catalog"], queryFn: () => apiGet<unknown>("/catalog/products?limit=300"), refetchInterval: 8000 });
-  const docs = useQuery({ queryKey: ["documents"], queryFn: () => apiGet<{ document_id: string; filename: string; supplier_name?: string | null; uploaded_at: string; rows_extracted: number }[]>("/catalog/documents") });
+  const docs = useQuery({ queryKey: ["documents"], queryFn: () => apiGet<SheetDoc[]>("/catalog/documents") });
   const all = useMemo(() => asList(products.data), [products.data]);
-  const activeSheet = docId ? (docs.data ?? []).find((d) => d.document_id === docId) : null;
+  const docList = useMemo(() => docs.data ?? [], [docs.data]);
+  const activeSheet = docId ? docList.find((d) => d.document_id === docId) : null;
 
   // distinct suppliers across the catalogue (each sheet's supplier)
   const suppliers = useMemo(() => {
@@ -66,17 +72,25 @@ export function Catalog() {
     if (docId) list = list.filter((p) => (p.document_ids ?? []).includes(docId));
     if (filter !== "all") list = list.filter((p) => p.enrichment_status === filter);
     if (supplier !== "all") list = list.filter((p) => (p.supplier_names ?? []).includes(supplier));
-    const q = search.trim().toLowerCase();
-    if (q) {
-      list = list.filter((p) =>
-        p.product_name?.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q) ||
-        (p.description ?? "").toLowerCase().includes(q) ||
-        JSON.stringify(p.specifications ?? {}).toLowerCase().includes(q));
-    }
+    if (search.trim()) list = list.filter((p) => matchesQuery(p, search));
     return list;
   }, [all, filter, search, supplier, docId]);
 
+  // grouped view: each sheet's own catalogue, in upload order (newest first)
+  const grouped = useMemo(() => {
+    if (!groupBySheet) return [];
+    const out: { doc: SheetDoc | null; items: Product[] }[] = [];
+    for (const d of docList) {
+      const items = rows.filter((p) => (p.document_ids ?? []).includes(d.document_id));
+      if (items.length) out.push({ doc: d, items });
+    }
+    const orphans = rows.filter((p) => !(p.document_ids ?? []).some((id) => docList.find((d) => d.document_id === id)));
+    if (orphans.length) out.push({ doc: null, items: orphans });
+    return out;
+  }, [groupBySheet, docList, rows]);
+
   function clearSheet() { const p = new URLSearchParams(params); p.delete("doc"); setParams(p, { replace: true }); }
+  function gotoSheet(id: string) { const p = new URLSearchParams(params); p.set("doc", id); setParams(p, { replace: true }); }
 
   return (
     <div className="space-y-6">
@@ -114,11 +128,20 @@ export function Catalog() {
         </div>
         {suppliers.length > 0 && (
           <select className="input !w-auto !py-2.5" value={supplier} onChange={(e) => setSupplier(e.target.value)} title="Filter by supplier">
-            <option value="all">All suppliers ({all.length})</option>
-            {suppliers.map((s) => <option key={s} value={s}>{s}</option>)}
+            <option value="all">All suppliers</option>
+            {suppliers.map((s) => {
+              const n = all.filter((p) => (p.supplier_names ?? []).includes(s)).length;
+              return <option key={s} value={s}>{s} ({n})</option>;
+            })}
           </select>
         )}
         <button onClick={() => products.refetch()} className="btn-ghost !py-2.5" title="Refresh"><RefreshCw className="h-4 w-4" /></button>
+        {!docId && (
+          <button onClick={() => setGroupBySheet((g) => !g)} title="Group products by the sheet they came from"
+            className={`chip ${groupBySheet ? "border-gold/50 bg-gold/15 text-gold-soft" : "border-line bg-white/[0.02] text-ink-soft hover:text-ink"}`}>
+            <Layers className="h-3.5 w-3.5" /> By sheet
+          </button>
+        )}
         <div className="flex flex-wrap gap-2">
           {FILTERS.map((f) => (
             <button key={f.key} onClick={() => setFilter(f.key)}
@@ -132,29 +155,54 @@ export function Catalog() {
       ) : rows.length === 0 ? (
         <EmptyState icon={<FileSpreadsheet className="h-8 w-8" />} title="No products yet"
           hint="Upload a supplier sheet to build your catalogue — the AI fetches real images, descriptions and specs." />
+      ) : groupBySheet ? (
+        <div className="space-y-8">
+          {grouped.map(({ doc, items }) => (
+            <div key={doc?.document_id ?? "orphans"}>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-line pb-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="grid h-9 w-9 place-items-center rounded-xl bg-gold/15 text-gold-soft"><FileSpreadsheet className="h-4.5 w-4.5" /></div>
+                  <div>
+                    <div className="text-sm font-700 text-ink">{doc?.filename ?? "Not from a sheet"}</div>
+                    <div className="flex flex-wrap items-center gap-x-3 text-[11px] text-ink-soft">
+                      {doc?.supplier_name && <span className="flex items-center gap-1"><Building2 className="h-3 w-3" /> {doc.supplier_name}</span>}
+                      {doc && <span>{new Date(doc.uploaded_at).toLocaleDateString()}</span>}
+                      <span>{items.length} product(s)</span>
+                    </div>
+                  </div>
+                </div>
+                {doc && <button onClick={() => gotoSheet(doc.document_id)} className="chip border-line bg-white/[0.03] text-ink-soft hover:text-ink">Open this sheet <ArrowRight className="h-3 w-3" /></button>}
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {items.map((p) => <ProductGridCard key={p.product_id} p={p} q={search} sheetId={doc?.document_id ?? null} onOpen={() => setOpen(p)} onEdit={() => setEditing(p)} />)}
+              </div>
+            </div>
+          ))}
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {rows.map((p) => <ProductGridCard key={p.product_id} p={p} q={search} onOpen={() => setOpen(p)} onEdit={() => setEditing(p)} />)}
+          {rows.map((p) => <ProductGridCard key={p.product_id} p={p} q={search} sheetId={docId} onOpen={() => setOpen(p)} onEdit={() => setEditing(p)} />)}
         </div>
       )}
 
-      {open && <ProductModal product={open} onClose={() => setOpen(null)} />}
-      {editing && <EditProductModal product={editing} onClose={() => setEditing(null)} />}
+      {open && <ProductModal key={open.product_id} product={open} onClose={() => setOpen(null)} />}
+      {editing && <EditProductModal key={editing.product_id} product={editing} onClose={() => setEditing(null)} />}
     </div>
   );
 }
 
-function ProductGridCard({ p, q, onOpen, onEdit }: { p: Product; q: string; onOpen: () => void; onEdit: () => void }) {
+function ProductGridCard({ p, q, sheetId, onOpen, onEdit }: { p: Product; q: string; sheetId: string | null; onOpen: () => void; onEdit: () => void }) {
   const basket = useBasket();
   const inBasket = basket.has(p.product_id);
   const [imgOk, setImgOk] = useState(true);
   // Always render exactly 3 spec slots so every card has the same height.
-  const specs = Object.entries(p.specifications ?? {}).slice(0, 3);
+  const specs = Object.entries(p.specifications ?? {}).filter(([k]) => !/^quantity$/i.test(k)).slice(0, 3);
   const excerpt = plain(p.description).slice(0, 120);
+  const available = p.available_qty ?? null;
 
   return (
     <div className="card group flex h-full flex-col overflow-hidden p-0 transition-all hover:-translate-y-0.5 hover:shadow-glow">
-      <button onClick={onOpen} className="relative grid aspect-[4/3] shrink-0 place-items-center bg-white">
+      <button onClick={onOpen} className="relative grid aspect-[4/3] shrink-0 place-items-center overflow-hidden border-b border-line bg-white">
         {p.image_url && imgOk ? (
           <img src={p.image_url} alt={p.product_name} className="h-full w-full object-contain p-3" loading="lazy" onError={() => setImgOk(false)} />
         ) : (
@@ -162,18 +210,21 @@ function ProductGridCard({ p, q, onOpen, onEdit }: { p: Product; q: string; onOp
         )}
         <div className="absolute left-2 top-2"><StatusBadge status={p.enrichment_status} /></div>
         {p.enrichment_source && <span className="chip absolute right-2 top-2 border-white/20 bg-black/55 text-[10px] font-600 text-white">{p.enrichment_source}</span>}
+        {available != null && (
+          <span className="absolute bottom-2 left-2 flex items-center gap-1 rounded-md bg-emerald/90 px-1.5 py-0.5 text-[10px] font-700 text-white shadow"><Package className="h-3 w-3" /> {available} avail.</span>
+        )}
       </button>
 
       <div className="flex flex-1 flex-col p-3.5">
         <button onClick={onOpen} className="text-left">
           <div className="line-clamp-2 min-h-[2.4rem] text-sm font-700 leading-snug text-ink"><Highlight text={p.product_name} q={q} /></div>
-          <div className="mt-0.5 font-mono text-[11px] text-ink-faint">{p.sku ?? "no sku"}</div>
+          <div className="mt-0.5 truncate font-mono text-[11px] text-ink-faint">{p.sku ?? "no sku"}</div>
         </button>
 
         {/* description — always reserve 2 lines so cards align */}
         <p className="mt-1.5 line-clamp-2 min-h-[2.1rem] text-xs leading-relaxed text-ink-soft">{excerpt ? `${excerpt}…` : <span className="text-ink-faint">No description yet.</span>}</p>
 
-        {/* specs — always reserve 3 rows */}
+        {/* specs — always reserve exactly 3 rows */}
         <div className="mt-2 min-h-[3.4rem] space-y-0.5">
           {specs.map(([k, v]) => (
             <div key={k} className="flex justify-between gap-2 text-[11px]">
@@ -184,13 +235,13 @@ function ProductGridCard({ p, q, onOpen, onEdit }: { p: Product; q: string; onOp
         </div>
 
         <div className="mt-auto flex items-center justify-between border-t border-line pt-3">
-          <div className="text-sm font-700 text-ink">{p.price != null ? formatCurrency(p.price, p.currency ?? "USD") : <span className="text-xs text-ink-faint">—</span>}</div>
+          <div className="text-sm font-700 text-ink">{p.price != null ? formatCurrency(p.price, p.currency ?? "USD") : <span className="text-xs text-ink-faint">no price</span>}</div>
           <div className="flex items-center gap-1.5">
             {p.source_urls && p.source_urls.length > 0 && (
               <a href={p.source_urls[0].url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} title="Source" className="grid h-7 w-7 place-items-center rounded-lg border border-line text-ink-faint hover:text-ink"><ExternalLink className="h-3.5 w-3.5" /></a>
             )}
             <button onClick={onEdit} title="Edit product" className="grid h-7 w-7 place-items-center rounded-lg border border-line text-ink-faint hover:border-gold/50 hover:text-gold-soft"><Pencil className="h-3.5 w-3.5" /></button>
-            <button onClick={() => basket.add(p)} title={inBasket ? "Noted for order" : "Note for order"}
+            <button onClick={() => basket.add(p, sheetId)} title={inBasket ? "Noted for order" : "Note for order"}
               className={`grid h-7 w-7 place-items-center rounded-lg border transition-all ${inBasket ? "border-gold bg-gold text-bg" : "border-line text-ink-soft hover:border-gold/50 hover:text-gold-soft"}`}>
               {inBasket ? <Check className="h-3.5 w-3.5" /> : <ShoppingBag className="h-3.5 w-3.5" />}
             </button>

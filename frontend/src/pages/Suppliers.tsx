@@ -1,10 +1,17 @@
-// Feature: Supplier Intelligence — list, add, score & compare
+// Feature: Suppliers — Our Suppliers (active) / Prospects directory. Add/edit via modal
+//          (required fields + auto-find location), ask a supplier for a catalogue,
+//          promote a prospect to Our Suppliers, see outreach history, and select 2+ to
+//          compare on the rich Compare page.
+// API:     GET /suppliers · PUT /suppliers/{id} · GET /network/conversations · POST /network/outreach
 import { useMemo, useState } from "react";
-import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Users, Plus, BarChart3, Mail, Phone, X, Trophy, Star, MapPin } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { Users, Plus, Mail, Phone, Star, MapPin, Pencil, GitCompare, MessageSquare, UserPlus, Check, Inbox } from "lucide-react";
 import { toast } from "sonner";
-import { apiGet, apiPost, apiErr } from "@/lib/api";
-import { Card, SectionTitle, Loading, EmptyState } from "@/components/ui";
+import { apiGet, apiPost, apiPut, apiErr } from "@/lib/api";
+import { Card, SectionTitle, Loading, EmptyState, Spinner } from "@/components/ui";
+import { SupplierEditModal } from "@/components/SupplierEditModal";
+import { useNetwork } from "@/stores/network";
 import type { Supplier } from "@/lib/types";
 
 function asList(d: unknown): Supplier[] {
@@ -12,160 +19,96 @@ function asList(d: unknown): Supplier[] {
   if (d && typeof d === "object" && Array.isArray((d as any).suppliers)) return (d as any).suppliers;
   return [];
 }
-function scoreOf(d: any): number {
-  if (typeof d === "number") return d;
-  return Number(d?.score ?? d?.value ?? d?.supplier_score ?? 0);
-}
-function tone(s: number) {
-  return s >= 80 ? "bg-emerald" : s >= 60 ? "bg-gold" : s >= 40 ? "bg-warn" : "bg-danger";
-}
+interface Convo { supplier_id: string; message_count: number; last_direction: string | null }
 
-export function Suppliers() {
+export function Suppliers({ relationship }: { relationship?: "active" | "prospect" }) {
   const qc = useQueryClient();
-  const [selected, setSelected] = useState<string[]>([]);
-  const [adding, setAdding] = useState(false);
-  const blank = { name: "", email: "", phone: "", location: "", description: "", rating: "", language: "en", currency: "USD" };
-  const [form, setForm] = useState(blank);
+  const navigate = useNavigate();
+  const net = useNetwork();
+  const [editing, setEditing] = useState<{ supplier: Supplier | null } | null>(null);
 
   const list = useQuery({ queryKey: ["suppliers"], queryFn: () => apiGet<unknown>("/suppliers") });
-  const suppliers = useMemo(() => asList(list.data), [list.data]);
+  const convos = useQuery({ queryKey: ["conversations"], queryFn: () => apiGet<Convo[]>("/network/conversations") });
+  const convoBy = useMemo(() => Object.fromEntries((convos.data ?? []).map((c) => [c.supplier_id, c])), [convos.data]);
+  const suppliers = useMemo(() => {
+    const all = asList(list.data);
+    return relationship ? all.filter((s) => (s.relationship ?? "active") === relationship) : all;
+  }, [list.data, relationship]);
+  const isProspect = relationship === "prospect";
 
-  const create = useMutation({
-    mutationFn: () => apiPost("/suppliers", {
-      name: form.name, language: form.language, currency: form.currency,
-      email: form.email || null, phone: form.phone || null,
-      location: form.location || null, description: form.description || null,
-      rating: form.rating ? Number(form.rating) : null,
-    }),
-    onSuccess: () => {
-      toast.success("Supplier added");
-      setAdding(false);
-      setForm(blank);
-      qc.invalidateQueries({ queryKey: ["suppliers"] });
-    },
-    onError: (e) => toast.error(apiErr(e, "Could not add supplier")),
+  const ask = useMutation({
+    mutationFn: (s: Supplier) => apiPost<{ supplier_id: string }>("/network/outreach", { target_id: s.supplier_id, intent: "catalog", to: s.email || null }),
+    onSuccess: (r) => { toast.success("Catalogue request drafted — approve in HITL"); qc.invalidateQueries({ queryKey: ["conversations"] }); navigate(`/suppliers/outreach?supplier=${r.supplier_id}`); },
+    onError: (e) => toast.error(apiErr(e, "Could not draft")),
+  });
+  const promote = useMutation({
+    mutationFn: (s: Supplier) => apiPut(`/suppliers/${s.supplier_id}`, { relationship: "active" }),
+    onSuccess: () => { toast.success("Moved to Our Suppliers"); qc.invalidateQueries({ queryKey: ["suppliers"] }); },
+    onError: (e) => toast.error(apiErr(e, "Failed")),
   });
 
-  // fetch scores only for selected suppliers (comparison)
-  const scoreQueries = useQueries({
-    queries: selected.map((id) => ({
-      queryKey: ["supplier-score", id],
-      queryFn: () => apiGet<any>(`/suppliers/${id}/score`),
-    })),
-  });
-
-  const toggle = (id: string) =>
-    setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : s.length >= 3 ? s : [...s, id]));
-
-  const compare = selected.map((id, i) => {
-    const sup = suppliers.find((s) => s.supplier_id === id);
-    const score = scoreQueries[i]?.data ? scoreOf(scoreQueries[i].data) : null;
-    return { id, name: sup?.name ?? id.slice(0, 8), score, loading: scoreQueries[i]?.isLoading };
-  });
-  const best = compare.reduce<{ id: string; score: number } | null>((acc, c) => (c.score != null && (!acc || c.score > acc.score) ? { id: c.id, score: c.score } : acc), null);
+  const selectedHere = suppliers.filter((s) => net.has(s.supplier_id)).length;
 
   return (
     <div className="space-y-6">
-      <SectionTitle title="Suppliers" subtitle="Scored by delivery reliability, price consistency & catalog completeness."
-        right={<button className="btn-gold !py-2" onClick={() => setAdding((a) => !a)}><Plus className="h-4 w-4" /> Add supplier</button>} />
+      <SectionTitle
+        title={isProspect ? "Prospects" : relationship === "active" ? "Our Suppliers" : "Suppliers"}
+        subtitle={isProspect
+          ? "Companies you're discovering or in outreach with — they become 'Our Suppliers' once you enrich a list from them or place an order."
+          : "Suppliers you do business with — scored by delivery reliability, price consistency & catalogue completeness."}
+        right={
+          <div className="flex gap-2">
+            {selectedHere >= 2 && <button onClick={() => navigate("/suppliers/compare")} className="btn-gold !py-2"><GitCompare className="h-4 w-4" /> Compare {selectedHere}</button>}
+            <button className="btn-gold !py-2" onClick={() => setEditing({ supplier: null })}><Plus className="h-4 w-4" /> Add supplier</button>
+          </div>
+        } />
 
-      {adding && (
-        <Card>
-          <SectionTitle title="New supplier" />
+      <Card>
+        <SectionTitle title="Directory" subtitle={`${suppliers.length} ${isProspect ? "prospect(s)" : "supplier(s)"} · select 2+ to compare`} />
+        {list.isLoading ? <Loading /> : suppliers.length === 0 ? (
+          <EmptyState icon={<Users className="h-8 w-8" />} title={isProspect ? "No prospects yet" : "No suppliers yet"} hint={isProspect ? "Discover some on the Network map, or add one manually." : "Add your first supplier, or enrich a sheet to create one automatically."} />
+        ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <div><label className="label">Name</label><input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Acme Supplies" /></div>
-            <div><label className="label">Email</label><input className="input" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="sales@acme.com" /></div>
-            <div><label className="label">Phone</label><input className="input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+961…" /></div>
-            <div><label className="label">Location</label><input className="input" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Brugherio, Italy" /></div>
-            <div><label className="label">Language</label>
-              <select className="input" value={form.language} onChange={(e) => setForm({ ...form, language: e.target.value })}>
-                <option value="en">English</option><option value="fr">French</option><option value="ar">Arabic</option>
-              </select>
-            </div>
-            <div><label className="label">Currency</label>
-              <select className="input" value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })}>
-                <option>USD</option><option>EUR</option><option>LBP</option>
-              </select>
-            </div>
-            <div><label className="label">Rating (0–5)</label><input className="input" type="number" min={0} max={5} step={0.5} value={form.rating} onChange={(e) => setForm({ ...form, rating: e.target.value })} placeholder="4.5" /></div>
-          </div>
-          <div className="mt-3"><label className="label">Description / notes</label>
-            <textarea className="input min-h-[80px] resize-y" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="What they supply, terms, contacts, notes…" />
-          </div>
-          <button className="btn-gold mt-4" disabled={!form.name || create.isPending} onClick={() => create.mutate()}>Save supplier</button>
-        </Card>
-      )}
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <Card>
-            <SectionTitle title="Directory" subtitle="Select up to 3 to compare →" />
-            {list.isLoading ? <Loading /> : suppliers.length === 0 ? (
-              <EmptyState icon={<Users className="h-8 w-8" />} title="No suppliers yet" hint="Add your first supplier to start scoring and comparing." />
-            ) : (
-              <div className="grid gap-2 sm:grid-cols-2">
-                {suppliers.map((s) => {
-                  const on = selected.includes(s.supplier_id);
-                  return (
-                    <button key={s.supplier_id} onClick={() => toggle(s.supplier_id)}
-                      className={`card p-4 text-left transition-all ${on ? "ring-1 ring-gold/50 shadow-glow" : "hover:bg-white/[0.04]"}`}>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="truncate font-700 text-ink">{s.name}</span>
-                        <div className="flex items-center gap-1.5">
-                          {s.rating != null && <span className="flex items-center gap-0.5 text-xs font-700 text-gold-soft"><Star className="h-3 w-3 fill-current" /> {Number(s.rating).toFixed(1)}</span>}
-                          <span className={`grid h-5 w-5 place-items-center rounded-md border ${on ? "border-gold bg-gold text-bg" : "border-line"}`}>
-                            {on && <BarChart3 className="h-3 w-3" />}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="mt-2 space-y-1 text-xs text-ink-faint">
-                        {s.location && <div className="flex items-center gap-1.5"><MapPin className="h-3 w-3" /> {s.location}</div>}
-                        {s.email && <div className="flex items-center gap-1.5"><Mail className="h-3 w-3" /> {s.email}</div>}
-                        {s.phone && <div className="flex items-center gap-1.5"><Phone className="h-3 w-3" /> {s.phone}</div>}
-                        {s.description && <div className="line-clamp-2 pt-0.5 text-ink-soft">{s.description}</div>}
-                        <div className="flex gap-2 pt-1">
-                          <span className="chip border-line bg-white/[0.02] uppercase">{s.language ?? "en"}</span>
-                          <span className="chip border-line bg-white/[0.02]">{s.currency ?? "USD"}</span>
-                        </div>
-                      </div>
+            {suppliers.map((s) => {
+              const on = net.has(s.supplier_id);
+              const c = convoBy[s.supplier_id];
+              return (
+                <div key={s.supplier_id} className={`card p-4 transition-all ${on ? "ring-1 ring-gold/50 shadow-glow" : ""}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <button onClick={() => net.toggle(s.supplier_id)} className="min-w-0 flex-1 text-left">
+                      <div className="truncate font-700 text-ink">{s.name}</div>
+                      {s.rating != null && <span className="mt-0.5 flex items-center gap-0.5 text-xs font-700 text-gold-soft"><Star className="h-3 w-3 fill-current" /> {Number(s.rating).toFixed(1)}</span>}
                     </button>
-                  );
-                })}
-              </div>
-            )}
-          </Card>
-        </div>
-
-        {/* comparison */}
-        <div>
-          <Card>
-            <SectionTitle title="Comparison" subtitle={selected.length ? `${selected.length} selected` : "Pick suppliers to compare"} />
-            {selected.length === 0 ? (
-              <EmptyState icon={<BarChart3 className="h-8 w-8" />} title="Nothing selected" hint="Choose up to 3 suppliers from the directory." />
-            ) : (
-              <div className="space-y-4">
-                {compare.map((c) => (
-                  <div key={c.id}>
-                    <div className="mb-1 flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-1.5 font-600 text-ink">
-                        {best?.id === c.id && <Trophy className="h-3.5 w-3.5 text-gold-soft" />}{c.name}
-                      </span>
-                      <button onClick={() => toggle(c.id)} className="text-ink-faint hover:text-danger"><X className="h-3.5 w-3.5" /></button>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-white/10">
-                        <div className={`h-full rounded-full transition-all duration-500 ${c.score != null ? tone(c.score) : "bg-white/10"}`} style={{ width: `${c.score ?? 0}%` }} />
-                      </div>
-                      <span className="w-12 text-right font-mono text-sm text-ink">{c.loading ? "…" : c.score != null ? c.score.toFixed(0) : "—"}</span>
-                    </div>
+                    <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-md border ${on ? "border-gold bg-gold text-bg" : "border-line text-ink-faint"}`}>{on ? <Check className="h-3.5 w-3.5" /> : <GitCompare className="h-3 w-3" />}</span>
                   </div>
-                ))}
-                <p className="pt-2 text-xs text-ink-faint">Scores 0–100 from the Ridge supplier model (delivery reliability, damage rate, price vs market, responsiveness, data completeness).</p>
-              </div>
-            )}
-          </Card>
-        </div>
-      </div>
+                  <div className="mt-2 space-y-1 text-xs text-ink-faint">
+                    {s.location && <div className="flex items-center gap-1.5"><MapPin className="h-3 w-3" /> {s.location}</div>}
+                    {s.email && <div className="flex items-center gap-1.5"><Mail className="h-3 w-3" /> {s.email}</div>}
+                    {s.phone && <div className="flex items-center gap-1.5"><Phone className="h-3 w-3" /> {s.phone}</div>}
+                    {c && <button onClick={() => navigate(`/suppliers/outreach?supplier=${s.supplier_id}`)} className="flex items-center gap-1.5 text-grape-soft hover:underline"><MessageSquare className="h-3 w-3" /> {c.message_count} message(s){c.last_direction === "inbound" ? " · replied" : ""}</button>}
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-1.5 border-t border-line pt-3">
+                    <button onClick={() => setEditing({ supplier: s })} className="chip border-line bg-white/[0.03] text-ink-soft hover:text-ink"><Pencil className="h-3 w-3" /> Edit</button>
+                    <button onClick={() => ask.mutate(s)} disabled={ask.isPending} className="chip border-grape/30 bg-grape/10 text-grape-soft hover:bg-grape/20">{ask.isPending ? <Spinner className="h-3 w-3" /> : <Inbox className="h-3 w-3" />} Ask for catalogue</button>
+                    {isProspect && <button onClick={() => promote.mutate(s)} disabled={promote.isPending} className="chip border-emerald/30 bg-emerald/10 text-emerald-soft hover:bg-emerald/20"><UserPlus className="h-3 w-3" /> Add to Our Suppliers</button>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {net.selected.length > 0 && (
+          <div className="mt-4 flex items-center justify-between rounded-xl border border-gold/30 bg-gold/[0.05] p-3 text-sm">
+            <span className="text-ink-soft">{net.selected.length} selected for comparison{net.selected.length < 2 ? " — pick at least 2" : ""}</span>
+            <div className="flex gap-2">
+              <button onClick={() => net.clear()} className="btn-ghost !py-1.5 text-xs">Clear</button>
+              <button onClick={() => navigate("/suppliers/compare")} disabled={net.selected.length < 2} className="btn-gold !py-1.5 text-xs"><GitCompare className="h-3.5 w-3.5" /> Compare</button>
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {editing && <SupplierEditModal supplier={editing.supplier} onClose={() => setEditing(null)} />}
     </div>
   );
 }

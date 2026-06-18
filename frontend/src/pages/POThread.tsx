@@ -2,21 +2,23 @@
 //          the supplier: the request we sent, replies received (logged), and our
 //          AI-assisted replies back.
 // API:     GET /procurement/purchase-orders/{id} · POST .../messages · .../draft-reply · .../reply
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ArrowLeft, Send, Sparkles, Inbox, Building2, ClipboardList, MessageSquarePlus } from "lucide-react";
+import { ArrowLeft, Send, Sparkles, Inbox, Building2, ClipboardList, MessageSquarePlus, Settings2, Trash2, CalendarCheck, CheckCircle2, Save } from "lucide-react";
 import { toast } from "sonner";
-import { apiGet, apiPost, apiErr } from "@/lib/api";
+import { apiGet, apiPost, apiPatch, apiErr } from "@/lib/api";
 import { Card, SectionTitle, Loading, StatusBadge, Spinner } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
+
+interface OrderLine { product_id?: string; product_name?: string; sku?: string | null; quantity: number; unit_price: number; currency?: string }
 
 interface Msg { direction: string; sender: string; body: string; at: string }
 interface PODetail {
   po_id: string; po_number: string; supplier_id: string; supplier_name: string | null; supplier_email: string | null;
   status: string; total_amount: number | null; currency: string; po_text: string | null; line_items: any[];
-  sent_at: string | null; created_at: string; messages: Msg[];
+  hitl_action_id: string | null; sent_at: string | null; created_at: string; messages: Msg[];
 }
 
 export function POThread() {
@@ -26,9 +28,28 @@ export function POThread() {
   const [logBody, setLogBody] = useState("");
   const [reply, setReply] = useState("");
   const [drafting, setDrafting] = useState(false);
+  const [lines, setLines] = useState<OrderLine[] | null>(null);
+  const [agreedDate, setAgreedDate] = useState("");
 
   const d = po.data;
   const invalidate = () => qc.invalidateQueries({ queryKey: ["po", poId] });
+
+  // hydrate the editable order lines from the PO
+  useEffect(() => {
+    if (d && lines === null) {
+      setLines((d.line_items ?? []).map((l: any) => ({ ...l, quantity: Number(l.quantity ?? 0), unit_price: Number(l.unit_price ?? 0) })));
+    }
+  }, [d]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const updateOrder = useMutation({
+    mutationFn: (body: Record<string, any>) => apiPatch(`/procurement/purchase-orders/${poId}`, body),
+    onSuccess: () => { toast.success("Order updated"); invalidate(); },
+    onError: (e) => toast.error(apiErr(e, "Update failed")),
+  });
+  const orderLines = lines ?? [];
+  const orderTotal = orderLines.reduce((s, l) => s + (l.quantity || 0) * (l.unit_price || 0), 0);
+  function setLine(i: number, patch: Partial<OrderLine>) { setLines((ls) => (ls ?? []).map((l, j) => (j === i ? { ...l, ...patch } : l))); }
+  function removeLine(i: number) { setLines((ls) => (ls ?? []).filter((_, j) => j !== i)); }
 
   const logReply = useMutation({
     mutationFn: () => apiPost(`/procurement/purchase-orders/${poId}/messages`, { body: logBody, direction: "inbound", sender: d?.supplier_name || "Supplier" }),
@@ -55,7 +76,7 @@ export function POThread() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <SectionTitle title={`Order ${d.po_number}`} subtitle="The conversation with your supplier for this purchase order."
-        right={<Link to="/purchase-orders" className="btn-ghost !py-2"><ArrowLeft className="h-4 w-4" /> All POs</Link>} />
+        right={<div className="flex gap-2"><Link to={`/procurement/edit/${poId}`} className="btn-ghost !py-2"><Settings2 className="h-4 w-4" /> Edit order</Link><Link to="/purchase-orders" className="btn-ghost !py-2"><ArrowLeft className="h-4 w-4" /> All POs</Link></div>} />
 
       {/* header */}
       <Card>
@@ -86,6 +107,13 @@ export function POThread() {
             <div className="space-y-4">
               {d.messages.length === 0 && <p className="py-6 text-center text-sm text-ink-faint">No messages yet.</p>}
               {d.messages.map((m, i) => {
+                if (m.direction === "system") {
+                  return (
+                    <div key={i} className="flex justify-center">
+                      <span className="rounded-full border border-line bg-white/[0.03] px-3 py-1 text-[11px] text-ink-faint"><Settings2 className="mr-1 inline h-3 w-3" /> {m.body} · {new Date(m.at).toLocaleString()}</span>
+                    </div>
+                  );
+                }
                 const out = m.direction === "outbound";
                 return (
                   <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={`flex gap-3 ${out ? "flex-row-reverse" : ""}`}>
@@ -107,6 +135,47 @@ export function POThread() {
             <SectionTitle title="Log a supplier reply" subtitle="Paste an email the supplier sent back, to keep the thread complete." right={<MessageSquarePlus className="h-5 w-5 text-ink-faint" />} />
             <textarea className="input min-h-[80px] resize-y" placeholder="Paste the supplier's reply…" value={logBody} onChange={(e) => setLogBody(e.target.value)} />
             <button className="btn-ghost mt-2" disabled={!logBody.trim() || logReply.isPending} onClick={() => logReply.mutate()}>{logReply.isPending ? <Spinner className="h-4 w-4" /> : <Inbox className="h-4 w-4" />} Log reply</button>
+          </Card>
+
+          {/* order actions — adjust items, confirm container date, set status */}
+          <Card>
+            <SectionTitle title="Order actions" subtitle="After the supplier replies, revise the order, confirm the container date, or mark it confirmed." right={<Settings2 className="h-5 w-5 text-ink-faint" />} />
+            <div className="space-y-2">
+              {orderLines.map((l, i) => (
+                <div key={i} className="flex items-center gap-2 rounded-xl border border-line bg-white/[0.02] p-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm text-ink">{l.product_name}</div>
+                    <div className="font-mono text-[11px] text-ink-faint">{l.sku ?? "—"}</div>
+                  </div>
+                  <input type="number" min={0} value={l.quantity} onChange={(e) => setLine(i, { quantity: Math.max(0, Number(e.target.value)) })} title="Quantity" className="input w-16 !py-1 text-center text-xs" />
+                  <input type="number" min={0} step="0.01" value={l.unit_price} onChange={(e) => setLine(i, { unit_price: Math.max(0, Number(e.target.value)) })} title="Unit price" className="input w-20 !py-1 text-right text-xs" />
+                  <span className="w-20 text-right font-mono text-xs text-ink">{formatCurrency((l.quantity || 0) * (l.unit_price || 0), d.currency)}</span>
+                  <button onClick={() => removeLine(i)} title="Remove item" className="text-ink-faint hover:text-danger"><Trash2 className="h-3.5 w-3.5" /></button>
+                </div>
+              ))}
+              {orderLines.length === 0 && <p className="py-2 text-center text-xs text-ink-faint">No items.</p>}
+            </div>
+            <div className="mt-2 flex items-center justify-between border-t border-line pt-2 text-sm">
+              <span className="text-ink-soft">New order total</span>
+              <span className="font-mono font-800 text-ink">{formatCurrency(orderTotal, d.currency)}</span>
+            </div>
+            <div className="mt-3 flex flex-wrap items-end gap-2">
+              <button className="btn-ghost !py-2 text-xs" disabled={updateOrder.isPending} onClick={() => updateOrder.mutate({ line_items: orderLines })}>
+                {updateOrder.isPending ? <Spinner className="h-3.5 w-3.5" /> : <Save className="h-3.5 w-3.5" />} Update items
+              </button>
+              <div className="flex items-end gap-2">
+                <div>
+                  <label className="label !mb-1 text-[10px]">Container / delivery date</label>
+                  <input type="date" className="input !py-1.5 text-xs" value={agreedDate} onChange={(e) => setAgreedDate(e.target.value)} />
+                </div>
+                <button className="btn-ghost !py-2 text-xs" disabled={!agreedDate || updateOrder.isPending} onClick={() => updateOrder.mutate({ agreed_delivery_date: agreedDate })}>
+                  <CalendarCheck className="h-3.5 w-3.5" /> Confirm date
+                </button>
+              </div>
+              <button className="btn-gold !py-2 text-xs" disabled={updateOrder.isPending} onClick={() => updateOrder.mutate({ status: "confirmed", note: "order confirmed with supplier" })}>
+                <CheckCircle2 className="h-3.5 w-3.5" /> Mark confirmed
+              </button>
+            </div>
           </Card>
 
           {/* reply to the supplier */}

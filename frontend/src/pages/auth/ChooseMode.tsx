@@ -78,12 +78,11 @@ export function ChooseMode() {
 
       <div className="relative w-full max-w-5xl">
         <motion.div className="mb-10 text-center" initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={SPRING}>
-          <motion.div
-            className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-gold to-grape shadow-glow"
+          <motion.img
+            src="/icon.ico" alt="Mawrid"
+            className="mx-auto mb-5 h-16 w-16 rounded-2xl shadow-glow"
             initial={{ scale: 0, rotate: -120 }} animate={{ scale: 1, rotate: 0 }} transition={{ ...SPRING, delay: 0.1 }}
-          >
-            <span className="text-2xl font-800 text-bg">M</span>
-          </motion.div>
+          />
           <h1 className="text-4xl font-800 tracking-tight text-ink">Who are you?</h1>
           <p className="mt-3 text-ink-soft">Drag, swipe, or use ← → to explore. Press Enter to choose.</p>
         </motion.div>

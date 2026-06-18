@@ -32,6 +32,13 @@ class SupplierRepository(TenantRepository):
         description: str | None = None,
         rating: float | None = None,
         moq: int | None = None,
+        relationship: str = "active",
+        source: str = "saved",
+        category: str | None = None,
+        condition: str | None = None,
+        latitude: float | None = None,
+        longitude: float | None = None,
+        region: str | None = None,
     ) -> Supplier:
         supplier = Supplier(
             supplier_id=supplier_id,
@@ -45,6 +52,13 @@ class SupplierRepository(TenantRepository):
             description=description,
             rating=rating,
             moq=moq,
+            relationship=relationship,
+            source=source,
+            category=category,
+            condition=condition,
+            latitude=latitude,
+            longitude=longitude,
+            region=region,
         )
         self._session.add(supplier)
         await self._session.flush()
@@ -70,7 +84,10 @@ class SupplierRepository(TenantRepository):
         supplier_id: str,
         **kwargs: Any,
     ) -> None:
-        allowed = {"name", "email", "phone", "language", "currency", "score", "embedding", "location", "description", "rating", "moq"}
+        allowed = {"name", "email", "phone", "language", "currency", "score", "embedding",
+                   "location", "description", "rating", "moq", "relationship", "source",
+                   "category", "website", "logo_url", "offering", "condition", "region",
+                   "latitude", "longitude", "kind"}
         values = {k: v for k, v in kwargs.items() if k in allowed}
         if values:
             await self._session.execute(

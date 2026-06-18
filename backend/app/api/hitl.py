@@ -120,6 +120,40 @@ async def approve_hitl_action(
 
     from app.core.hitl.services import approve_action
 
+    # For a purchase order, the importer may have edited line items / quantities / the
+    # email on the review screen. Rebuild the attached spreadsheet and total from the
+    # current payload so what we send matches exactly what they approved.
+    if action.action_type == "purchase_order_send" and action.payload.get("line_items"):
+        import base64 as _b64  # noqa: PLC0415
+
+        from app.api.procurement import _XLSX_MIME, _order_excel  # noqa: PLC0415
+
+        lines = action.payload.get("line_items") or []
+        currency = str(action.payload.get("currency") or "USD")
+        total = sum(
+            int(it.get("quantity", 0) or 0) * float(it.get("unit_price", 0) or 0) for it in lines
+        )
+        po_number = str(action.payload.get("po_number") or "ORDER")
+        supplier_name = str(action.payload.get("supplier_name") or "Supplier")
+        xlsx = _order_excel(lines, supplier_name, po_number, currency)
+        action.payload = {
+            **action.payload,
+            "total": total,
+            "attachment_b64": _b64.b64encode(xlsx).decode(),
+            "attachment_filename": f"{po_number}.xlsx",
+            "attachment_mime": _XLSX_MIME,
+        }
+        po_id_edit = action.payload.get("po_id")
+        if po_id_edit:
+            from app.infra.db.repos.order_repo import OrderRepository  # noqa: PLC0415
+
+            edit_repo = OrderRepository(session, current_user.tenant_id)
+            po_row = await edit_repo.get_po_by_id(str(po_id_edit))
+            if po_row is not None:
+                po_row.line_items = lines
+                po_row.total_amount = total
+                po_row.po_text = str(action.payload.get("body") or po_row.po_text)
+
     email_sender = EmailSender()
     result = await approve_action(
         action_id=action_id,
@@ -137,6 +171,29 @@ async def approve_hitl_action(
         action_type=action.action_type,
         user_id=current_user.user_id,
     )
+
+    if action.action_type == "supplier_outreach" and result.status == "approved":
+        from app.infra.db.repos.notification_repo import record_event  # noqa: PLC0415
+
+        await record_event(
+            session, current_user.tenant_id, kind="outreach_sent",
+            title="Outreach email sent",
+            body=f"Your message to {action.payload.get('supplier_name', 'a supplier')} was sent.",
+            link="/suppliers/network",
+        )
+        await session.commit()
+
+    if action.action_type in ("dunning_payables_advance", "dispute_letter") and result.status == "approved":
+        from app.infra.db.repos.notification_repo import record_event  # noqa: PLC0415
+
+        kind = "Payment reminder" if action.action_type == "dunning_payables_advance" else "Dispute letter"
+        await record_event(
+            session, current_user.tenant_id, kind="dunning_sent",
+            title=f"{kind} sent",
+            body=f"Sent to {action.payload.get('supplier_name', action.payload.get('to', 'supplier'))}.",
+            link="/dunning",
+        )
+        await session.commit()
 
     # Notify n8n when a PO is approved so WF-04 can create the shipment record
     if action.action_type == "purchase_order_send":
@@ -156,6 +213,15 @@ async def approve_hitl_action(
                     "body": str(action.payload.get("body", "")),
                     "at": datetime.now(UTC).isoformat(),
                 },
+            )
+            from app.infra.db.repos.notification_repo import record_event  # noqa: PLC0415
+
+            await record_event(
+                session, current_user.tenant_id, kind="po_sent",
+                title="Purchase order sent",
+                body=f"{action.payload.get('po_number', 'A PO')} was emailed to "
+                f"{action.payload.get('supplier_name', 'the supplier')}.",
+                link=f"/purchase-orders/{po_id}",
             )
             await session.commit()
 

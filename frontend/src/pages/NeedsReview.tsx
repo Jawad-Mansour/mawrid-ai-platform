@@ -46,9 +46,9 @@ export function NeedsReview() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((p) => (
-            <div key={p.product_id} className="card flex flex-col overflow-hidden p-0">
-              <button onClick={() => setOpen(p)} className="relative grid aspect-[4/3] place-items-center bg-white">
-                {p.image_url ? <img src={p.image_url} alt="" className="h-full w-full object-contain p-3" /> : <div className="flex flex-col items-center gap-1 text-ink-faint/60"><ImageOff className="h-7 w-7" /><span className="text-[10px]">no image found</span></div>}
+            <div key={p.product_id} className="card flex h-full flex-col overflow-hidden p-0">
+              <button onClick={() => setOpen(p)} className="relative grid aspect-[4/3] shrink-0 place-items-center overflow-hidden border-b border-line bg-white">
+                {p.image_url ? <img src={p.image_url} alt="" className="h-full w-full object-contain p-3" loading="lazy" /> : <div className="flex flex-col items-center gap-1 text-ink-faint/60"><ImageOff className="h-7 w-7" /><span className="text-[10px]">no image found</span></div>}
                 <span className="chip absolute left-2 top-2 border-warn/40 bg-warn/15 text-warn">needs review</span>
               </button>
               <div className="flex flex-1 flex-col p-3.5">
@@ -71,8 +71,8 @@ export function NeedsReview() {
         </div>
       )}
 
-      {open && <ProductModal product={open} onClose={() => setOpen(null)} />}
-      {editing && <EditProductModal product={editing} onClose={() => setEditing(null)} />}
+      {open && <ProductModal key={open.product_id} product={open} onClose={() => setOpen(null)} />}
+      {editing && <EditProductModal key={editing.product_id} product={editing} onClose={() => setEditing(null)} />}
     </div>
   );
 }

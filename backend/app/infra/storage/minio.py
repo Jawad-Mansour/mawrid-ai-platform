@@ -16,6 +16,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import io
+import os
 from datetime import timedelta
 
 from minio import Minio
@@ -24,6 +25,7 @@ from minio.error import S3Error
 from app.infra.secrets.vault import get_secrets
 
 _client: Minio | None = None
+_presign_client_inst: Minio | None = None
 
 
 def _get_client() -> Minio:
@@ -49,6 +51,29 @@ def _get_client() -> Minio:
     return _client
 
 
+def _get_presign_client() -> Minio:
+    """A client whose endpoint is the BROWSER-reachable MinIO host. The internal
+    endpoint (e.g. ``minio:9000``) is unreachable from the user's browser, so
+    presigned URLs must be signed against the public host (``localhost:9000`` in
+    dev, set MINIO_PUBLIC_ENDPOINT for prod). Presigning is offline — this client
+    never opens a connection, it only computes the signature for the public host."""
+    global _presign_client_inst
+    if _presign_client_inst is None:
+        secrets = get_secrets()
+        public_endpoint = os.environ.get("MINIO_PUBLIC_ENDPOINT", "localhost:9000")
+        # region MUST be set so the SDK signs the URL offline. Without it, the SDK
+        # calls GetBucketLocation against the public endpoint — which is unreachable
+        # from inside the container (localhost there is the container itself).
+        _presign_client_inst = Minio(
+            endpoint=public_endpoint,
+            access_key=secrets.minio_access_key,
+            secret_key=secrets.minio_secret_key,
+            secure=os.environ.get("MINIO_PUBLIC_SECURE", "false").lower() == "true",
+            region=os.environ.get("MINIO_REGION", "us-east-1"),
+        )
+    return _presign_client_inst
+
+
 def _ensure_bucket(client: Minio, bucket: str) -> None:
     if not client.bucket_exists(bucket):
         client.make_bucket(bucket)
@@ -68,7 +93,8 @@ def _upload_sync(bucket: str, object_name: str, data: bytes, content_type: str) 
 
 
 def _presign_sync(bucket: str, object_name: str, expires_seconds: int = 3600) -> str:
-    client = _get_client()
+    # Sign against the public host so the URL works in the user's browser.
+    client = _get_presign_client()
     return client.presigned_get_object(
         bucket_name=bucket,
         object_name=object_name,

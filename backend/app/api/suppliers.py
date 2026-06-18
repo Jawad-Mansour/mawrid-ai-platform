@@ -19,7 +19,7 @@ import uuid
 from typing import Any
 
 import structlog
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, UploadFile, status
 
 from app.api.deps import CurrentUser, SessionDep
 from app.api.schemas import StrictModel
@@ -51,6 +51,11 @@ class SupplierCreate(StrictModel):
     description: str | None = None
     rating: float | None = None
     moq: int | None = None
+    condition: str | None = None
+    relationship: str = "active"
+    latitude: float | None = None
+    longitude: float | None = None
+    region: str | None = None
 
 
 class SupplierUpdate(StrictModel):
@@ -63,6 +68,11 @@ class SupplierUpdate(StrictModel):
     description: str | None = None
     rating: float | None = None
     moq: int | None = None
+    condition: str | None = None
+    relationship: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    region: str | None = None
 
 
 class SupplierMatchRequest(StrictModel):
@@ -87,9 +97,13 @@ class SupplierResponse(StrictModel):
     rating: float | None = None
     moq: int | None = None
     score: float | None
+    relationship: str = "active"
+    condition: str | None = None
+    category: str | None = None
+    website: str | None = None
 
 
-def _supplier_response(s: Any) -> "SupplierResponse":
+def _supplier_response(s: Any) -> SupplierResponse:
     return SupplierResponse(
         supplier_id=s.supplier_id,
         name=s.name,
@@ -102,6 +116,10 @@ def _supplier_response(s: Any) -> "SupplierResponse":
         rating=float(s.rating) if getattr(s, "rating", None) is not None else None,
         moq=getattr(s, "moq", None),
         score=float(s.score) if s.score is not None else None,
+        relationship=getattr(s, "relationship", None) or "active",
+        condition=getattr(s, "condition", None),
+        category=getattr(s, "category", None),
+        website=getattr(s, "website", None),
     )
 
 
@@ -111,6 +129,49 @@ class ScoreResponse(StrictModel):
     method: str
     sample_count: int
     features: dict[str, float]
+
+
+class ResolveLocationRequest(StrictModel):
+    query: str  # supplier name and/or a rough place, e.g. "Smeg, Guastalla Italy"
+
+
+class ResolveLocationResponse(StrictModel):
+    found: bool
+    latitude: float | None = None
+    longitude: float | None = None
+    city: str | None = None
+    country: str | None = None
+    country_code: str | None = None
+    phone_code: str | None = None
+    display_name: str | None = None
+
+
+@router.post(
+    "/resolve-location",
+    response_model=ResolveLocationResponse,
+    summary="Auto-resolve a supplier's real location + coordinates + phone code (OpenStreetMap)",
+)
+async def resolve_location(
+    body: ResolveLocationRequest, current_user: CurrentUser
+) -> ResolveLocationResponse:
+    """The location 'agent': type a name/rough place → we look it up on OpenStreetMap and
+    return the real address, coordinates and the country's phone dialing code. Never
+    fabricates — returns found=false if nothing matches."""
+    from app.infra.geo.geocode import geocode_detailed  # noqa: PLC0415
+
+    d = await geocode_detailed(body.query)
+    if not d:
+        return ResolveLocationResponse(found=False)
+    return ResolveLocationResponse(
+        found=True,
+        latitude=d.get("latitude"),  # type: ignore[arg-type]
+        longitude=d.get("longitude"),  # type: ignore[arg-type]
+        city=d.get("city"),  # type: ignore[arg-type]
+        country=d.get("country"),  # type: ignore[arg-type]
+        country_code=d.get("country_code"),  # type: ignore[arg-type]
+        phone_code=d.get("phone_code"),  # type: ignore[arg-type]
+        display_name=d.get("display_name"),  # type: ignore[arg-type]
+    )
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
@@ -139,6 +200,11 @@ async def create_supplier(
         description=body.description,
         rating=body.rating,
         moq=body.moq,
+        condition=body.condition,
+        relationship=body.relationship,
+        latitude=body.latitude,
+        longitude=body.longitude,
+        region=body.region or "europe",
     )
     await session.commit()
     logger.info("supplier_created", supplier_id=supplier.supplier_id, name=supplier.name)
@@ -197,6 +263,36 @@ async def update_supplier(
         await repo.update(supplier_id, **updates)
     await session.commit()
 
+    updated = await repo.get_by_id(supplier_id)
+    assert updated is not None
+    return _supplier_response(updated)
+
+
+@router.post(
+    "/{supplier_id}/logo",
+    response_model=SupplierResponse,
+    summary="Upload a logo for a supplier (when the logo agent couldn't find one)",
+)
+async def upload_supplier_logo(
+    supplier_id: str, file: UploadFile, current_user: CurrentUser, session: SessionDep
+) -> SupplierResponse:
+    import uuid as _uuid  # noqa: PLC0415
+
+    repo = SupplierRepository(session, current_user.tenant_id)
+    supplier = await repo.get_by_id(supplier_id)
+    if supplier is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Supplier not found.")
+    data = await file.read()
+    ct = (file.content_type or "").lower()
+    if not data or not ct.startswith("image/"):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Provide an image file.")
+    ext = {"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/svg+xml": "svg"}.get(ct, "png")
+    from app.infra.storage.minio import get_presigned_url, upload_image  # noqa: PLC0415
+
+    path = await upload_image(current_user.tenant_id, f"logos/{_uuid.uuid4().hex}.{ext}", data)
+    bucket, obj = path.split("/", 1)
+    url = await get_presigned_url(bucket, obj, expires_seconds=7 * 24 * 3600)
+    await repo.update(supplier_id, logo_url=url)
     updated = await repo.get_by_id(supplier_id)
     assert updated is not None
     return _supplier_response(updated)

@@ -13,8 +13,22 @@ function asList(d: unknown): HITLAction[] {
   return [];
 }
 
+const TYPE_LABELS: Record<string, string> = {
+  purchase_order_send: "Purchase Orders",
+  dispute_letter: "Disputes",
+  dunning_payables_advance: "Payables",
+  dunning_disputes_on_demand: "Payment Disputes",
+  dunning_receivables: "Receivables",
+  dunning_collections: "Collections",
+  supplier_match_review: "Supplier Matches",
+  supplier_outreach: "Supplier Outreach",
+  customer_match_review: "Customer Matches",
+};
+const labelFor = (t: string) => TYPE_LABELS[t] ?? t.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
 export function Approvals() {
   const qc = useQueryClient();
+  const [tab, setTab] = useState("all");
   const [selected, setSelected] = useState(0);
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -24,7 +38,14 @@ export function Approvals() {
     queryFn: () => apiGet<unknown>("/hitl/actions?status=pending"),
     refetchInterval: 12_000,
   });
-  const actions = useMemo(() => asList(q.data).filter((a) => a.status === "pending"), [q.data]);
+  const allActions = useMemo(() => asList(q.data).filter((a) => a.status === "pending"), [q.data]);
+  // one tab per tracked action type (notification-center style), with counts
+  const tabs = useMemo(() => {
+    const counts = new Map<string, number>();
+    allActions.forEach((a) => counts.set(a.action_type, (counts.get(a.action_type) ?? 0) + 1));
+    return [...counts.entries()].map(([type, count]) => ({ type, count }));
+  }, [allActions]);
+  const actions = useMemo(() => (tab === "all" ? allActions : allActions.filter((a) => a.action_type === tab)), [allActions, tab]);
 
   const approve = useMutation({
     mutationFn: (id: string) => apiPost(`/hitl/actions/${id}/approve`, {}),
@@ -74,6 +95,22 @@ export function Approvals() {
         subtitle="No external message, order, or payment leaves the system without your sign-off."
         right={<span className="chip border-line bg-white/[0.02] text-ink-soft"><Keyboard className="h-3.5 w-3.5" /> A approve · R reject · E edit</span>}
       />
+
+      {/* tracked-type tabs (notification-center style) */}
+      {allActions.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          <button onClick={() => { setTab("all"); setSelected(0); }}
+            className={`chip ${tab === "all" ? "border-gold/50 bg-gold/15 text-gold-soft" : "border-line bg-white/[0.02] text-ink-soft hover:text-ink"}`}>
+            All <span className="ml-1 rounded-full bg-black/20 px-1.5 text-[10px]">{allActions.length}</span>
+          </button>
+          {tabs.map((t) => (
+            <button key={t.type} onClick={() => { setTab(t.type); setSelected(0); }}
+              className={`chip ${tab === t.type ? "border-gold/50 bg-gold/15 text-gold-soft" : "border-line bg-white/[0.02] text-ink-soft hover:text-ink"}`}>
+              {labelFor(t.type)} <span className="ml-1 rounded-full bg-black/20 px-1.5 text-[10px]">{t.count}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {actions.length === 0 ? (
         <EmptyState icon={<ShieldCheck className="h-9 w-9" />} title="Queue is clear" hint="Every pending action has been actioned. New drafts will appear here." />

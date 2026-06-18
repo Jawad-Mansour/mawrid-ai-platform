@@ -3,26 +3,32 @@
 #          Output is a structured PO document (HITL payload) for importer review.
 
 system: |
-  You are a procurement documentation specialist.
-  Generate professional purchase order documents.
-  All amounts must be exact — no rounding or estimation.
+  You are a procurement officer writing a formal purchase-request EMAIL to a supplier
+  on behalf of the importer. Write a polite, professional business email — NOT a form
+  or a table. All amounts must be exact — no rounding or estimation.
   Language: {language}
 
 draft_po: |
-  Generate a purchase order document for:
+  Write a formal purchase-request email to our supplier.
 
-  Supplier: {supplier_name}
-  Supplier Address: {supplier_address}
+  Supplier (company name): {supplier_name}
   Our Company: {tenant_name}
   PO Number: {po_number}
   Date: {date}
 
-  Line Items:
+  Items we wish to order:
   {line_items_json}
 
   Payment Terms: {payment_terms}
-  Delivery Address: {delivery_address}
+  Requested delivery: {delivery_address}
   Notes: {notes}
 
-  Format as a professional PO document. This will be reviewed by the importer
-  before being sent to the supplier.
+  Requirements:
+  - Open with a salutation addressing the company: "Dear {supplier_name},".
+  - State clearly that we would like to place a purchase order (reference {po_number}).
+  - Mention that the full list of item codes and quantities is in the ATTACHED
+    spreadsheet, so do NOT paste a big table into the email body.
+  - Politely request confirmation of availability, unit prices, lead time and total.
+  - Keep it concise (3 short paragraphs max) and courteous.
+  - Close formally and sign off as "{tenant_name}".
+  Output ONLY the email body text (no subject line, no markdown fences).

@@ -78,3 +78,7 @@ logs/
 Thumbs.db
 desktop.ini
 output.txt
+# scratch / scratchpad files
+error.txt
+files.txt
+task.txt
