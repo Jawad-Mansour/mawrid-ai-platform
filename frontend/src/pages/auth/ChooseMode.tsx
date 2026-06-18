@@ -79,7 +79,7 @@ export function ChooseMode() {
       <div className="relative w-full max-w-5xl">
         <motion.div className="mb-10 text-center" initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={SPRING}>
           <motion.img
-            src="/icon.ico" alt="Mawrid"
+            src="/new_icon.ico" alt="Mawrid"
             className="mx-auto mb-5 h-16 w-16 rounded-2xl shadow-glow"
             initial={{ scale: 0, rotate: -120 }} animate={{ scale: 1, rotate: 0 }} transition={{ ...SPRING, delay: 0.1 }}
           />

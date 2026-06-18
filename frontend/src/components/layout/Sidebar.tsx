@@ -100,7 +100,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
     <aside className={cn("glass sticky top-0 z-30 flex h-screen flex-col rounded-none border-y-0 border-l-0 transition-all duration-300", collapsed ? "w-[76px]" : "w-[256px]")}>
       {/* brand */}
       <div className="flex items-center gap-3 px-4 py-5">
-        <img src="/icon.ico" alt="Mawrid" className="h-11 w-11 shrink-0 rounded-2xl shadow-glow" />
+        <img src="/new_icon.ico" alt="Mawrid" className="h-11 w-11 shrink-0 rounded-2xl shadow-glow" />
         {!collapsed && (
           <div className="min-w-0">
             <div className="truncate text-lg font-800 tracking-tight text-ink">Mawrid</div>

@@ -25,7 +25,7 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
           transition={{ type: "spring", stiffness: 200, damping: 20 }}
         >
           <motion.img
-            src="/icon.ico" alt="Mawrid"
+            src="/new_icon.ico" alt="Mawrid"
             className="h-12 w-12 rounded-xl shadow-glow"
             initial={{ scale: 0, rotate: -90 }}
             animate={{ scale: 1, rotate: 0 }}
