@@ -12,19 +12,22 @@ system: |
   Language: {language}
 
 dispute_letter: |
-  Generate a formal dispute letter to the supplier.
-  Tone: formal (fixed — do not vary)
+  Write a formal, courteous supplier CLAIM email on behalf of the importer about a damaged or
+  short delivery that has just been received and inspected.
+  Tone: formal (fixed — do not vary).
   Supplier: {supplier_name}
-  PO Reference: {po_reference}
-  Shipment ID: {shipment_id}
-  Dispute Type: {dispute_type}
-  Products Affected: {products_affected_json}
-  Damage / Issue Description: {damage_description}
-  Resolution Requested: {resolution_requested}
+  PO reference: {po_reference}
+  Shipment: {shipment_id}
+  Affected items (each with quantity DAMAGED and/or SHORT): {damaged_items}
+  Inspection summary: {damage_description}
 
-  The letter must:
-  - Open with a formal salutation in {language}
-  - State the PO and shipment references
-  - Describe each affected product and the nature of the defect or shortage
-  - State the resolution the importer is requesting (replacement / credit note / refund)
-  - Close professionally
+  The email MUST:
+  - Open with a formal salutation addressing {supplier_name} by its proper name with correct
+    capitalisation (e.g. "Dear Hoover," not "Dear hoover,").
+  - State the PO reference and that the goods have now been received and inspected.
+  - List EACH affected product with the exact quantity damaged and/or short.
+  - Note that a full goods-received report is attached for their records.
+  - Request a specific remedy — a credit note or replacement of the affected units — and ask for
+    a written response within 10 business days.
+  - Stay professional and solution-oriented; sign off as the importer.
+  Output ONLY the email body text (no subject line, no markdown fences).

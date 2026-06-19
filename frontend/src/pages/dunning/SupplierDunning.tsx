@@ -6,9 +6,9 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Banknote, FileWarning, Check, X, Send, Building2, PlayCircle } from "lucide-react";
+import { Banknote, FileWarning, Check, X, Send, Building2, PlayCircle, ClipboardList, Download } from "lucide-react";
 import { toast } from "sonner";
-import { apiGet, apiPost, apiErr } from "@/lib/api";
+import { apiGet, apiPost, apiErr, apiClient } from "@/lib/api";
 import { Card, SectionTitle, Loading, EmptyState, Spinner } from "@/components/ui";
 import type { HITLAction } from "@/lib/types";
 
@@ -30,6 +30,14 @@ export function SupplierDunning() {
   });
   const approve = useMutation({ mutationFn: (id: string) => apiPost(`/hitl/actions/${id}/approve`, {}), onSuccess: () => { toast.success("Sent to supplier"); qc.invalidateQueries({ queryKey: ["hitl-all"] }); }, onError: (e) => toast.error(apiErr(e, "Send failed")) });
   const reject = useMutation({ mutationFn: (id: string) => apiPost(`/hitl/actions/${id}/reject`, {}), onSuccess: () => { toast("Rejected"); qc.invalidateQueries({ queryKey: ["hitl-all"] }); }, onError: (e) => toast.error(apiErr(e, "Reject failed")) });
+
+  async function downloadReport(shipmentId: string, po: string) {
+    try {
+      const res = await apiClient.get(`/procurement/shipments/${shipmentId}/receipt-pdf`, { responseType: "blob" });
+      const url = URL.createObjectURL(res.data as Blob); const a = document.createElement("a");
+      a.href = url; a.download = `receipt-${po}.pdf`; a.click(); URL.revokeObjectURL(url);
+    } catch (e) { toast.error(apiErr(e, "Couldn't download the report")); }
+  }
 
   const list = tab === "payables" ? payables : disputes;
 
@@ -73,6 +81,13 @@ export function SupplierDunning() {
                   <span className="text-xs text-ink-faint">{a.payload.subject}</span>
                 </div>
                 <div className="max-h-[160px] overflow-y-auto whitespace-pre-wrap rounded-lg border border-line bg-black/20 p-3 text-xs text-ink-soft">{String(a.payload.body ?? a.payload.draft ?? "")}</div>
+                {(a.payload.po_id || a.payload.shipment_id) && (
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
+                    {a.payload.po_reference && <span className="font-mono text-ink-faint">PO {String(a.payload.po_reference)}</span>}
+                    {a.payload.po_id && <Link to={`/purchase-orders/${a.payload.po_id}`} className="chip border-grape/30 bg-grape/10 text-grape-soft hover:bg-grape/20"><ClipboardList className="h-3 w-3" /> Open order</Link>}
+                    {a.payload.shipment_id && <button onClick={() => downloadReport(String(a.payload.shipment_id), String(a.payload.po_reference ?? "report"))} className="chip border-line bg-white/[0.03] text-ink-soft hover:text-ink"><Download className="h-3 w-3" /> Report PDF</button>}
+                  </div>
+                )}
                 <div className="mt-3 flex gap-2">
                   <button className="btn-gold !py-1.5 text-xs" disabled={!a.payload.to || approve.isPending} onClick={() => approve.mutate(a.action_id)}><Send className="h-3.5 w-3.5" /> Approve & send</button>
                   <button className="btn-danger !py-1.5 text-xs" disabled={reject.isPending} onClick={() => reject.mutate(a.action_id)}><X className="h-3.5 w-3.5" /> Reject</button>

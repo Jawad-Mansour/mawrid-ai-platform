@@ -868,6 +868,7 @@ class CreateShipmentRequest(StrictModel):
     carrier: str | None = None
     tracking_number: str | None = None
     expected_arrival_date: str | None = None
+    expected_arrival_at: str | None = None  # exact ISO datetime (Beirut wall-clock)
 
 
 class ShipmentResponse(StrictModel):
@@ -876,6 +877,7 @@ class ShipmentResponse(StrictModel):
     carrier: str | None
     tracking_number: str | None
     expected_arrival_date: str | None
+    expected_arrival_at: str | None = None
     status: str
     created_at: str
 
@@ -892,12 +894,15 @@ async def create_shipment(
     session: SessionDep,
 ) -> ShipmentResponse:
     shipment_repo = ShipmentRepository(session, current_user.tenant_id)
+    # If only an exact datetime was given, derive the date part for the scheduler/calendar.
+    arrival_date = body.expected_arrival_date or (body.expected_arrival_at[:10] if body.expected_arrival_at else None)
     shipment = await shipment_repo.create(
         shipment_id=uuid.uuid4().hex,
         po_id=body.po_id,
         carrier=body.carrier,
         tracking_number=body.tracking_number,
-        expected_arrival_date=body.expected_arrival_date,
+        expected_arrival_date=arrival_date,
+        expected_arrival_at=body.expected_arrival_at,
     )
     await session.commit()
     return ShipmentResponse(
@@ -905,9 +910,8 @@ async def create_shipment(
         po_id=shipment.po_id,
         carrier=shipment.carrier,
         tracking_number=shipment.tracking_number,
-        expected_arrival_date=str(shipment.expected_arrival_date)
-        if shipment.expected_arrival_date
-        else None,
+        expected_arrival_date=str(shipment.expected_arrival_date) if shipment.expected_arrival_date else None,
+        expected_arrival_at=shipment.expected_arrival_at.isoformat() if shipment.expected_arrival_at else None,
         status=shipment.status,
         created_at=str(shipment.created_at),
     )
@@ -932,6 +936,7 @@ async def list_shipments(
             carrier=s.carrier,
             tracking_number=s.tracking_number,
             expected_arrival_date=str(s.expected_arrival_date) if s.expected_arrival_date else None,
+            expected_arrival_at=s.expected_arrival_at.isoformat() if s.expected_arrival_at else None,
             status=s.status,
             created_at=str(s.created_at),
         )
@@ -942,6 +947,7 @@ async def list_shipments(
 class UpdateShipmentStatusRequest(StrictModel):
     status: str
     expected_arrival_date: str | None = None
+    expected_arrival_at: str | None = None
 
 
 @router.put(
@@ -966,7 +972,10 @@ async def update_shipment_status(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shipment not found.")
 
     await shipment_repo.set_status(shipment_id, body.status)
-    if body.expected_arrival_date:
+    if body.expected_arrival_at:
+        await shipment_repo.update_arrival_at(shipment_id, body.expected_arrival_at)
+        await shipment_repo.update_arrival_date(shipment_id, body.expected_arrival_at[:10])
+    elif body.expected_arrival_date:
         await shipment_repo.update_arrival_date(shipment_id, body.expected_arrival_date)
     await session.commit()
     return {"shipment_id": shipment_id, "status": body.status}
@@ -1499,7 +1508,7 @@ async def file_supplier_dispute(
         dispute_prompt = _load_prompt("dispute_letter")
         system_prompt = dispute_prompt.get("system", "You are a procurement specialist.")
         system_prompt = system_prompt.format(language=supplier_language)
-        user_prompt = dispute_prompt.get("draft_dispute", "").format(
+        user_prompt = dispute_prompt["dispute_letter"].format(
             supplier_name=supplier_name,
             po_reference=po_ref,
             shipment_id=shipment_id,
@@ -1529,10 +1538,11 @@ async def file_supplier_dispute(
         action_type="dispute_letter",
         payload={
             "shipment_id": shipment_id,
+            "po_id": shipment.po_id,  # linkage back to the order/report (Phase D)
             "po_reference": po_ref,
             "supplier_name": supplier_name,
             "to": supplier_email,
-            "subject": f"Formal Dispute — Shipment {shipment_id}",
+            "subject": f"Formal claim — damaged/short delivery · PO {po_ref}",
             "body": draft_text,
             "language": supplier_language,
             "damaged_items": body.damaged_items,

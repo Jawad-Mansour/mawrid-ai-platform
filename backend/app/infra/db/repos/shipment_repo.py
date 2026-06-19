@@ -21,6 +21,21 @@ from app.infra.db.models.order import GoodsReceived, Shipment
 from app.infra.db.repos.base_repo import TenantRepository
 
 
+def _to_dt(value: str | datetime | None) -> datetime | None:
+    """Parse an ISO datetime (e.g. '2026-06-25T14:30' from a datetime-local input). The value
+    is the importer's Beirut wall-clock; we tag it UTC so the numbers round-trip exactly and
+    the UI shows them verbatim (labelled 'Beirut time')."""
+    if value is None or isinstance(value, datetime):
+        return value
+    if isinstance(value, str) and value.strip():
+        try:
+            dt = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+        except ValueError:
+            return None
+        return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
+    return None
+
+
 class ShipmentRepository(TenantRepository):
     async def create(
         self,
@@ -29,6 +44,7 @@ class ShipmentRepository(TenantRepository):
         carrier: str | None = None,
         tracking_number: str | None = None,
         expected_arrival_date: str | date | None = None,
+        expected_arrival_at: str | datetime | None = None,
     ) -> Shipment:
         shipment = Shipment(
             shipment_id=shipment_id,
@@ -37,11 +53,19 @@ class ShipmentRepository(TenantRepository):
             carrier=carrier,
             tracking_number=tracking_number,
             expected_arrival_date=to_date(expected_arrival_date),
+            expected_arrival_at=_to_dt(expected_arrival_at),
             status="pending_shipment",
         )
         self._session.add(shipment)
         await self._session.flush()
         return shipment
+
+    async def update_arrival_at(self, shipment_id: str, expected_arrival_at: str | datetime) -> None:
+        await self._session.execute(
+            update(Shipment)
+            .where(self._tenant_filter(Shipment), Shipment.shipment_id == shipment_id)
+            .values(expected_arrival_at=_to_dt(expected_arrival_at))
+        )
 
     async def get_by_id(self, shipment_id: str) -> Shipment | None:
         result = await self._session.execute(

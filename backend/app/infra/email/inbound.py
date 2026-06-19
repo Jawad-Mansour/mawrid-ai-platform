@@ -251,9 +251,11 @@ async def ingest_supplier_reply(
         existing = await ship_repo.list_by_po(po_id)
         if existing:
             await ship_repo.update_arrival_date(existing[0].shipment_id, c.arrival_date)
+            await ship_repo.update_arrival_at(existing[0].shipment_id, c.arrival_date)
         else:
             await ship_repo.create(
-                shipment_id=uuid.uuid4().hex, po_id=po_id, expected_arrival_date=c.arrival_date
+                shipment_id=uuid.uuid4().hex, po_id=po_id,
+                expected_arrival_date=c.arrival_date, expected_arrival_at=c.arrival_date,
             )
         await record_event(
             session, tenant_id, kind="arrival_proposed",

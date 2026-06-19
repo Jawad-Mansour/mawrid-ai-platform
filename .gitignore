@@ -82,3 +82,6 @@ output.txt
 error.txt
 files.txt
 task.txt
+# conversation/history dumps — may contain pasted secrets, never commit
+*history*.txt
+some of the history.txt

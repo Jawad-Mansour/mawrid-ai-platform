@@ -18,8 +18,11 @@ export function Stock() {
   const q = useQuery({ queryKey: ["stock"], queryFn: () => apiGet<Item[]>("/procurement/stock"), refetchInterval: 20_000 });
   const [qty, setQty] = useState<Record<string, number>>({});
   const [thr, setThr] = useState<Record<string, number>>({});
-  const rows = q.data ?? [];
+  // low-stock first, then lowest stock, so what needs attention is at the top
+  const rows = (q.data ?? []).slice().sort((a, b) => (Number(b.low) - Number(a.low)) || (a.qty_in_stock - b.qty_in_stock));
   const lowCount = rows.filter((r) => r.low).length;
+  const cur = rows.find((r) => r.currency)?.currency ?? "USD";
+  const stockValue = rows.reduce((s, r) => s + r.qty_in_stock * (r.price ?? 0), 0);
 
   const restock = useMutation({
     mutationFn: ({ id, quantity }: { id: string; quantity: number }) => apiPost<{ hitl_action_id: string }>(`/procurement/products/${id}/restock`, { quantity }),
@@ -37,10 +40,14 @@ export function Stock() {
       <SectionTitle title="Stock Levels" subtitle="Everything you hold in stock — low items are flagged so you can reorder from the right supplier."
         right={<button onClick={() => q.refetch()} className="btn-ghost !py-2"><RefreshCw className="h-4 w-4" /> Refresh</button>} />
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Products in stock" value={rows.length} icon={<Warehouse className="h-5 w-5" />} />
         <Stat label="Low stock" value={lowCount} icon={<PackageMinus className="h-5 w-5" />} tone="warn" />
         <Stat label="On storefront" value={rows.filter((r) => r.storefront_qty > 0).length} icon={<Store className="h-5 w-5" />} tone="emerald" />
+        <Card className="flex items-center gap-3">
+          <div className="grid h-11 w-11 place-items-center rounded-xl bg-grape/15 text-grape-soft"><TrendingUp className="h-5 w-5" /></div>
+          <div><div className="text-2xl font-800 text-ink">{formatCurrency(stockValue, cur)}</div><div className="text-xs text-ink-soft">Stock value</div></div>
+        </Card>
       </div>
 
       <div className="flex items-start gap-2 rounded-xl border border-grape/25 bg-grape/[0.06] p-3 text-xs text-ink-soft">
@@ -56,7 +63,7 @@ export function Stock() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead><tr className="border-b border-line text-left text-xs uppercase tracking-wider text-ink-faint">
-                <th className="py-2 pr-2 font-600">Product</th><th className="px-2 text-right font-600">In stock</th><th className="px-2 text-right font-600">On store</th><th className="px-2 text-center font-600">Reorder ≤</th><th className="px-2 font-600">Supplier</th><th className="px-2 text-right font-600">Restock</th>
+                <th className="py-2 pr-2 font-600">Product</th><th className="px-2 text-right font-600">In stock</th><th className="px-2 text-right font-600">Reserved</th><th className="px-2 text-right font-600">Available</th><th className="px-2 text-center font-600">Reorder ≤</th><th className="px-2 font-600">Supplier</th><th className="px-2 text-right font-600">Restock</th>
               </tr></thead>
               <tbody>
                 {rows.map((p) => (
@@ -64,6 +71,7 @@ export function Stock() {
                     <td className="py-2 pr-2"><div className="line-clamp-1 text-ink">{p.product_name}</div><div className="font-mono text-[10px] text-ink-faint">{p.sku ?? "—"}{p.price != null ? ` · ${formatCurrency(p.price, p.currency ?? "USD")}` : ""}</div></td>
                     <td className="px-2 text-right"><span className={`inline-flex items-center gap-1 font-700 ${p.low ? "text-danger" : "text-ink"}`}>{p.low && <PackageMinus className="h-3.5 w-3.5" />}{p.qty_in_stock}</span></td>
                     <td className="px-2 text-right text-ink-soft">{p.storefront_qty || "—"}</td>
+                    <td className="px-2 text-right font-600 text-emerald-soft">{Math.max(0, p.qty_in_stock - p.storefront_qty)}</td>
                     <td className="px-2 text-center">
                       <input type="number" min={0} defaultValue={p.reorder_threshold ?? 5} onChange={(e) => setThr({ ...thr, [p.product_id]: Number(e.target.value) })}
                         onBlur={() => { const t = thr[p.product_id]; if (t != null && t !== (p.reorder_threshold ?? 5)) setThreshold.mutate({ id: p.product_id, t }); }}

@@ -58,6 +58,8 @@ class Shipment(TenantMixin, Base):
     carrier: Mapped[str | None] = mapped_column(Text, nullable=True)
     tracking_number: Mapped[str | None] = mapped_column(Text, nullable=True)
     expected_arrival_date: Mapped[str | None] = mapped_column(Date, nullable=True)
+    # exact arrival datetime (Beirut wall-clock, stored as timestamptz)
+    expected_arrival_at: Mapped[Any | None] = mapped_column(DateTime(timezone=True), nullable=True)
     status: Mapped[str] = mapped_column(Text, default="pending_shipment")
     received_at: Mapped[str | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[str] = mapped_column(DateTime(timezone=True), server_default=func.now())

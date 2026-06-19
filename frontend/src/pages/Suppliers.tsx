@@ -12,7 +12,7 @@ import { apiGet, apiPost, apiPut, apiDelete, apiErr } from "@/lib/api";
 import { Card, SectionTitle, Loading, EmptyState, Spinner } from "@/components/ui";
 import { SupplierEditModal } from "@/components/SupplierEditModal";
 import { useNetwork } from "@/stores/network";
-import type { Supplier } from "@/lib/types";
+import type { Supplier, HITLAction } from "@/lib/types";
 
 function asList(d: unknown): Supplier[] {
   if (Array.isArray(d)) return d as Supplier[];
@@ -30,6 +30,9 @@ export function Suppliers({ relationship }: { relationship?: "active" | "prospec
   const list = useQuery({ queryKey: ["suppliers"], queryFn: () => apiGet<unknown>("/suppliers") });
   const convos = useQuery({ queryKey: ["conversations"], queryFn: () => apiGet<Convo[]>("/network/conversations") });
   const convoBy = useMemo(() => Object.fromEntries((convos.data ?? []).map((c) => [c.supplier_id, c])), [convos.data]);
+  // suppliers with a catalogue/outreach request still awaiting HITL approval
+  const hitl = useQuery({ queryKey: ["hitl-pending"], queryFn: () => apiGet<HITLAction[]>("/hitl/actions?status=pending"), refetchInterval: 12_000 });
+  const pendingOutreach = useMemo(() => new Set((Array.isArray(hitl.data) ? hitl.data : []).filter((a) => a.action_type === "supplier_outreach" && a.payload?.supplier_id).map((a) => String(a.payload.supplier_id))), [hitl.data]);
   const suppliers = useMemo(() => {
     const all = asList(list.data);
     return relationship ? all.filter((s) => (s.relationship ?? "active") === relationship) : all;
@@ -86,6 +89,18 @@ export function Suppliers({ relationship }: { relationship?: "active" | "prospec
                     </button>
                     <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-md border ${on ? "border-gold bg-gold text-bg" : "border-line text-ink-faint"}`}>{on ? <Check className="h-3.5 w-3.5" /> : <GitCompare className="h-3 w-3" />}</span>
                   </div>
+                  {(() => {
+                    const replied = c && c.last_direction === "inbound";
+                    const requested = pendingOutreach.has(s.supplier_id);
+                    if (!replied && !requested && !(c && c.message_count > 0)) return null;
+                    return (
+                      <div className="mt-1.5">
+                        <span className={`chip ${replied ? "border-emerald/30 bg-emerald/10 text-emerald-soft" : "border-gold/30 bg-gold/10 text-gold-soft"}`}>
+                          <Inbox className="h-3 w-3" /> {replied ? "Replied" : requested ? "Catalogue requested" : "Awaiting reply"}
+                        </span>
+                      </div>
+                    );
+                  })()}
                   <div className="mt-2 space-y-1 text-xs text-ink-faint">
                     {s.location && <div className="flex items-center gap-1.5"><MapPin className="h-3 w-3" /> {s.location}</div>}
                     {s.email && <div className="flex items-center gap-1.5"><Mail className="h-3 w-3" /> {s.email}</div>}
