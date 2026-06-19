@@ -7,6 +7,7 @@ import {
   Building2, Store, Boxes, ShoppingBag, ArrowRight, Clock,
   ChevronLeft, ChevronRight, type LucideIcon,
 } from "lucide-react";
+import { AuthScene } from "@/components/AuthScene";
 
 interface Role {
   key: string; title: string; tag: string; available: boolean; icon: LucideIcon;
@@ -47,7 +48,8 @@ export function ChooseMode() {
   const navigate = useNavigate();
   const [active, setActive] = useState(0);
   const drag = useMotionValue(0);
-  const go = (dir: number) => setActive((a) => Math.min(ROLES.length - 1, Math.max(0, a + dir)));
+  // infinite: wraps around forever (next on the last card → back to the first)
+  const go = (dir: number) => setActive((a) => (a + dir + ROLES.length) % ROLES.length);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -71,12 +73,9 @@ export function ChooseMode() {
 
   return (
     <div className="relative grid min-h-screen place-items-center overflow-hidden bg-radial-fade px-6 py-12">
-      <motion.div className="pointer-events-none absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1 }}>
-        <div className="absolute -left-32 top-10 h-72 w-72 rounded-full bg-grape/10 blur-3xl animate-float" />
-        <div className="absolute -right-24 bottom-0 h-80 w-80 rounded-full bg-gold/10 blur-3xl animate-float" style={{ animationDelay: "2s" }} />
-      </motion.div>
+      <AuthScene />
 
-      <div className="relative w-full max-w-5xl">
+      <div className="relative z-10 w-full max-w-5xl">
         <motion.div className="mb-10 text-center" initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={SPRING}>
           <motion.img
             src="/new_icon.ico" alt="Mawrid"
@@ -98,7 +97,11 @@ export function ChooseMode() {
             onDragEnd={onDragEnd}
           >
             {ROLES.map((r, i) => {
-              const offset = i - active;
+              // circular offset so the carousel wraps smoothly in both directions
+              let offset = i - active;
+              const n = ROLES.length;
+              if (offset > n / 2) offset -= n;
+              else if (offset < -n / 2) offset += n;
               const abs = Math.abs(offset);
               const visible = abs <= 2;
               return (
@@ -166,12 +169,12 @@ export function ChooseMode() {
             })}
           </motion.div>
 
-          <button onClick={() => go(-1)} disabled={active === 0}
-            className="absolute left-0 top-1/2 z-20 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full glass transition-all hover:bg-white/[0.08] disabled:opacity-30">
+          <button onClick={() => go(-1)}
+            className="absolute left-0 top-1/2 z-20 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full glass transition-all hover:scale-110 hover:bg-white/[0.1] hover:shadow-glow">
             <ChevronLeft className="h-5 w-5 text-ink" />
           </button>
-          <button onClick={() => go(1)} disabled={active === ROLES.length - 1}
-            className="absolute right-0 top-1/2 z-20 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full glass transition-all hover:bg-white/[0.08] disabled:opacity-30">
+          <button onClick={() => go(1)}
+            className="absolute right-0 top-1/2 z-20 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full glass transition-all hover:scale-110 hover:bg-white/[0.1] hover:shadow-glow">
             <ChevronRight className="h-5 w-5 text-ink" />
           </button>
         </div>

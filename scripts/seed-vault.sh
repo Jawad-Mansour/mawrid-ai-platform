@@ -75,6 +75,28 @@ vault_put "mawrid/icecat" "{\"api_key\": \"${ICECAT_KEY}\"}"
 # MinIO (Phase 2 enrichment — document + image storage)
 vault_put "mawrid/minio" "{\"access_key\": \"minioadmin\", \"secret_key\": \"minioadmin\", \"endpoint\": \"minio:9000\"}"
 
+# IMAP (optional — inbound supplier-reply detection). Set IMAP_USER + IMAP_PASSWORD in the
+# environment to enable. For Gmail: enable IMAP, turn on 2FA, and use an App Password.
+# If unset, the backend simply runs without inbound polling (manual reply logging still works).
+if [ -n "${IMAP_USER:-}" ] && [ -n "${IMAP_PASSWORD:-}" ]; then
+  IMAP_HOST="${IMAP_HOST:-imap.gmail.com}"
+  vault_put "mawrid/imap" \
+    "{\"host\": \"${IMAP_HOST}\", \"user\": \"${IMAP_USER}\", \"password\": $(json_encode "${IMAP_PASSWORD}")}"
+  echo "  inbound email: ENABLED (${IMAP_USER} @ ${IMAP_HOST})"
+else
+  echo "  inbound email: disabled (set IMAP_USER + IMAP_PASSWORD to enable)"
+fi
+
+# Connect Gmail (OAuth) — set GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET (from keys.txt) to enable.
+# Needed after a full `docker compose down` since Vault dev mode resets.
+if [ -n "${GOOGLE_CLIENT_ID:-}" ] && [ -n "${GOOGLE_CLIENT_SECRET:-}" ]; then
+  vault_put "mawrid/google" \
+    "{\"client_id\": \"${GOOGLE_CLIENT_ID}\", \"client_secret\": \"${GOOGLE_CLIENT_SECRET}\"}"
+  echo "  Connect Gmail: ENABLED"
+else
+  echo "  Connect Gmail: disabled (set GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET to enable)"
+fi
+
 echo ""
 echo "==> Vault seeded successfully."
 echo "    Pass your real keys as arguments:"

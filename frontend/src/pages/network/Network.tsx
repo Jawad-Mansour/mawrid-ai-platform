@@ -5,7 +5,7 @@
 //          starts outreach.
 // API:     GET /network/regions · GET /network/factories · POST /network/refresh
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw, GitCompare, MapPin, Globe2, Lock, Building2, ExternalLink, Mail, Check, ArrowRight, Factory, Bot, Sparkles, Search, ImagePlus } from "lucide-react";
@@ -14,19 +14,22 @@ import { apiGet, apiPost, apiErr } from "@/lib/api";
 import { SectionTitle, Loading, Spinner, Card } from "@/components/ui";
 import { LeafletMap } from "@/components/LeafletMap";
 import { FactoryDetailModal } from "@/components/FactoryDetailModal";
+import { ContactModal } from "@/components/ContactModal";
 import { useNetwork, colorForCategory } from "@/stores/network";
+import { brandLogoSources } from "@/lib/utils";
 
 interface Region { key: string; label: string; available: boolean; center: [number, number]; zoom: number; bounds?: [[number, number], [number, number]]; min_zoom?: number }
 interface Pin2 { id: string; source: string; name: string; category: string; latitude: number | null; longitude: number | null; city?: string | null; country?: string | null; website?: string | null; logo_url?: string | null; email?: string | null; condition?: string | null; offering?: string | null }
 interface FactoriesResp { region: string; pins: Pin2[]; categories: string[] }
 
 export function Network() {
-  const navigate = useNavigate();
   const qc = useQueryClient();
   const net = useNetwork();
-  const [hidden, setHidden] = useState<string[]>([]);
+  const [contact, setContact] = useState<Pin2 | null>(null);
+  const [active, setActive] = useState<string[]>([]); // selected categories; empty = show all
   const [cond, setCond] = useState<"all" | "new" | "used" | "both">("all");
   const [detail, setDetail] = useState<Pin2 | null>(null);
+  const [search, setSearch] = useState("");
 
   const regions = useQuery({ queryKey: ["regions"], queryFn: () => apiGet<Region[]>("/network/regions") });
   const data = useQuery({ queryKey: ["factories", net.region], queryFn: () => apiGet<FactoriesResp>(`/network/factories?region=${net.region}`), refetchInterval: 30_000 });
@@ -51,7 +54,11 @@ export function Network() {
   const categories = data.data?.categories ?? [];
   const colorFor = (c: string) => colorForCategory(c, categories);
   const condOk = (c?: string | null) => cond === "all" || c === cond || (c === "both" && (cond === "new" || cond === "used"));
-  const visiblePins = useMemo(() => allPins.filter((p) => !hidden.includes(p.category) && condOk(p.condition)), [allPins, hidden, cond]);
+  const q = search.trim().toLowerCase();
+  const visiblePins = useMemo(() => allPins.filter((p) =>
+    (active.length === 0 || active.includes(p.category)) && condOk(p.condition) &&
+    (!q || p.name.toLowerCase().includes(q) || (p.city ?? "").toLowerCase().includes(q) || (p.country ?? "").toLowerCase().includes(q))
+  ), [allPins, active, cond, q]);
   const byCategory = useMemo(() => {
     const m = new Map<string, Pin2[]>();
     visiblePins.forEach((p) => { if (!m.has(p.category)) m.set(p.category, []); m.get(p.category)!.push(p); });
@@ -67,6 +74,14 @@ export function Network() {
             <button onClick={() => refresh.mutate()} disabled={refresh.isPending} className="btn-ghost !py-2">{refresh.isPending ? <Spinner className="h-4 w-4" /> : <RefreshCw className="h-4 w-4" />} Refresh</button>
           </div>
         } />
+
+      {/* search a specific supplier/factory by name or place */}
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search a supplier by name, city or country…"
+          className="input !pl-9" />
+        {search && <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink-faint hover:text-ink">clear</button>}
+      </div>
 
       {/* region + condition selectors */}
       <div className="flex flex-wrap items-center gap-2">
@@ -94,16 +109,20 @@ export function Network() {
       {data.isLoading ? <Loading label="Loading the network…" /> : (
         <>
           <LeafletMap pins={visiblePins} center={region.center} zoom={region.zoom} colorFor={colorFor} selectedIds={net.selected} onSelect={(id) => net.toggle(id)}
+            onContact={(id) => { const pin = visiblePins.find((x) => x.id === id); if (pin) setContact(pin); }}
             maxBounds={(region as Region).bounds} minZoom={(region as Region).min_zoom} />
 
-          {/* legend / category filters */}
+          {/* category filter — click one to show ONLY it; click more to add; click again to remove */}
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs uppercase tracking-wider text-ink-faint">Categories</span>
+            <button onClick={() => setActive([])}
+              className={`chip ${active.length === 0 ? "border-gold/50 bg-gold/15 text-gold-soft" : "border-line bg-white/[0.02] text-ink-soft hover:text-ink"}`}>All</button>
             {categories.map((c) => {
-              const on = !hidden.includes(c);
+              const on = active.includes(c);
+              const dim = active.length > 0 && !on;
               return (
-                <button key={c} onClick={() => setHidden((h) => (h.includes(c) ? h.filter((x) => x !== c) : [...h, c]))}
-                  className={`chip capitalize ${on ? "border-line bg-white/[0.04] text-ink" : "border-line bg-white/[0.01] text-ink-faint line-through"}`}>
+                <button key={c} onClick={() => setActive((a) => (a.includes(c) ? a.filter((x) => x !== c) : [...a, c]))}
+                  className={`chip capitalize ${on ? "border-gold/50 bg-gold/15 text-gold-soft" : dim ? "border-line bg-white/[0.01] text-ink-faint opacity-50" : "border-line bg-white/[0.04] text-ink"}`}>
                   <span className="h-2.5 w-2.5 rounded-full" style={{ background: colorFor(c) }} /> {c.replace("-", " ")} <span className="text-[10px] text-ink-faint">{allPins.filter((p) => p.category === c).length}</span>
                 </button>
               );
@@ -122,7 +141,7 @@ export function Network() {
                 <DragCarousel reverse={i % 2 === 1}>
                   {pins.map((p) => (
                     <FactoryCard key={p.id} p={p} selected={net.has(p.id)} color={colorFor(cat)}
-                      onToggle={() => net.toggle(p.id)} onOpen={() => setDetail(p)} onContact={() => navigate(`/suppliers/outreach?target=${encodeURIComponent(p.id)}`)} />
+                      onToggle={() => net.toggle(p.id)} onOpen={() => setDetail(p)} onContact={() => setContact(p)} />
                   ))}
                 </DragCarousel>
               </div>
@@ -135,8 +154,10 @@ export function Network() {
       {detail && (
         <FactoryDetailModal pin={detail} color={colorFor(detail.category)} selected={net.has(detail.id)}
           onClose={() => setDetail(null)} onToggle={() => net.toggle(detail.id)}
-          onContact={() => navigate(`/suppliers/outreach?target=${encodeURIComponent(detail.id)}`)} />
+          onContact={() => { setContact(detail); setDetail(null); }} />
       )}
+
+      {contact && <ContactModal target={contact} onClose={() => setContact(null)} />}
     </div>
   );
 }
@@ -157,49 +178,65 @@ function AgentCard({ icon: Icon, title, desc, running, onRun }: { icon: typeof B
   );
 }
 
-// Auto-scrolling carousel that pauses on hover and supports click-drag to scroll left/right.
+// Slow auto-scrolling marquee that (a) pauses on hover and (b) lets you grab & drag the row
+// by hand while paused, then resumes auto-scroll when the pointer leaves. JS-driven transform
+// so the manual drag and the loop share one offset. Cards are repeated enough to fill the row.
 function DragCarousel({ children, reverse }: { children: React.ReactNode; reverse?: boolean }) {
-  const items = Array.isArray(children) ? children : [children];
-  const ref = useRef<HTMLDivElement>(null);
-  const hovering = useRef(false);
-  const drag = useRef<{ active: boolean; startX: number; startScroll: number }>({ active: false, startX: 0, startScroll: 0 });
+  const items = (Array.isArray(children) ? children : [children]).filter(Boolean);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const offset = useRef(0);
+  const halfW = useRef(0);
+  const paused = useRef(false);
+  const drag = useRef({ active: false, startX: 0, startOffset: 0, moved: false });
+
+  const reps = items.length ? Math.max(2, Math.ceil(6 / items.length)) : 0;
+  const base = Array.from({ length: reps }, () => items).flat();
+
+  const apply = (o: number) => {
+    const h = halfW.current;
+    if (h > 0) { while (o <= -h) o += h; while (o > 0) o -= h; }
+    offset.current = o;
+    if (trackRef.current) trackRef.current.style.transform = `translate3d(${o}px,0,0)`;
+  };
 
   useEffect(() => {
-    const el = ref.current;
-    if (!el || items.length === 0) return;
-    // start mid-way so it can scroll both directions seamlessly
-    el.scrollLeft = el.scrollWidth / 4;
+    const track = trackRef.current;
+    if (!track) return;
+    const measure = () => { halfW.current = track.scrollWidth / 2; };
+    measure();
+    const speed = reverse ? 0.7 : -0.7; // px/frame
     let raf = 0;
-    const dir = reverse ? -1 : 1;
-    const step = () => {
-      if (el && !hovering.current && !drag.current.active) {
-        el.scrollLeft += dir * 0.4;
-        const half = el.scrollWidth / 2;
-        if (el.scrollLeft >= half * 1.5) el.scrollLeft -= half;
-        if (el.scrollLeft <= half * 0.5) el.scrollLeft += half;
-      }
-      raf = requestAnimationFrame(step);
+    const tick = () => {
+      if (halfW.current > 0 && !paused.current && !drag.current.active) apply(offset.current + speed);
+      raf = requestAnimationFrame(tick);
     };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [items.length, reverse]);
+    raf = requestAnimationFrame(tick);
+    window.addEventListener("resize", measure);
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", measure); };
+  }, [base.length, reverse]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  if (items.length === 0) return null;
   return (
-    <div ref={ref}
-      onMouseEnter={() => (hovering.current = true)} onMouseLeave={() => { hovering.current = false; drag.current.active = false; }}
-      onPointerDown={(e) => { drag.current = { active: true, startX: e.clientX, startScroll: ref.current!.scrollLeft }; (e.target as HTMLElement).setPointerCapture?.(e.pointerId); }}
-      onPointerMove={(e) => { if (drag.current.active && ref.current) ref.current.scrollLeft = drag.current.startScroll - (e.clientX - drag.current.startX); }}
-      onPointerUp={() => (drag.current.active = false)}
-      className="flex cursor-grab gap-3 overflow-x-auto pb-1 active:cursor-grabbing [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      {[...items, ...items].map((c, i) => <div key={i} className="shrink-0 select-none">{c}</div>)}
+    <div className="overflow-hidden py-1"
+      onMouseEnter={() => (paused.current = true)}
+      onMouseLeave={() => { paused.current = false; drag.current.active = false; }}>
+      <div ref={trackRef}
+        className="flex w-max cursor-grab gap-3 select-none active:cursor-grabbing"
+        onPointerDown={(e) => { drag.current = { active: true, startX: e.clientX, startOffset: offset.current, moved: false }; (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId); }}
+        onPointerMove={(e) => { if (!drag.current.active) return; const dx = e.clientX - drag.current.startX; if (Math.abs(dx) > 4) drag.current.moved = true; apply(drag.current.startOffset + dx); }}
+        onPointerUp={() => { drag.current.active = false; }}
+        onPointerCancel={() => { drag.current.active = false; }}
+        onClickCapture={(e) => { if (drag.current.moved) { e.preventDefault(); e.stopPropagation(); drag.current.moved = false; } }}>
+        {[...base, ...base].map((c, i) => <div key={i} className="shrink-0">{c}</div>)}
+      </div>
     </div>
   );
 }
 
-// Logo with a robust fallback chain: provided/Clearbit → Google favicon → initials.
+// Logo with a robust fallback chain (Google favicon → DuckDuckGo → initials); see
+// brandLogoSources. A real uploaded logo wins; dead Clearbit URLs are ignored.
 function Logo({ name, url, website, color }: { name: string; url?: string | null; website?: string | null; color: string }) {
-  const domain = website ? website.replace(/^https?:\/\//, "").replace(/\/.*$/, "") : null;
-  const sources = [url, domain ? `https://logo.clearbit.com/${domain}` : null, domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=64` : null].filter(Boolean) as string[];
+  const sources = brandLogoSources(url, website);
   const [idx, setIdx] = useState(0);
   const src = sources[idx];
   if (!src) return <span className="text-sm font-800" style={{ color }}>{name[0]?.toUpperCase()}</span>;
@@ -228,7 +265,7 @@ function FactoryCard({ p, selected, color, onToggle, onOpen, onContact }: { p: P
         {p.condition && <div className="capitalize">Sells: {p.condition}</div>}
       </div>
       <div className="mt-2.5 flex items-center gap-1.5 border-t border-line pt-2.5">
-        {p.website && <a href={p.website} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="grid h-7 w-7 place-items-center rounded-lg border border-line text-ink-faint hover:text-ink" title="Website"><ExternalLink className="h-3.5 w-3.5" /></a>}
+        {p.website && <a href={/^https?:\/\//.test(p.website) ? p.website : `https://${p.website}`} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="grid h-7 w-7 place-items-center rounded-lg border border-line text-ink-faint hover:text-ink" title="Visit website"><ExternalLink className="h-3.5 w-3.5" /></a>}
         <button onClick={(e) => { e.stopPropagation(); onContact(); }} className="btn-gold flex-1 !py-1.5 text-xs"><Mail className="h-3.5 w-3.5" /> Contact <ArrowRight className="h-3 w-3" /></button>
       </div>
     </div>

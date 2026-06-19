@@ -99,6 +99,16 @@ class SupplierRepository(TenantRepository):
                 .values(**values)
             )
 
+    async def delete(self, supplier_id: str) -> None:
+        from sqlalchemy import delete as _delete  # noqa: PLC0415
+
+        await self._session.execute(
+            _delete(Supplier).where(
+                self._tenant_filter(Supplier),
+                Supplier.supplier_id == supplier_id,
+            )
+        )
+
     async def increment_discrepancy(self, supplier_id: str) -> None:
         await self._session.execute(
             update(Supplier)

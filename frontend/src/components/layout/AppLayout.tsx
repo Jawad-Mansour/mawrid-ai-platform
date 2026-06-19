@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
-import { Chatbot } from "@/components/Chatbot";
 import { Background } from "@/components/Background";
 import { useAuthStore } from "@/stores/auth";
 import { Loading } from "@/components/ui";
@@ -27,7 +26,6 @@ export function AppLayout() {
           </div>
         </main>
       </div>
-      <Chatbot />
     </div>
   );
 }

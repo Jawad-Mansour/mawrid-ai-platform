@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     # otherwise SendGrid rejects the send. Set SENDGRID_FROM_EMAIL to your verified address.
     sendgrid_from_email: str = "noreply@mawrid.app"
     sendgrid_from_name: str = "Mawrid Platform"
+    # Connect Gmail (OAuth). redirect URI must match the one registered in Google Cloud.
+    google_redirect_uri: str = "http://localhost:8000/auth/google/callback"
+    frontend_url: str = "http://localhost:3000"
 
 
 @lru_cache

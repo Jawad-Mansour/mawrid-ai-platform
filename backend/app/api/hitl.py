@@ -19,7 +19,6 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException, status
 from app.api.deps import CurrentUser, SessionDep
 from app.api.schemas import StrictModel
 from app.infra.db.repos.hitl_repo import HITLRepository
-from app.infra.email.sender import EmailSender
 
 logger = structlog.get_logger(__name__)
 
@@ -154,7 +153,11 @@ async def approve_hitl_action(
                 po_row.total_amount = total
                 po_row.po_text = str(action.payload.get("body") or po_row.po_text)
 
-    email_sender = EmailSender()
+    # Route the send through the tenant's connected Gmail when available (inbox deliverability),
+    # else SendGrid.
+    from app.infra.email.gmail import TenantEmailSender  # noqa: PLC0415
+
+    email_sender = TenantEmailSender(session, current_user.tenant_id)
     result = await approve_action(
         action_id=action_id,
         action_type=action.action_type,
@@ -263,6 +266,30 @@ async def reject_hitl_action(
 
     result = reject_action(action_id=action_id, action_type=action.action_type)
     await repo.set_status(action_id, result.status, actor_user_id=current_user.user_id)
+
+    # A rejected purchase-order draft must leave the pending queue — cancel the linked PO
+    # so it no longer shows as awaiting approval.
+    if action.action_type == "purchase_order_send":
+        po_id = action.payload.get("po_id")
+        if po_id:
+            from app.infra.db.repos.order_repo import OrderRepository  # noqa: PLC0415
+
+            order_repo = OrderRepository(session, current_user.tenant_id)
+            po = await order_repo.get_po_by_id(str(po_id))
+            if po is not None:
+                po.status = "cancelled"
+
+    # Track every rejection in the activity feed (it wasn't before).
+    from app.infra.db.repos.notification_repo import record_event  # noqa: PLC0415
+
+    label = action.action_type.replace("_", " ")
+    target = action.payload.get("supplier_name") or action.payload.get("to") or action.payload.get("po_number") or ""
+    await record_event(
+        session, current_user.tenant_id, kind="hitl_rejected",
+        title=f"Rejected: {label}",
+        body=f"You rejected this {label}{f' ({target})' if target else ''}. Nothing was sent.",
+        link="/approvals",
+    )
     await session.commit()
 
     logger.info("hitl_rejected", action_id=action_id)

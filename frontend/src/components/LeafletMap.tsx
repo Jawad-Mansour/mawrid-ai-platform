@@ -17,17 +17,19 @@ export interface MapPin {
   city?: string | null;
   country?: string | null;
   offering?: string | null;
+  website?: string | null;
   source: string;
 }
 
 export function LeafletMap({
-  pins, center, zoom, colorFor, onSelect, selectedIds, height = 460, maxBounds, minZoom,
+  pins, center, zoom, colorFor, onSelect, onContact, selectedIds, height = 460, maxBounds, minZoom,
 }: {
   pins: MapPin[];
   center: [number, number];
   zoom: number;
   colorFor: (category: string) => string;
   onSelect?: (id: string) => void;
+  onContact?: (id: string) => void;
   selectedIds?: string[];
   height?: number;
   maxBounds?: [[number, number], [number, number]];
@@ -91,19 +93,36 @@ export function LeafletMap({
           <div style="font-size:11px;color:#555;text-transform:capitalize">${escapeHtml(p.category)}${loc ? " · " + escapeHtml(loc) : ""}</div>
           ${p.offering ? `<div style="font-size:11px;color:#333;margin-top:4px">${escapeHtml(p.offering)}</div>` : ""}
           <div style="font-size:10px;color:#888;margin:4px 0">${p.source === "curated" ? "Verified manufacturer" : p.source === "discovered" ? "Discovered" : "Your supplier"}</div>
+          <div style="display:flex;gap:6px;margin-bottom:6px">
+            ${p.website ? `<a href="${escapeHtml(withScheme(p.website))}" target="_blank" rel="noopener noreferrer" style="flex:1;text-align:center;text-decoration:none;cursor:pointer;border:1px solid #3b82f6;background:#3b82f622;color:#2563eb;border-radius:8px;padding:4px 6px;font-size:11px;font-weight:700">🌐 Website</a>` : ""}
+            <button class="mawrid-contact" style="flex:1;cursor:pointer;border:1px solid #7c4dff;background:#7c4dff22;color:#6a3de8;border-radius:8px;padding:4px 6px;font-size:11px;font-weight:700">✉ Contact</button>
+          </div>
           <button class="mawrid-sel" style="cursor:pointer;border:1px solid ${selected ? "#059669" : "#d4a373"};background:${selected ? "#05966922" : "#d4a37322"};color:${selected ? "#059669" : "#a86b3d"};border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;width:100%">${sel}</button>
         </div>`,
       );
-      // hover shows the popup; the popup button (or marker click) selects for comparison
-      marker.on("mouseover", () => marker.openPopup());
+      // hover shows the popup; it disappears shortly after the pointer leaves the marker AND
+      // the popup (so you still have time to click Website/Contact/Compare).
+      let closeTimer: ReturnType<typeof setTimeout> | null = null;
+      const cancelClose = () => { if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; } };
+      const scheduleClose = () => { cancelClose(); closeTimer = setTimeout(() => marker.closePopup(), 220); };
+      marker.on("mouseover", () => { cancelClose(); marker.openPopup(); });
+      marker.on("mouseout", scheduleClose);
       marker.on("popupopen", (e: any) => {
-        const btn = e.popup?._contentNode?.querySelector?.(".mawrid-sel");
-        if (btn) btn.onclick = () => { onSelect?.(p.id); marker.closePopup(); };
+        const node = e.popup?._contentNode;
+        const wrap = node?.closest?.(".leaflet-popup");
+        if (wrap) {
+          wrap.addEventListener("mouseenter", cancelClose);
+          wrap.addEventListener("mouseleave", scheduleClose);
+        }
+        const sb = node?.querySelector?.(".mawrid-sel");
+        if (sb) sb.onclick = () => { onSelect?.(p.id); marker.closePopup(); };
+        const cb = node?.querySelector?.(".mawrid-contact");
+        if (cb) cb.onclick = () => { onContact?.(p.id); marker.closePopup(); };
       });
       marker.on("click", () => onSelect?.(p.id));
       layerRef.current.addLayer(marker);
     }
-  }, [pins, selectedIds, colorFor, onSelect]);
+  }, [pins, selectedIds, colorFor, onSelect, onContact]);
 
   // `isolate` + z-0 keep Leaflet's internal high z-index panes from rendering
   // over the sticky topbar/slogan when the page scrolls.
@@ -112,4 +131,8 @@ export function LeafletMap({
 
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
+}
+
+function withScheme(url: string): string {
+  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
 }

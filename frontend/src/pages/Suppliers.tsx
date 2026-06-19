@@ -6,9 +6,9 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { Users, Plus, Mail, Phone, Star, MapPin, Pencil, GitCompare, MessageSquare, UserPlus, Check, Inbox } from "lucide-react";
+import { Users, Plus, Mail, Phone, Star, MapPin, Pencil, GitCompare, MessageSquare, UserPlus, Check, Inbox, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { apiGet, apiPost, apiPut, apiErr } from "@/lib/api";
+import { apiGet, apiPost, apiPut, apiDelete, apiErr } from "@/lib/api";
 import { Card, SectionTitle, Loading, EmptyState, Spinner } from "@/components/ui";
 import { SupplierEditModal } from "@/components/SupplierEditModal";
 import { useNetwork } from "@/stores/network";
@@ -45,6 +45,11 @@ export function Suppliers({ relationship }: { relationship?: "active" | "prospec
     mutationFn: (s: Supplier) => apiPut(`/suppliers/${s.supplier_id}`, { relationship: "active" }),
     onSuccess: () => { toast.success("Moved to Our Suppliers"); qc.invalidateQueries({ queryKey: ["suppliers"] }); },
     onError: (e) => toast.error(apiErr(e, "Failed")),
+  });
+  const remove = useMutation({
+    mutationFn: (s: Supplier) => apiDelete(`/suppliers/${s.supplier_id}`),
+    onSuccess: () => { toast.success("Supplier removed"); qc.invalidateQueries({ queryKey: ["suppliers"] }); qc.invalidateQueries({ queryKey: ["factories"] }); net.clear(); },
+    onError: (e) => toast.error(apiErr(e, "Could not remove")),
   });
 
   const selectedHere = suppliers.filter((s) => net.has(s.supplier_id)).length;
@@ -91,6 +96,7 @@ export function Suppliers({ relationship }: { relationship?: "active" | "prospec
                     <button onClick={() => setEditing({ supplier: s })} className="chip border-line bg-white/[0.03] text-ink-soft hover:text-ink"><Pencil className="h-3 w-3" /> Edit</button>
                     <button onClick={() => ask.mutate(s)} disabled={ask.isPending} className="chip border-grape/30 bg-grape/10 text-grape-soft hover:bg-grape/20">{ask.isPending ? <Spinner className="h-3 w-3" /> : <Inbox className="h-3 w-3" />} Ask for catalogue</button>
                     {isProspect && <button onClick={() => promote.mutate(s)} disabled={promote.isPending} className="chip border-emerald/30 bg-emerald/10 text-emerald-soft hover:bg-emerald/20"><UserPlus className="h-3 w-3" /> Add to Our Suppliers</button>}
+                    <button onClick={() => { if (window.confirm(`Remove ${s.name}? This can't be undone.`)) remove.mutate(s); }} disabled={remove.isPending} className="chip border-danger/30 bg-danger/10 text-danger hover:bg-danger/20" title="Remove supplier"><Trash2 className="h-3 w-3" /> Remove</button>
                   </div>
                 </div>
               );

@@ -31,16 +31,29 @@ export function Activity() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [filter, setFilter] = useState("all");
+  const [readFilter, setReadFilter] = useState<"all" | "unread">("all");
   const q = useQuery({ queryKey: ["activity"], queryFn: () => apiGet<Resp>("/notifications?limit=200"), refetchInterval: 10_000 });
   const items = q.data?.items ?? [];
+  const unread = q.data?.unread ?? items.filter((i) => !i.read).length;
   const kinds = [...new Set(items.map((i) => i.kind))];
-  const shown = filter === "all" ? items : items.filter((i) => i.kind === filter);
+  const shown = items
+    .filter((i) => filter === "all" || i.kind === filter)
+    .filter((i) => readFilter === "all" || !i.read);
 
+  // Optimistic: flip everything to read instantly, then sync with the server.
   const readAll = useMutation({
     mutationFn: () => apiPost("/notifications/read-all", {}),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["activity"] }),
+    onMutate: async () => {
+      await qc.cancelQueries({ queryKey: ["activity"] });
+      const prev = qc.getQueryData<Resp>(["activity"]);
+      qc.setQueryData<Resp>(["activity"], (old) => old ? { ...old, items: old.items.map((i) => ({ ...i, read: true })), unread: 0 } : old);
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => { if (ctx?.prev) qc.setQueryData(["activity"], ctx.prev); },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["activity"] }),
   });
   function open(n: Note) {
+    qc.setQueryData<Resp>(["activity"], (old) => old ? { ...old, items: old.items.map((i) => i.notification_id === n.notification_id ? { ...i, read: true } : i), unread: Math.max(0, old.unread - (n.read ? 0 : 1)) } : old);
     apiPost(`/notifications/${n.notification_id}/read`, {}).finally(() => qc.invalidateQueries({ queryKey: ["activity"] }));
     if (n.link) navigate(n.link);
   }
@@ -49,6 +62,16 @@ export function Activity() {
     <div className="mx-auto max-w-3xl space-y-6">
       <SectionTitle title="Activity" subtitle="A live log of everything that happens in your workspace."
         right={<button onClick={() => readAll.mutate()} className="btn-ghost !py-2 text-xs"><CheckCheck className="h-3.5 w-3.5" /> Mark all read</button>} />
+
+      {/* Unread / All split */}
+      <div className="flex w-fit gap-1 rounded-xl border border-line bg-white/[0.02] p-1">
+        {(["all", "unread"] as const).map((rf) => (
+          <button key={rf} onClick={() => setReadFilter(rf)}
+            className={cn("flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-600 capitalize transition-all", readFilter === rf ? "bg-gold/15 text-gold-soft" : "text-ink-soft hover:text-ink")}>
+            {rf}{rf === "unread" && <span className="grid h-4 min-w-4 place-items-center rounded-full bg-gold/20 px-1 text-[10px] font-700 text-gold-soft">{unread}</span>}
+          </button>
+        ))}
+      </div>
 
       <div className="flex flex-wrap gap-2">
         <button onClick={() => setFilter("all")} className={cn("chip", filter === "all" ? "border-gold/50 bg-gold/15 text-gold-soft" : "border-line bg-white/[0.02] text-ink-soft hover:text-ink")}>
@@ -69,8 +92,8 @@ export function Activity() {
         <Card>
           <div className="flex flex-col items-center gap-3 py-12 text-center text-ink-faint">
             <BellOff className="h-9 w-9" />
-            <div className="text-base font-700 text-ink">No activity yet</div>
-            <div className="text-sm">Upload a sheet or place an order — events will stream in here.</div>
+            <div className="text-base font-700 text-ink">{readFilter === "unread" && items.length > 0 ? "You're all caught up 🎉" : "No activity yet"}</div>
+            <div className="text-sm">{readFilter === "unread" && items.length > 0 ? "No unread notifications." : "Upload a sheet or place an order — events will stream in here."}</div>
           </div>
         </Card>
       ) : (

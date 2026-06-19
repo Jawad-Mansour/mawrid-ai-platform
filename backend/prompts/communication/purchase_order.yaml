@@ -24,11 +24,15 @@ draft_po: |
   Notes: {notes}
 
   Requirements:
-  - Open with a salutation addressing the company: "Dear {supplier_name},".
+  - Open with a salutation addressing the company by its PROPER name with correct
+    capitalisation — e.g. "Dear Hoover," not "Dear hoover," (capitalise the first letter of
+    each word; keep known acronyms like BSH, LG, AEG upper-case). Never lower-case the name.
   - State clearly that we would like to place a purchase order (reference {po_number}).
   - Mention that the full list of item codes and quantities is in the ATTACHED
     spreadsheet, so do NOT paste a big table into the email body.
   - Politely request confirmation of availability, unit prices, lead time and total.
+  - Explicitly ask them to confirm or propose a firm delivery/arrival date for the shipment
+    so we can agree on it (we will track this date).
   - Keep it concise (3 short paragraphs max) and courteous.
   - Close formally and sign off as "{tenant_name}".
   Output ONLY the email body text (no subject line, no markdown fences).

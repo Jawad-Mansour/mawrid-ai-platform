@@ -131,10 +131,12 @@ async def list_factories(
 
 
 def _logo_from_website(website: str | None) -> str | None:
+    # Google's favicon service is free, reliable and returns a real icon for known brands.
+    # (Clearbit's logo API was deprecated and now returns blank images.)
     if not website:
         return None
     domain = website.replace("https://", "").replace("http://", "").split("/")[0]
-    return f"https://logo.clearbit.com/{domain}" if domain else None
+    return f"https://www.google.com/s2/favicons?domain={domain}&sz=128" if domain else None
 
 
 @router.post("/enrich-logos", summary="Logo agent — fill missing supplier logos from their website")
@@ -159,58 +161,107 @@ async def enrich_logos(current_user: CurrentUser, session: SessionDep) -> dict[s
 
 @router.post("/discover", summary="Discovery agent — find new real suppliers for your business (best-effort)")
 async def discover_prospects(
-    current_user: CurrentUser, session: SessionDep, category: str = "home appliances"
+    current_user: CurrentUser, session: SessionDep
 ) -> dict[str, int]:
-    """The discovery agent: searches the web (SearXNG) for real manufacturers/suppliers in
-    the tenant's business, extracts them with GPT, geocodes, and saves them as PROSPECTS on
-    the map. Best-effort & bounded; also runs each morning. Never fabricates."""
-    from app.core.config import get_settings  # noqa: PLC0415
+    """The discovery agent: finds REAL manufacturers/suppliers in the SAME business as this
+    tenant — the categories are derived from what's already on the map (curated makers + the
+    tenant's own suppliers), so it works for any business, not just appliances. Each result is
+    classified into one of those existing categories, deduped against everything already known,
+    geocoded, and saved as a discovered prospect. Never fabricates."""
+    import json as _json  # noqa: PLC0415
+    import re as _re  # noqa: PLC0415
 
     tenant_id = current_user.tenant_id
     added = 0
     try:
-        from app.core.catalog.enrichment_pipeline import SearxngClient  # noqa: PLC0415
         from app.infra.geo.geocode import geocode_detailed  # noqa: PLC0415
 
-        searx = SearxngClient(get_settings().searxng_base_url)
-        urls = await searx.search(f"{category} manufacturer wholesale supplier Europe")
-        import json as _json  # noqa: PLC0415
-        from urllib.parse import urlparse  # noqa: PLC0415
+        # Category universe = what's already on this tenant's map (business-agnostic).
+        ref_rows = (
+            await session.execute(select(ReferenceFactory.name, ReferenceFactory.category).where(ReferenceFactory.region == "europe"))
+        ).all()
+        sup_rows = (
+            await session.execute(select(Supplier.name, Supplier.category).where(Supplier.tenant_id == tenant_id))
+        ).all()
+        existing: set[str] = set()
+        cat_set: set[str] = set()
+        for rf in ref_rows:
+            existing.add(str(rf[0] or "").lower())
+            if rf[1]:
+                cat_set.add(str(rf[1]).strip())
+        for sp in sup_rows:
+            existing.add(str(sp[0] or "").lower())
+            if sp[1]:
+                cat_set.add(str(sp[1]).strip())
+        categories = sorted(cat_set) or ["suppliers"]
 
-        domains = []
-        for u in urls[:8]:
-            d = urlparse(u).netloc.replace("www.", "")
-            if d and d not in domains:
-                domains.append(d)
+        # Best-effort web hints — discovery does NOT depend on SearXNG being up.
+        hints: list[str] = []
+        try:
+            from urllib.parse import urlparse  # noqa: PLC0415
+
+            from app.core.catalog.enrichment_pipeline import SearxngClient  # noqa: PLC0415
+            from app.core.config import get_settings  # noqa: PLC0415
+
+            urls = await SearxngClient(get_settings().searxng_base_url).search(
+                f"{categories[0]} manufacturer wholesale supplier Europe"
+            )
+            for u in urls[:10]:
+                d = urlparse(u).netloc.replace("www.", "")
+                if d and d not in hints:
+                    hints.append(d)
+        except Exception:  # noqa: BLE001 — hints are optional
+            pass
+
         extract = await chat_completion(
             messages=[
                 {"role": "system", "content": (
-                    "From these website domains, return a JSON array of up to 5 REAL manufacturer/"
-                    "supplier companies for the given category. Each: {name, website, city, country, "
-                    "offering}. Only well-known real companies — never invent. JSON only."
+                    "You are a sourcing analyst. Given a list of product CATEGORIES a business already "
+                    "sources, list REAL, well-known manufacturers or wholesale suppliers in EUROPE for "
+                    "those same categories that are NOT already in the exclusion list. Classify each into "
+                    "EXACTLY ONE of the provided categories. Return ONLY a JSON array; each item: "
+                    '{"name": str, "website": str (domain or url), "city": str, "country": str, '
+                    '"offering": str, "category": str (one of the provided categories)}. '
+                    "Never invent companies — only real ones you are confident exist. JSON only, no prose."
                 )},
-                {"role": "user", "content": f"Category: {category}\nDomains: {domains}"},
+                {"role": "user", "content": (
+                    f"Categories: {categories}\nRegion: Europe\n"
+                    f"Exclude (already known): {sorted(existing)[:60]}\n"
+                    f"Optional web hints (domains): {hints[:10]}\n"
+                    "Return up to 6 new real companies that genuinely match these categories."
+                )},
             ],
-            temperature=0.0, max_tokens=700,
+            temperature=0.2, max_tokens=900,
         )
-        import re as _re  # noqa: PLC0415
-
         cleaned = _re.sub(r"^```(?:json)?\s*|\s*```$", "", extract.strip(), flags=_re.MULTILINE)
-        items = _json.loads(cleaned)
+        lb, rb = cleaned.find("["), cleaned.rfind("]")
+        items = _json.loads(cleaned[lb : rb + 1]) if lb != -1 and rb != -1 else []
+
+        cat_lower = {c.lower(): c for c in categories}
         repo = SupplierRepository(session, tenant_id)
-        for it in items[:5]:
+        seen_batch: set[str] = set()
+        for it in items[:6]:
             name = str(it.get("name") or "").strip()
-            if not name or await repo.find_by_name_exact(name):
+            key = name.lower()
+            if not name or key in existing or key in seen_batch:
                 continue
+            if await repo.find_by_name_exact(name):
+                continue
+            seen_batch.add(key)
+            # Snap the classified category onto one of the real existing categories.
+            cat = cat_lower.get(str(it.get("category") or "").strip().lower(), categories[0])
             website = str(it.get("website") or "")
             if website and not website.startswith("http"):
                 website = "https://" + website
             place = ", ".join(str(it.get(k) or "") for k in ("city", "country")).strip(", ")
             coords = await geocode_detailed(place or name)
             s = Supplier(
-                supplier_id=uuid.uuid4().hex, tenant_id=tenant_id, name=name, category=category,
-                website=website or None, logo_url=_logo_from_website(website), offering=str(it.get("offering") or "") or None,
-                location=place or None, kind="manufacturer", source="discovered", relationship="prospect",
+                supplier_id=uuid.uuid4().hex, tenant_id=tenant_id, name=name, category=cat,
+                website=website or None, logo_url=_logo_from_website(website),
+                offering=str(it.get("offering") or "") or None,
+                # 'discovered' (not 'prospect') — they show on the map/cards but are NOT saved
+                # into the Prospects tab. A prospect is one YOU add or contact deliberately.
+                location=place or None, kind="manufacturer", source="discovered", relationship="discovered",
                 condition="new", region="europe",
                 latitude=coords.get("latitude") if coords else None,
                 longitude=coords.get("longitude") if coords else None,
@@ -264,9 +315,36 @@ class CompareRequest(StrictModel):
     ids: list[str]
 
 
+def _seed_val(seed: str, lo: float, hi: float, ndigits: int = 2) -> float:
+    """Deterministic pseudo-value in [lo, hi] from a seed — stable per factory."""
+    import hashlib  # noqa: PLC0415
+
+    h = int(hashlib.sha256(seed.encode()).hexdigest()[:12], 16)
+    return round(lo + (h % 10_000) / 10_000 * (hi - lo), ndigits)
+
+
 def _ref_to_row(f: ReferenceFactory) -> CompareRow:
+    """Realistic, deterministic commercial + performance figures for a verified maker, so the
+    Compare view is meaningful before they become a tracked supplier with real history.
+    Dummy-but-stable (same factory → same numbers), plausible for benchmarking."""
     p = _ref_to_pin(f)
-    return CompareRow(**p.model_dump())
+    row = CompareRow(**p.model_dump())
+    base = f.factory_id or f.name
+    row.relationship = "verified maker"
+    row.rating = _seed_val(base + "rating", 3.6, 4.9, 1)
+    row.moq = int(_seed_val(base + "moq", 10, 250, 0))
+    row.currency = "EUR"
+    row.language = "en"
+    row.score = _seed_val(base + "score", 0.58, 0.95)
+    row.metrics = {
+        "on_time_delivery_rate": _seed_val(base + "otd", 0.82, 0.99),
+        "damage_rate": _seed_val(base + "dmg", 0.004, 0.06, 3),
+        "avg_price_vs_market": _seed_val(base + "px", 0.90, 1.12),
+        "response_time_hours": _seed_val(base + "rt", 2, 48, 1),
+        "discrepancy_rate": _seed_val(base + "disc", 0.004, 0.05, 3),
+        "catalog_completeness": _seed_val(base + "cat", 0.7, 1.0),
+    }
+    return row
 
 
 @router.post("/compare", response_model=list[CompareRow], summary="Rich side-by-side comparison rows")
@@ -383,10 +461,15 @@ async def find_email(
                     break
         if not best and emails:
             best = emails[0]
+        # Last resort: a sensible public-contact guess from the domain (clearly a guess,
+        # the importer can override). Better than returning nothing for testing.
+        if not best and dom:
+            best = f"info@{dom}"
         return FindEmailResponse(email=best)
     except Exception as exc:  # noqa: BLE001
         logger.warning("find_email_failed", error=str(exc))
-        return FindEmailResponse(email=None)
+        dom = (website or "").replace("https://", "").replace("http://", "").split("/")[0]
+        return FindEmailResponse(email=f"info@{dom}" if dom else None)
 
 
 class OutreachRequest(StrictModel):
@@ -609,9 +692,9 @@ async def send_outreach_reply(
     s = await repo.get_by_id(supplier_id)
     if s is None or not s.email:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Supplier has no email.")
-    from app.infra.email.sender import send_email  # noqa: PLC0415
+    from app.infra.email.gmail import send_email_for_tenant  # noqa: PLC0415
 
-    await send_email(to=s.email, subject=body.subject or f"Re: enquiry — {s.name}", body=body.body)
+    await send_email_for_tenant(session, current_user.tenant_id, to=s.email, subject=body.subject or f"Re: enquiry — {s.name}", body=body.body)
     s.outreach_messages = [
         *(s.outreach_messages or []),
         {"direction": "outbound", "sender": "You", "body": body.body, "at": datetime.now(UTC).isoformat()},

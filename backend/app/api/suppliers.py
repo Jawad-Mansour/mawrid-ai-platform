@@ -132,7 +132,9 @@ class ScoreResponse(StrictModel):
 
 
 class ResolveLocationRequest(StrictModel):
-    query: str  # supplier name and/or a rough place, e.g. "Smeg, Guastalla Italy"
+    name: str | None = None  # the company name — drives the real-location lookup
+    place: str | None = None  # an optional rough place hint
+    query: str | None = None  # backward-compat: a combined name/place string
 
 
 class ResolveLocationResponse(StrictModel):
@@ -144,24 +146,84 @@ class ResolveLocationResponse(StrictModel):
     country_code: str | None = None
     phone_code: str | None = None
     display_name: str | None = None
+    website: str | None = None
+    email: str | None = None
+
+
+async def _company_facts(name: str, place: str | None) -> dict[str, object]:
+    """Ask GPT-4o for a REAL company's headquarters city/country + official website. Returns
+    {} if the model isn't confident the company is real/known (so we never fabricate)."""
+    import json as _json  # noqa: PLC0415
+    import re as _re  # noqa: PLC0415
+
+    try:
+        from app.infra.llm.openai import chat_completion  # noqa: PLC0415
+
+        raw = await chat_completion(
+            messages=[
+                {"role": "system", "content": (
+                    "You know real companies and brands. Given a company name (and an optional "
+                    "location hint), return ONLY JSON "
+                    '{"city": str|null, "country": str|null, "website": str|null} with the '
+                    "company's REAL primary headquarters / main office city and country and its "
+                    "official website domain. Use only well-known real facts. If you are not "
+                    "confident the company is real and known, return all nulls. No prose."
+                )},
+                {"role": "user", "content": f"Company: {name}\nHint: {place or '-'}"},
+            ],
+            temperature=0.0, max_tokens=200,
+        )
+        m = _re.search(r"\{.*\}", raw, _re.DOTALL)
+        if m:
+            parsed = _json.loads(m.group(0))
+            if isinstance(parsed, dict):
+                return parsed
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("company_facts_failed", name=name, error=str(exc))
+    return {}
 
 
 @router.post(
     "/resolve-location",
     response_model=ResolveLocationResponse,
-    summary="Auto-resolve a supplier's real location + coordinates + phone code (OpenStreetMap)",
+    summary="Auto-resolve a supplier's REAL location + coordinates + phone code + website",
 )
 async def resolve_location(
     body: ResolveLocationRequest, current_user: CurrentUser
 ) -> ResolveLocationResponse:
-    """The location 'agent': type a name/rough place → we look it up on OpenStreetMap and
-    return the real address, coordinates and the country's phone dialing code. Never
-    fabricates — returns found=false if nothing matches."""
+    """The location 'agent': from the company NAME we find its real headquarters (GPT-4o knows
+    real brands — e.g. Candy → Brugherio, Italy), geocode that on OpenStreetMap for real
+    coordinates + the country dial code, and return the official website + a best-effort contact
+    email. Falls back to the rough place you typed for companies the model doesn't know. Never
+    fabricates coordinates — returns found=false if nothing resolves."""
     from app.infra.geo.geocode import geocode_detailed  # noqa: PLC0415
 
-    d = await geocode_detailed(body.query)
+    name = (body.name or body.query or "").strip()
+    place = (body.place or "").strip() or None
+
+    facts = await _company_facts(name, place) if name else {}
+    city = str(facts.get("city") or "").strip()
+    country = str(facts.get("country") or "").strip()
+    website = str(facts.get("website") or "").strip() or None
+
+    # Try the company's REAL location first, then the typed place, then the bare name.
+    candidates = [
+        f"{city}, {country}".strip(", ") if (city or country) else "",
+        place or "",
+        name,
+    ]
+    d: dict[str, object] | None = None
+    for q in candidates:
+        if q:
+            d = await geocode_detailed(q)
+            if d:
+                break
+
+    domain = (website or "").replace("https://", "").replace("http://", "").split("/")[0]
+    email_guess = f"info@{domain}" if domain else None
+
     if not d:
-        return ResolveLocationResponse(found=False)
+        return ResolveLocationResponse(found=False, website=website, email=email_guess)
     return ResolveLocationResponse(
         found=True,
         latitude=d.get("latitude"),  # type: ignore[arg-type]
@@ -171,6 +233,8 @@ async def resolve_location(
         country_code=d.get("country_code"),  # type: ignore[arg-type]
         phone_code=d.get("phone_code"),  # type: ignore[arg-type]
         display_name=d.get("display_name"),  # type: ignore[arg-type]
+        website=website,
+        email=email_guess,
     )
 
 
@@ -266,6 +330,23 @@ async def update_supplier(
     updated = await repo.get_by_id(supplier_id)
     assert updated is not None
     return _supplier_response(updated)
+
+
+@router.delete(
+    "/{supplier_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Remove a supplier (from Our Suppliers or Prospects)",
+)
+async def delete_supplier(
+    supplier_id: str,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> None:
+    repo = SupplierRepository(session, current_user.tenant_id)
+    if await repo.get_by_id(supplier_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Supplier not found.")
+    await repo.delete(supplier_id)
+    await session.commit()
 
 
 @router.post(

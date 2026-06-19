@@ -217,6 +217,9 @@ def _pick_product_image(
 
     name_tokens = {t for t in re.findall(r"[a-z0-9]+", product_name.lower()) if len(t) > 2}
     model_l = re.sub(r"[^a-z0-9]", "", (model or "").lower())
+    # When we know the model/SKU code, the photo MUST contain it — otherwise we'd risk
+    # attaching a *different* code's product (a frequent enrichment error). Better no image.
+    strict = len(model_l) >= 4  # noqa: PLR2004
     brand_l = (brand or "").lower().strip()
     best: str | None = None
     best_score = 0.0
@@ -229,14 +232,18 @@ def _pick_product_image(
             continue
         if any(b in low for b in _IMG_REJECT):
             continue
-        if any(p in title for p in _PART_TERMS):
+        if any(p in (title + " " + low) for p in _PART_TERMS):  # reject spare-part photos
             continue
+
+        norm = re.sub(r"[^a-z0-9]", "", low + " " + title)
+        model_ok = bool(model_l) and model_l in norm
+        if strict and not model_ok:
+            continue  # never attach a different model's photo when we know the code
 
         score = 0.0
         title_tokens = {t for t in re.findall(r"[a-z0-9]+", title) if len(t) > 2}
         score += len(name_tokens & title_tokens)
-        norm = re.sub(r"[^a-z0-9]", "", low + " " + title)
-        if model_l and len(model_l) >= 5 and model_l in norm:  # noqa: PLR2004
+        if model_ok:
             score += 6
         if brand_l and brand_l in (low + " " + title):
             score += 1.5
@@ -258,8 +265,9 @@ def _pick_product_image(
             best_score = score
             best = src
 
-    # Require a meaningful match so we don't attach a random photo.
-    return best if best_score >= 2 else None  # noqa: PLR2004
+    # Strict candidates already match the model (≥6); otherwise require a meaningful match.
+    threshold = 1.0 if strict else 2.0
+    return best if best_score >= threshold else None
 
 
 def _extract_og_image(html: str, base_url: str) -> str | None:
@@ -434,7 +442,7 @@ async def _gpt4o_enrich(
         {"role": "user", "content": user_content},
     ]
     try:
-        raw = await chat_completion(messages, temperature=0.2, max_tokens=1800)
+        raw = await chat_completion(messages, temperature=0.0, max_tokens=1800)
         import re  # noqa: PLC0415
 
         cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip(), flags=re.MULTILINE)
@@ -518,8 +526,14 @@ class SequentialEnrichmentPipeline:
                 inp.product_name.split()[0] if inp.product_name else ""
             )
             try:
-                imgs = await _search_images(inp.product_name)
-                searched = _pick_product_image(imgs, brand, inp.sku or "", inp.product_name)
+                # Anchor the image search on the model/SKU code for precision; fall back to
+                # the plain name only if the code-anchored search returns nothing.
+                model_code = (inp.sku or "").strip()
+                img_query = f"{brand} {model_code} {inp.product_name}".strip() if model_code else inp.product_name
+                imgs = await _search_images(img_query)
+                if model_code and not imgs:
+                    imgs = await _search_images(inp.product_name)
+                searched = _pick_product_image(imgs, brand, model_code, inp.product_name)
                 if searched:
                     image_url = searched
                 image_pages = [
@@ -540,9 +554,8 @@ class SequentialEnrichmentPipeline:
             q_specs = f"{inp.product_name} {inp.sku or ''} specifications".strip()
             urls_a = await self._searxng.search(q_specs)
             urls_b = await self._searxng.search(inp.product_name)
-            seen_u: set[str] = set()
             ordered = [*image_pages[:3], *urls_a, *urls_b, *image_pages[3:]]
-            urls = [u for u in ordered if not (u in seen_u or seen_u.add(u))][:7]
+            urls = list(dict.fromkeys(ordered))[:7]  # order-preserving de-dup
 
             page_texts: list[str] = []
             _fetch_page = getattr(self._fetcher, "fetch_page", None)
@@ -560,9 +573,14 @@ class SequentialEnrichmentPipeline:
             if source != "icecat" and web_text:
                 source = "web"
 
-        # de-dup source links by url
+        # de-dup source links by url (order-preserving)
         _seen_src: set[str] = set()
-        source_urls = [s for s in source_urls if not (s["url"] in _seen_src or _seen_src.add(s["url"]))]
+        _deduped: list[dict[str, str]] = []
+        for _s in source_urls:
+            if _s["url"] not in _seen_src:
+                _seen_src.add(_s["url"])
+                _deduped.append(_s)
+        source_urls = _deduped
 
         # ── Steps 4 & 5: GPT-4o spec fill + description ───────────────────────
         # Retailer listing titles often name the exact type (e.g. "10/6 kg Washer

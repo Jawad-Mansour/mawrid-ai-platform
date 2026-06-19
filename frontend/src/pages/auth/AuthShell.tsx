@@ -1,23 +1,14 @@
-// Feature: Auth — shared shell with animated ambient background + entrance motion
+// Feature: Auth — shared shell with a theme-aware 3D ambient scene + entrance motion
 import type { ReactNode } from "react";
 import { motion } from "framer-motion";
+import { AuthScene } from "@/components/AuthScene";
 
 export function AuthShell({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
   return (
     <div className="relative grid min-h-screen place-items-center overflow-hidden bg-radial-fade px-6 py-10">
-      {/* ambient drifting orbs (animate in, then float) */}
-      <motion.div
-        className="pointer-events-none absolute inset-0"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1.2 }}
-      >
-        <div className="absolute -left-40 top-0 h-96 w-96 rounded-full bg-grape/10 blur-3xl animate-float" />
-        <div className="absolute -right-32 bottom-0 h-96 w-96 rounded-full bg-gold/10 blur-3xl animate-float" style={{ animationDelay: "2.5s" }} />
-        <div className="absolute left-1/2 top-1/3 h-64 w-64 -translate-x-1/2 rounded-full bg-emerald/5 blur-3xl" />
-      </motion.div>
+      <AuthScene />
 
-      <div className="relative w-full max-w-md">
+      <div className="relative z-10 w-full max-w-md">
         <motion.div
           className="mb-6 flex items-center gap-3"
           initial={{ opacity: 0, y: -14 }}

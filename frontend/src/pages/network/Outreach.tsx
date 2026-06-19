@@ -6,10 +6,21 @@ import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Sparkles, Send, Inbox, ShieldCheck, ArrowLeft, UploadCloud, MessageSquarePlus, CheckCircle2, Search as SearchIcon } from "lucide-react";
+import { Sparkles, Send, Inbox, ShieldCheck, ArrowLeft, UploadCloud, MessageSquarePlus, CheckCircle2, Search as SearchIcon, GitCompare, Globe, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { apiGet, apiPost, apiErr } from "@/lib/api";
 import { SectionTitle, Card, Loading, Spinner } from "@/components/ui";
+import { brandLogoSources } from "@/lib/utils";
+import { useNetwork } from "@/stores/network";
+
+interface Pin { id: string; name: string; category: string; website?: string | null; logo_url?: string | null }
+function CompanyLogo({ url, website, name }: { url?: string | null; website?: string | null; name: string }) {
+  const sources = brandLogoSources(url, website);
+  const [i, setI] = useState(0);
+  const src = sources[i];
+  if (!src) return <span className="text-base font-800 text-grape-soft">{name[0]?.toUpperCase()}</span>;
+  return <img src={src} alt="" className="h-full w-full object-contain p-1.5" onError={() => setI((x) => x + 1)} />;
+}
 
 interface Msg { direction: string; sender: string; body: string; at: string }
 interface ThreadData { supplier_id: string; name: string; email: string | null; messages: Msg[] }
@@ -23,8 +34,12 @@ export function Outreach() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const net = useNetwork();
   const target = params.get("target");
   const [supplierId, setSupplierId] = useState<string | null>(params.get("supplier"));
+  const factories = useQuery({ queryKey: ["factories", "europe"], queryFn: () => apiGet<{ pins: Pin[] }>("/network/factories?region=europe"), staleTime: 60_000 });
+  const targetPin = (factories.data?.pins ?? []).find((p) => p.id === target) ?? null;
+  const goCompare = () => { if (target && !net.has(target)) net.toggle(target); navigate("/suppliers/compare"); };
   const [intent, setIntent] = useState("introduce");
   const [notes, setNotes] = useState("");
   const [email, setEmail] = useState("");
@@ -50,7 +65,27 @@ export function Outreach() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <SectionTitle title="Supplier Outreach" subtitle="The AI writes a professional first email; approve it in HITL to send, then track the reply."
-        right={<Link to="/suppliers/network" className="btn-ghost !py-2"><ArrowLeft className="h-4 w-4" /> Network</Link>} />
+        right={<div className="flex gap-2">
+          <button onClick={goCompare} className="btn-ghost !py-2" title="Compare this supplier with others"><GitCompare className="h-4 w-4" /> Compare</button>
+          <Link to="/suppliers/network" className="btn-ghost !py-2"><ArrowLeft className="h-4 w-4" /> Network</Link>
+        </div>} />
+
+      {/* the company we're contacting — logo + name */}
+      {targetPin && (
+        <Card className="flex items-center gap-3">
+          <div className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-2xl bg-white" style={{ boxShadow: "0 0 18px rgb(var(--accent) / 0.25)" }}>
+            <CompanyLogo url={targetPin.logo_url} website={targetPin.website} name={targetPin.name} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 text-base font-800 text-ink"><Building2 className="h-4 w-4 text-gold-soft" /> {targetPin.name}</div>
+            <div className="flex items-center gap-2 text-xs capitalize text-ink-faint">
+              {targetPin.category?.replace("-", " ")}
+              {targetPin.website && <a href={/^https?:\/\//.test(targetPin.website) ? targetPin.website : `https://${targetPin.website}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-grape-soft hover:underline"><Globe className="h-3 w-3" /> website</a>}
+            </div>
+          </div>
+          <button onClick={goCompare} className="chip border-grape/30 bg-grape/10 text-grape-soft hover:bg-grape/20"><GitCompare className="h-3.5 w-3.5" /> Compare</button>
+        </Card>
+      )}
 
       {/* compose (only when starting from a target and not yet drafted) */}
       {target && !draft && (

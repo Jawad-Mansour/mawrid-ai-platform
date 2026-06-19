@@ -4,7 +4,7 @@ Layer:    Script
 Purpose:  Idempotently seed `reference_factories` with REAL, publicly-documented
           European manufacturers of electronics / home appliances / kitchen / garden,
           with real city-level coordinates and real websites. No mock data.
-          Logos are derived from each real website domain via Clearbit.
+          Logos are derived from each real website domain via Google's favicon service.
 
 Run (from project root):
     DATABASE_URL=postgresql+asyncpg://mawrid:password@localhost:5433/mawrid \
@@ -109,7 +109,8 @@ async def main() -> None:
                 {
                     "fid": _fid(name), "name": name, "category": cat, "subcategory": sub,
                     "country": country, "city": city, "lat": lat, "lon": lon,
-                    "website": f"https://{domain}", "logo_url": f"https://logo.clearbit.com/{domain}",
+                    "website": f"https://{domain}",
+                    "logo_url": f"https://www.google.com/s2/favicons?domain={domain}&sz=128",
                     "offering": offering, "condition": cond,
                 },
             )

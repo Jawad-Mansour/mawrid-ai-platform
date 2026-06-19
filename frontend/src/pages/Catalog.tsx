@@ -2,12 +2,12 @@
 //          (image, description excerpt, specs, sources), NLP-style search with
 //          highlighting, status filters, and a "note for order" basket.
 // API:     GET /catalog/products
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, RefreshCw, ImageOff, ShoppingBag, Check, ExternalLink, FileSpreadsheet, ArrowRight, UploadCloud, Pencil, X, Building2, Layers, Package } from "lucide-react";
+import { Search, RefreshCw, ImageOff, ShoppingBag, Check, ExternalLink, FileSpreadsheet, ArrowRight, UploadCloud, Pencil, X, Building2, Layers, Package, Sparkles } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { apiGet } from "@/lib/api";
-import { SectionTitle, StatusBadge, Loading, EmptyState } from "@/components/ui";
+import { SectionTitle, StatusBadge, Loading, EmptyState, Spinner } from "@/components/ui";
 import { ProductModal } from "@/components/ProductModal";
 import { EditProductModal } from "@/components/EditProductModal";
 import { useBasket } from "@/stores/basket";
@@ -56,6 +56,18 @@ export function Catalog() {
 
   const products = useQuery({ queryKey: ["catalog"], queryFn: () => apiGet<unknown>("/catalog/products?limit=300"), refetchInterval: 8000 });
   const docs = useQuery({ queryKey: ["documents"], queryFn: () => apiGet<SheetDoc[]>("/catalog/documents") });
+
+  // AI semantic search — debounced; runs the RAG pipeline (embeddings + rerank) to rank
+  // by meaning. Instant keyword matching still runs locally; semantic results lead.
+  const [debounced, setDebounced] = useState("");
+  useEffect(() => { const t = setTimeout(() => setDebounced(search.trim()), 600); return () => clearTimeout(t); }, [search]);
+  const sem = useQuery({
+    queryKey: ["catalog-search", debounced],
+    queryFn: () => apiGet<{ results: { product_id: string; score: number }[] }>(`/search/catalog?q=${encodeURIComponent(debounced)}`),
+    enabled: debounced.length >= 3,
+    staleTime: 60_000, retry: false,
+  });
+  const semIds = useMemo(() => (debounced.length >= 3 ? (sem.data?.results.map((r) => r.product_id) ?? []) : []), [sem.data, debounced]);
   const all = useMemo(() => asList(products.data), [products.data]);
   const docList = useMemo(() => docs.data ?? [], [docs.data]);
   const activeSheet = docId ? docList.find((d) => d.document_id === docId) : null;
@@ -72,9 +84,20 @@ export function Catalog() {
     if (docId) list = list.filter((p) => (p.document_ids ?? []).includes(docId));
     if (filter !== "all") list = list.filter((p) => p.enrichment_status === filter);
     if (supplier !== "all") list = list.filter((p) => (p.supplier_names ?? []).includes(supplier));
-    if (search.trim()) list = list.filter((p) => matchesQuery(p, search));
+    if (search.trim()) {
+      const kw = list.filter((p) => matchesQuery(p, search));
+      if (semIds.length) {
+        // Semantic-ranked matches first (in RAG order), then any keyword-only matches.
+        const rank = new Map(semIds.map((id, i) => [id, i] as const));
+        const semSet = new Set(semIds);
+        const semMatched = list.filter((p) => semSet.has(p.product_id)).sort((a, b) => (rank.get(a.product_id) ?? 0) - (rank.get(b.product_id) ?? 0));
+        list = [...semMatched, ...kw.filter((p) => !semSet.has(p.product_id))];
+      } else {
+        list = kw;
+      }
+    }
     return list;
-  }, [all, filter, search, supplier, docId]);
+  }, [all, filter, search, supplier, docId, semIds]);
 
   // grouped view: each sheet's own catalogue, in upload order (newest first)
   const grouped = useMemo(() => {
@@ -124,7 +147,12 @@ export function Catalog() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-[240px] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
-          <input className="input pl-9" placeholder="Search products, specs & descriptions…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <input className="input pl-9 pr-28" placeholder="Search by meaning — e.g. 'energy-efficient front-load washer'…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          {debounced.length >= 3 && (
+            <span className="absolute right-2.5 top-1/2 flex -translate-y-1/2 items-center gap-1 rounded-md border border-grape/30 bg-grape/10 px-1.5 py-0.5 text-[10px] font-700 text-grape-soft">
+              {sem.isFetching ? <Spinner className="h-3 w-3" /> : <Sparkles className="h-3 w-3" />} {semIds.length ? "AI ranked" : sem.isFetching ? "AI…" : "AI search"}
+            </span>
+          )}
         </div>
         {suppliers.length > 0 && (
           <select className="input !w-auto !py-2.5" value={supplier} onChange={(e) => setSupplier(e.target.value)} title="Filter by supplier">

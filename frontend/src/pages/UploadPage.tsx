@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { UploadCloud, FileSpreadsheet, Sparkles, ArrowRight, CheckCircle2, X, Trash2, Loader2, Plus } from "lucide-react";
+import { UploadCloud, FileSpreadsheet, Sparkles, ArrowRight, CheckCircle2, X, Trash2, Loader2, Plus, AlertTriangle, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { apiGet, apiPost, apiUpload, apiErr } from "@/lib/api";
 import { Card, SectionTitle } from "@/components/ui";
@@ -30,22 +30,29 @@ export function UploadPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [params] = useSearchParams();
   const [dragOver, setDragOver] = useState(false);
-  const [sheets, setSheets] = useState<Sheet[]>([]);
+  // Persist staged sheets so they survive navigating away and back.
+  const [sheets, setSheets] = useState<Sheet[]>(() => {
+    try { return JSON.parse(localStorage.getItem("mawrid_upload_sheets") || "[]") as Sheet[]; } catch { return []; }
+  });
+  useEffect(() => { localStorage.setItem("mawrid_upload_sheets", JSON.stringify(sheets)); }, [sheets]);
   const [busy, setBusy] = useState(false);
   const [modal, setModal] = useState<{ sheetId: string } | null>(null);
   const [activeTs, setActiveTs] = useState<number>(() => Number(localStorage.getItem("mawrid_enrich_active") || 0));
   const markActive = () => { const t = Date.now(); localStorage.setItem("mawrid_enrich_active", String(t)); setActiveTs(t); };
   const clearActive = () => { localStorage.removeItem("mawrid_enrich_active"); setActiveTs(0); };
 
-  const products = useQuery({ queryKey: ["catalog"], queryFn: () => apiGet<unknown>("/catalog/products?limit=300"), refetchInterval: 4000 });
+  const [kick, setKick] = useState(false); // optimistic: show the loader the instant Enrich is clicked
+  const products = useQuery({ queryKey: ["catalog"], queryFn: () => apiGet<unknown>("/catalog/products?limit=300"), refetchInterval: 2000 });
   const suppliersQ = useQuery({ queryKey: ["suppliers"], queryFn: () => apiGet<unknown>("/suppliers") });
   const suppliers = asSuppliers(suppliersQ.data);
   const all = asList(products.data);
   const pending = all.filter((p) => p.enrichment_status === "pending").length;
   const total = all.length;
   const done = total - pending;
-  const enriching = pending > 0;
+  const enriching = pending > 0 || kick;
   const showDone = !enriching && activeTs > 0 && total > 0 && Date.now() - activeTs > 6000;
+  // once real pending products appear, hand the loader over to the live count
+  useEffect(() => { if (pending > 0) setKick(false); }, [pending]);
 
   // convo → enrichment handoff: ?supplier=<id> prefills new sheets with that supplier
   const presetId = params.get("supplier");
@@ -72,8 +79,9 @@ export function UploadPage() {
 
   const enrichOne = useMutation({
     mutationFn: (s: Sheet) => apiPost<{ jobs_submitted: number }>(`/catalog/documents/${s.id}/enrich`, { supplier_name: s.sup.name, supplier_email: s.sup.email, supplier_location: s.sup.location }),
-    onSuccess: (r, s) => { setSheets((x) => x.map((y) => (y.id === s.id ? { ...y, enriched: true } : y))); markActive(); products.refetch(); toast.success(`${r.jobs_submitted} product(s) queued`); },
-    onError: (e) => toast.error(apiErr(e, "Enrichment failed")),
+    onMutate: () => { setKick(true); markActive(); }, // instant feedback before the request returns
+    onSuccess: (r, s) => { setSheets((x) => x.map((y) => (y.id === s.id ? { ...y, enriched: true } : y))); products.refetch(); toast.success(`${r.jobs_submitted} product(s) queued`); setTimeout(() => setKick(false), 8000); },
+    onError: (e) => { setKick(false); toast.error(apiErr(e, "Enrichment failed")); },
   });
   async function enrichAll() { for (const s of sheets.filter((x) => !x.enriched && ready(x.sup))) await enrichOne.mutateAsync(s); }
   const setSup = (id: string, patch: Partial<Sup>) => setSheets((s) => s.map((x) => (x.id === id ? { ...x, sup: { ...x.sup, ...patch } } : x)));
@@ -140,38 +148,57 @@ export function UploadPage() {
           <SectionTitle title={`${sheets.length} sheet(s) ready to enrich`} subtitle="Each sheet needs a supplier (name · valid email · location) before it can enrich."
             right={pendingReady > 0 ? <button className="btn-gold !py-2" disabled={enrichOne.isPending} onClick={enrichAll}><Sparkles className="h-4 w-4" /> Enrich {pendingReady} ready</button> : undefined} />
           <div className="space-y-3">
-            {sheets.map((s) => (
+            {sheets.map((s) => {
+              const chosen = s.sup.name.trim().length > 0;
+              const ok = ready(s.sup);
+              return (
               <div key={s.id} className="rounded-xl border border-line bg-white/[0.02] p-3">
                 <div className="mb-2 flex items-center gap-2">
                   <FileSpreadsheet className="h-5 w-5 shrink-0 text-emerald-soft" />
                   <div className="min-w-0 flex-1"><div className="truncate text-sm font-700 text-ink">{s.filename}</div><div className="text-[11px] text-ink-faint">{s.rows} product row(s)</div></div>
                   {s.enriched ? <span className="chip border-emerald/30 bg-emerald/10 text-emerald-soft"><Loader2 className="h-3 w-3 animate-spin" /> Enriching</span>
-                    : <button className="btn-gold !py-1.5 text-xs" disabled={!ready(s.sup) || enrichOne.isPending} onClick={() => enrichOne.mutate(s)} title={ready(s.sup) ? "Enrich this sheet" : "Set the supplier first"}><Sparkles className="h-3.5 w-3.5" /> Enrich</button>}
+                    : <button className="btn-gold !py-1.5 text-xs" disabled={!ok || enrichOne.isPending} onClick={() => enrichOne.mutate(s)} title={ok ? "Enrich this sheet" : "Set the supplier first"}><Sparkles className="h-3.5 w-3.5" /> Enrich</button>}
                   <button onClick={() => setSheets((x) => x.filter((y) => y.id !== s.id))} title="Remove from list" className="text-ink-faint hover:text-danger"><Trash2 className="h-4 w-4" /></button>
                 </div>
-                {!s.enriched && (
-                  <>
-                    <div className="mb-2 flex items-center gap-2">
-                      <select className="input !py-1.5 text-xs" value="" onChange={(e) => e.target.value && pickSupplier(s.id, e.target.value)}>
-                        <option value="">Pick an existing supplier…</option>
-                        {suppliers.map((x) => <option key={x.supplier_id} value={x.supplier_id}>{x.name}{x.location ? ` — ${x.location}` : ""}</option>)}
-                      </select>
-                      <button onClick={() => setModal({ sheetId: s.id })} className="btn-ghost shrink-0 !py-1.5 text-xs"><Plus className="h-3.5 w-3.5" /> New supplier</button>
+                {!s.enriched && !chosen && (
+                  // No supplier yet — pick an existing one OR create a new one (modal).
+                  <div className="flex flex-wrap items-center gap-2">
+                    <select className="input !py-1.5 min-w-[200px] flex-1 text-xs" value="" onChange={(e) => e.target.value && pickSupplier(s.id, e.target.value)}>
+                      <option value="">Pick an existing supplier…</option>
+                      {suppliers.map((x) => <option key={x.supplier_id} value={x.supplier_id}>{x.name}{x.location ? ` — ${x.location}` : ""}</option>)}
+                    </select>
+                    <span className="text-xs text-ink-faint">or</span>
+                    <button onClick={() => setModal({ sheetId: s.id })} className="btn-ghost shrink-0 !py-1.5 text-xs"><Plus className="h-3.5 w-3.5" /> New supplier</button>
+                  </div>
+                )}
+                {!s.enriched && chosen && (
+                  // Supplier chosen — show a compact summary; only reveal fields still missing.
+                  <div className="rounded-lg border border-line bg-white/[0.02] p-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg ${ok ? "bg-emerald/15 text-emerald-soft" : "bg-warn/15 text-warn"}`}>{ok ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-700 text-ink">{s.sup.name}</div>
+                        <div className="truncate text-[11px] text-ink-faint">{[s.sup.location, s.sup.email].filter(Boolean).join(" · ") || "needs email + location"}</div>
+                      </div>
+                      <button onClick={() => setSup(s.id, { name: "", email: "", location: "" })} className="flex shrink-0 items-center gap-1 text-xs text-ink-faint underline hover:text-ink"><Pencil className="h-3 w-3" /> Change</button>
                     </div>
-                    <div className="grid gap-2 sm:grid-cols-3">
-                      <input className="input !py-1.5 text-xs" placeholder="Supplier name *" value={s.sup.name} onChange={(e) => setSup(s.id, { name: e.target.value })} />
-                      <input className={`input !py-1.5 text-xs ${s.sup.email && !isEmail(s.sup.email) ? "!border-danger/60" : ""}`} type="email" placeholder="Email *" value={s.sup.email} onChange={(e) => setSup(s.id, { email: e.target.value })} />
-                      <input className="input !py-1.5 text-xs" placeholder="Location *" value={s.sup.location} onChange={(e) => setSup(s.id, { location: e.target.value })} />
-                    </div>
-                  </>
+                    {!ok && (
+                      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                        {!s.sup.location.trim() && <input className="input !py-1.5 text-xs" placeholder="Location *" value={s.sup.location} onChange={(e) => setSup(s.id, { location: e.target.value })} />}
+                        {!isEmail(s.sup.email) && <input className={`input !py-1.5 text-xs ${s.sup.email && !isEmail(s.sup.email) ? "!border-danger/60" : ""}`} type="email" placeholder="Email *" value={s.sup.email} onChange={(e) => setSup(s.id, { email: e.target.value })} />}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
         </Card>
       )}
 
-      {modal && <SupplierEditModal supplier={null} onClose={() => setModal(null)} onSaved={(s) => { pickSupplier(modal.sheetId, s.supplier_id); }} />}
+      {modal && <SupplierEditModal supplier={null} onClose={() => setModal(null)}
+        onSaved={(s) => setSup(modal.sheetId, { name: s.name, email: s.email ?? "", location: s.location ?? "" })} />}
     </div>
   );
 }

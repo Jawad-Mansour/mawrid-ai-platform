@@ -29,6 +29,7 @@ from app.api import (
     chat,
     customers,
     dunning,
+    google_auth,
     hitl,
     invoices,
     network,
@@ -123,8 +124,13 @@ def create_app() -> FastAPI:
         webhooks.router,
         admin.router,
         widget.router,
+        google_auth.router,
     ]:
         app.include_router(router, prefix="/api/v1")
+
+    # Gmail OAuth callback is mounted at ROOT (no /api/v1) to match the redirect URI
+    # registered in Google Cloud (http://localhost:8000/auth/google/callback).
+    app.include_router(google_auth.callback_router)
 
     @app.get("/health")
     async def health() -> dict[str, str]:

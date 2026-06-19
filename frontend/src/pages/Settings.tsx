@@ -1,11 +1,12 @@
-// Feature: Settings — workspace, theme picker, about, widget embed
-import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+// Feature: Settings — workspace, theme picker, Connect Gmail, about, widget embed
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { Globe, LogOut, ShieldCheck, Check, Clock, Info, Cpu, Boxes } from "lucide-react";
-import { apiPatch, apiErr } from "@/lib/api";
+import { Globe, LogOut, ShieldCheck, Check, Clock, Info, Cpu, Boxes, Mail, Spline } from "lucide-react";
+import { apiGet, apiDelete, apiPatch, apiErr } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, SectionTitle } from "@/components/ui";
+import { Card, SectionTitle, Spinner } from "@/components/ui";
 import { THEMES, useThemeStore } from "@/stores/theme";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +14,24 @@ export function Settings() {
   const { user, logout } = useAuth();
   const { theme, setTheme } = useThemeStore();
   const [origins, setOrigins] = useState("");
+  const qc = useQueryClient();
+  const [params] = useSearchParams();
+
+  const gmail = useQuery({ queryKey: ["gmail-status"], queryFn: () => apiGet<{ connected: boolean; email: string | null; configured: boolean }>("/auth/google/status") });
+  useEffect(() => {
+    const g = params.get("gmail");
+    if (g === "connected") { toast.success("Gmail connected"); qc.invalidateQueries({ queryKey: ["gmail-status"] }); }
+    else if (g === "error") toast.error("Couldn't connect Gmail — try again.");
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  async function connectGmail() {
+    try { const r = await apiGet<{ url: string }>("/auth/google/start"); window.location.href = r.url; }
+    catch (e) { toast.error(apiErr(e, "Couldn't start Google sign-in")); }
+  }
+  const disconnectGmail = useMutation({
+    mutationFn: () => apiDelete("/auth/google/disconnect"),
+    onSuccess: () => { toast.success("Gmail disconnected"); qc.invalidateQueries({ queryKey: ["gmail-status"] }); },
+    onError: (e) => toast.error(apiErr(e, "Failed")),
+  });
 
   const saveOrigins = useMutation({
     mutationFn: () => apiPatch("/widget/settings", { allowed_origins: origins }),
@@ -23,6 +42,32 @@ export function Settings() {
   return (
     <div className="space-y-6">
       <SectionTitle title="Settings" subtitle="Appearance, workspace, and embed options." />
+
+      {/* Connect Gmail */}
+      <Card>
+        <SectionTitle title="Connect Gmail" subtitle="Send POs, outreach & dunning from your own Gmail (lands in the inbox, not Junk) — and auto-detect supplier replies back."
+          right={<Mail className="h-5 w-5 text-ink-faint" />} />
+        {gmail.isLoading ? <div className="flex items-center gap-2 text-sm text-ink-soft"><Spinner className="h-4 w-4" /> Checking…</div>
+          : gmail.data?.configured === false ? (
+            <div className="rounded-xl border border-warn/30 bg-warn/10 p-3 text-sm text-warn">Google sign-in isn't configured on the server yet.</div>
+          ) : gmail.data?.connected ? (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-sm text-ink">
+                <span className="grid h-9 w-9 place-items-center rounded-lg bg-emerald/15 text-emerald-soft"><Check className="h-4 w-4" /></span>
+                Connected as <b className="font-mono text-emerald-soft">{gmail.data.email}</b>
+              </div>
+              <button className="btn-ghost" disabled={disconnectGmail.isPending} onClick={() => disconnectGmail.mutate()}>
+                {disconnectGmail.isPending ? <Spinner className="h-4 w-4" /> : <Spline className="h-4 w-4" />} Disconnect
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="text-sm text-ink-soft">Connect your Gmail so emails go out from your address and replies are detected automatically.</div>
+              <button className="btn-gold" onClick={connectGmail}><Mail className="h-4 w-4" /> Connect Gmail</button>
+            </div>
+          )}
+        <p className="mt-3 text-[11px] text-ink-faint">We only request send + read access, and never store your password. You can disconnect anytime.</p>
+      </Card>
 
       {/* Theme picker */}
       <Card>

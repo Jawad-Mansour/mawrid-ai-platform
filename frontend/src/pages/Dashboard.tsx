@@ -1,17 +1,20 @@
-// Feature: Operations Command Center — main dashboard
+// Feature: Operations Command Center — the main dashboard. Supplier-network globe with
+//          live Lebanon→region flows, embedded AI Assistant, to-do, calendar, analytics,
+//          approvals, dunning, AI health, and quick links into every section.
 import { useQuery } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
-  Boxes, CheckSquare, Banknote, Ship, AlertTriangle, TrendingUp,
-  Package, Activity, ArrowUpRight, type LucideIcon,
+  Boxes, CheckSquare, Banknote, Ship, AlertTriangle, TrendingUp, Package, Activity,
+  ArrowUpRight, UploadCloud, ClipboardList, Map, Store, Globe2, type LucideIcon,
 } from "lucide-react";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
 } from "recharts";
 import { apiGet } from "@/lib/api";
 import { Card, SectionTitle, StatusBadge } from "@/components/ui";
-import { Globe3D } from "@/components/Globe3D";
-import { useThemeStore } from "@/stores/theme";
+import { DashboardNetworkMap } from "@/components/dashboard/DashboardNetworkMap";
+import { TodoWidget, CalendarWidget, DashboardChat, type CalEvent } from "@/components/dashboard/Widgets";
 import type { DashboardSummary, AIHealthResponse, HITLAction, DunningSequence } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
@@ -27,29 +30,32 @@ function Metric({ icon: Icon, label, value, accent, to, delta }: {
   const body = (
     <Card className="group relative overflow-hidden">
       <div className="flex items-start justify-between">
-        <div className={`grid h-11 w-11 place-items-center rounded-xl ${accent}`}>
-          <Icon className="h-5 w-5" />
-        </div>
+        <div className={`grid h-11 w-11 place-items-center rounded-xl ${accent}`}><Icon className="h-5 w-5" /></div>
         {to && <ArrowUpRight className="h-4 w-4 text-ink-faint transition-colors group-hover:text-gold" />}
       </div>
       <div className="metric-num mt-4">{value}</div>
-      <div className="mt-1 flex items-center gap-2 text-sm text-ink-soft">
-        {label}
-        {delta && <span className="text-xs text-emerald-soft">{delta}</span>}
-      </div>
+      <div className="mt-1 flex items-center gap-2 text-sm text-ink-soft">{label}{delta && <span className="text-xs text-emerald-soft">{delta}</span>}</div>
     </Card>
   );
   return to ? <Link to={to}>{body}</Link> : body;
 }
 
+const QUICK = [
+  { to: "/upload", label: "Upload sheet", icon: UploadCloud },
+  { to: "/procurement", label: "Create order", icon: ClipboardList },
+  { to: "/suppliers/network", label: "Network map", icon: Map },
+  { to: "/publishing", label: "Storefront", icon: Store },
+  { to: "/dunning", label: "Dunning", icon: Banknote },
+  { to: "/catalog", label: "Catalogue", icon: Boxes },
+];
+
 export function Dashboard() {
-  const theme = useThemeStore((s) => s.theme);
   const summary = useQuery({ queryKey: ["summary"], queryFn: () => apiGet<DashboardSummary>("/admin/summary"), refetchInterval: 30_000 });
   const health = useQuery({ queryKey: ["ai-health"], queryFn: () => apiGet<AIHealthResponse>("/admin/ai-health") });
   const hitl = useQuery({ queryKey: ["hitl-pending"], queryFn: () => apiGet<unknown>("/hitl/actions?status=pending") });
   const dunning = useQuery({ queryKey: ["dunning-seq"], queryFn: () => apiGet<unknown>("/dunning/sequences") });
+  const shipments = useQuery({ queryKey: ["dash-shipments"], queryFn: () => apiGet<any[]>("/procurement/shipments") });
 
-  // Render immediately and fill in as each query resolves (no full-page block).
   const s = summary.data;
   const actions = asList<HITLAction>(hitl.data, "actions").filter((a) => a.status === "pending").slice(0, 5);
   const sequences = asList<DunningSequence>(dunning.data, "sequences").slice(0, 5);
@@ -61,16 +67,36 @@ export function Dashboard() {
     { stage: "Failed", n: s?.failed_enrichment ?? 0 },
   ];
 
+  const calEvents: CalEvent[] = (Array.isArray(shipments.data) ? shipments.data : [])
+    .filter((sh) => sh?.expected_arrival_date)
+    .map((sh) => ({ date: String(sh.expected_arrival_date).slice(0, 10), label: `Arrival · ${String(sh.po_id ?? "").slice(0, 8)}`, tone: "grape" as const }));
+
+  const today = new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+
   return (
-    <div className="space-y-6">
+    <div className="relative isolate space-y-6">
+      {/* subtle, theme-aware ambient backdrop */}
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <motion.div className="absolute -left-24 top-6 h-80 w-80 rounded-full blur-3xl" style={{ background: "rgb(var(--accent) / 0.07)" }} animate={{ x: [0, 28, 0], y: [0, 18, 0], opacity: [0.45, 0.8, 0.45] }} transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }} />
+        <motion.div className="absolute -right-10 top-1/3 h-96 w-96 rounded-full blur-3xl" style={{ background: "rgb(var(--accent) / 0.05)" }} animate={{ x: [0, -36, 0], y: [0, 26, 0], opacity: [0.4, 0.7, 0.4] }} transition={{ duration: 19, repeat: Infinity, ease: "easeInOut" }} />
+        <div className="absolute inset-0 opacity-[0.12]" style={{ backgroundImage: "radial-gradient(rgb(var(--accent) / 0.7) 1px, transparent 1px)", backgroundSize: "46px 46px", maskImage: "radial-gradient(ellipse at 50% -10%, black, transparent 70%)", WebkitMaskImage: "radial-gradient(ellipse at 50% -10%, black, transparent 70%)" }} />
+      </div>
+
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-800 tracking-tight text-ink">Operations Command Center</h1>
-          <p className="mt-1 text-sm text-ink-soft">Real-time view across procurement, catalog, and collections.</p>
+          <p className="mt-1 text-sm text-ink-soft">{today} · real-time across procurement, catalog & collections.</p>
         </div>
-        <div className="chip border-grape/40 bg-grape/10 text-grape-soft">
-          <Activity className="h-3.5 w-3.5" /> Drift: {health.data?.drift_status ?? "—"}
-        </div>
+        <div className="chip border-grape/40 bg-grape/10 text-grape-soft"><Activity className="h-3.5 w-3.5" /> Drift: {health.data?.drift_status ?? "—"}</div>
+      </div>
+
+      {/* quick links */}
+      <div className="flex flex-wrap gap-2">
+        {QUICK.map((q) => (
+          <Link key={q.to} to={q.to} className="chip border-line bg-white/[0.03] text-ink-soft transition-all hover:-translate-y-0.5 hover:border-gold/40 hover:text-ink hover:shadow-glow">
+            <q.icon className="h-3.5 w-3.5" /> {q.label}
+          </Link>
+        ))}
       </div>
 
       {/* Metrics */}
@@ -81,32 +107,33 @@ export function Dashboard() {
         <Metric icon={Banknote} label="Outstanding A/R" value={formatCurrency(s?.outstanding_receivables ?? 0)} accent="bg-grape/15 text-grape-soft" to="/dunning" />
       </div>
 
-      {/* Globe + funnel */}
+      {/* Supplier network globe + embedded AI Assistant */}
       <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-1">
-          <SectionTitle title="Supplier Network" subtitle="Live sourcing locations"
-            right={<Link to="/suppliers" className="text-sm font-600 text-gold-soft hover:underline">Compare</Link>} />
-          <Globe3D themeKey={theme} />
+        <Card className="lg:col-span-2">
+          <SectionTitle title="Supplier Network" subtitle="Europe is live with real supplier locations — more regions unlock soon."
+            right={<Link to="/suppliers/network" className="flex items-center gap-1 text-sm font-600 text-gold-soft hover:underline"><Globe2 className="h-4 w-4" /> Open map</Link>} />
+          <DashboardNetworkMap />
           <div className="mt-4 grid grid-cols-3 gap-3 text-center">
             <div><div className="metric-num text-xl">{s?.active_shipments ?? 0}</div><div className="text-xs text-ink-faint">Shipments</div></div>
             <div><div className="metric-num text-xl">{s?.low_stock_count ?? 0}</div><div className="text-xs text-ink-faint">Low stock</div></div>
             <div><div className="metric-num text-xl">{s?.consumer_orders_pending ?? 0}</div><div className="text-xs text-ink-faint">Orders</div></div>
           </div>
         </Card>
+        <Card className="flex flex-col"><DashboardChat /></Card>
+      </div>
 
-        <Card className="lg:col-span-2">
-          <SectionTitle title="Catalog Enrichment Funnel" subtitle="Product lifecycle distribution" right={<TrendingUp className="h-5 w-5 text-gold" />} />
-          <ResponsiveContainer width="100%" height={260}>
-            <AreaChart data={funnel} margin={{ left: -16, right: 8, top: 8 }}>
-              <defs>
-                <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#D4A373" stopOpacity={0.5} />
-                  <stop offset="100%" stopColor="#D4A373" stopOpacity={0} />
-                </linearGradient>
-              </defs>
+      {/* To-do + Calendar + Funnel */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="flex flex-col"><TodoWidget /></Card>
+        <Card className="flex flex-col"><CalendarWidget events={calEvents} /></Card>
+        <Card className="flex flex-col">
+          <SectionTitle title="Enrichment Funnel" subtitle="Product lifecycle" right={<TrendingUp className="h-5 w-5 text-gold" />} />
+          <ResponsiveContainer width="100%" height={200}>
+            <AreaChart data={funnel} margin={{ left: -20, right: 8, top: 8 }}>
+              <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#D4A373" stopOpacity={0.5} /><stop offset="100%" stopColor="#D4A373" stopOpacity={0} /></linearGradient></defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(212,163,115,0.08)" />
-              <XAxis dataKey="stage" stroke="#6B6759" fontSize={12} />
-              <YAxis stroke="#6B6759" fontSize={12} allowDecimals={false} />
+              <XAxis dataKey="stage" stroke="#6B6759" fontSize={11} />
+              <YAxis stroke="#6B6759" fontSize={11} allowDecimals={false} width={28} />
               <Tooltip contentStyle={{ background: "rgba(20,25,35,0.95)", border: "1px solid rgba(212,163,115,0.2)", borderRadius: 12, color: "#ECE7DF" }} />
               <Area type="monotone" dataKey="n" stroke="#D4A373" strokeWidth={2.5} fill="url(#g)" />
             </AreaChart>
@@ -117,19 +144,14 @@ export function Dashboard() {
       {/* HITL + Dunning */}
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
-          <SectionTitle title="Pending Approvals" subtitle="Actions awaiting your sign-off"
-            right={<Link to="/approvals" className="text-sm font-600 text-gold-soft hover:underline">View all</Link>} />
-          {actions.length === 0 ? (
-            <p className="py-8 text-center text-sm text-ink-soft">Nothing waiting — you're all caught up.</p>
-          ) : (
+          <SectionTitle title="Pending Approvals" subtitle="Actions awaiting your sign-off" right={<Link to="/approvals" className="text-sm font-600 text-gold-soft hover:underline">View all</Link>} />
+          {actions.length === 0 ? <p className="py-8 text-center text-sm text-ink-soft">Nothing waiting — you're all caught up.</p> : (
             <div className="space-y-2">
               {actions.map((a) => (
                 <Link key={a.action_id} to="/approvals" className="table-row flex items-center justify-between rounded-xl px-3 py-3">
                   <div className="min-w-0">
                     <div className="truncate text-sm font-600 text-ink">{a.action_type.replace(/_/g, " ")}</div>
-                    <div className="truncate text-xs text-ink-faint">
-                      {a.payload?.to || a.payload?.supplier_name || a.payload?.invoice_id || a.action_id.slice(0, 12)}
-                    </div>
+                    <div className="truncate text-xs text-ink-faint">{a.payload?.to || a.payload?.supplier_name || a.payload?.invoice_id || a.action_id.slice(0, 12)}</div>
                   </div>
                   <StatusBadge status={a.status} />
                 </Link>
@@ -139,11 +161,8 @@ export function Dashboard() {
         </Card>
 
         <Card>
-          <SectionTitle title="Active Dunning Sequences" subtitle="Collections in progress"
-            right={<Link to="/dunning" className="text-sm font-600 text-gold-soft hover:underline">Open engine</Link>} />
-          {sequences.length === 0 ? (
-            <p className="py-8 text-center text-sm text-ink-soft">No active sequences.</p>
-          ) : (
+          <SectionTitle title="Active Dunning Sequences" subtitle="Collections in progress" right={<Link to="/dunning" className="text-sm font-600 text-gold-soft hover:underline">Open engine</Link>} />
+          {sequences.length === 0 ? <p className="py-8 text-center text-sm text-ink-soft">No active sequences.</p> : (
             <div className="space-y-2">
               {sequences.map((d) => (
                 <div key={d.sequence_id} className="table-row flex items-center justify-between rounded-xl px-3 py-3">
@@ -161,25 +180,16 @@ export function Dashboard() {
 
       {/* AI health strip */}
       <Card>
-        <SectionTitle title="AI Model Health" subtitle="Registry status across all models"
-          right={<Link to="/ai-health" className="text-sm font-600 text-gold-soft hover:underline">Details</Link>} />
+        <SectionTitle title="AI Model Health" subtitle="Registry status across all models" right={<Link to="/ai-health" className="text-sm font-600 text-gold-soft hover:underline">Details</Link>} />
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           {(health.data?.models ?? []).map((m) => (
             <div key={m.name} className="rounded-xl border border-line bg-white/[0.02] p-4">
-              <div className="flex items-center gap-2">
-                <Boxes className="h-4 w-4 text-grape-soft" />
-                <span className="truncate text-sm font-600 text-ink">{m.name}</span>
-              </div>
-              <div className="mt-2 flex items-center justify-between">
-                <StatusBadge status={m.status} />
-                <span className="font-mono text-xs text-ink-faint">{m.latest_version ? `v${m.latest_version}` : "—"}</span>
-              </div>
+              <div className="flex items-center gap-2"><Boxes className="h-4 w-4 text-grape-soft" /><span className="truncate text-sm font-600 text-ink">{m.name}</span></div>
+              <div className="mt-2 flex items-center justify-between"><StatusBadge status={m.status} /><span className="font-mono text-xs text-ink-faint">{m.latest_version ? `v${m.latest_version}` : "—"}</span></div>
             </div>
           ))}
           {(health.data?.models ?? []).length === 0 && (
-            <div className="col-span-full flex items-center gap-2 py-4 text-sm text-ink-soft">
-              <Ship className="h-4 w-4" /> No models registered yet — train them to populate the registry.
-            </div>
+            <div className="col-span-full flex items-center gap-2 py-4 text-sm text-ink-soft"><Ship className="h-4 w-4" /> No models registered yet — train them to populate the registry.</div>
           )}
         </div>
       </Card>

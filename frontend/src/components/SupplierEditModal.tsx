@@ -35,19 +35,34 @@ export function SupplierEditModal({ supplier, presetName, onClose, onSaved }: {
 
   const valid = form.name.trim().length > 1 && isEmail(form.email) && form.location.trim().length > 0;
 
+  interface ResolveResp { found: boolean; latitude?: number; longitude?: number; city?: string; country?: string; phone_code?: string; display_name?: string; website?: string | null; email?: string | null }
   const find = useMutation({
-    mutationFn: () => apiPost<{ found: boolean; latitude?: number; longitude?: number; city?: string; country?: string; phone_code?: string; display_name?: string }>(
-      "/suppliers/resolve-location", { query: [form.name, form.location].filter(Boolean).join(", ") }),
+    // Resolve the COMPANY's real HQ from its name (GPT knows real brands), then geocode it.
+    // The typed location is only a hint/fallback for companies the model doesn't know.
+    mutationFn: () => apiPost<ResolveResp>("/suppliers/resolve-location", { name: form.name, place: form.location }),
     onSuccess: (r) => {
-      if (!r.found) { toast.error("Couldn't find that place — refine the name/location."); return; }
-      setForm((f) => ({
-        ...f,
-        location: [r.city, r.country].filter(Boolean).join(", ") || f.location,
-        phone: f.phone && f.phone.trim() ? f.phone : (r.phone_code ? `${r.phone_code} ` : f.phone),
-      }));
+      if (!r.found) { toast.error("Couldn't resolve that company — add a rough 'City, Country' as a hint."); return; }
+      setForm((f) => {
+        // Replace the dial-code prefix with the resolved country's code, keeping any digits typed after it.
+        const rest = (f.phone || "").replace(/^\+\d{1,4}\s*/, "").trim();
+        return {
+          ...f,
+          location: [r.city, r.country].filter(Boolean).join(", ") || f.location,
+          phone: r.phone_code ? `${r.phone_code} ${rest}`.trim() : f.phone,
+          email: f.email.trim() ? f.email : (r.email ?? f.email), // fill a suggested email if empty
+        };
+      });
       if (r.latitude != null && r.longitude != null) setCoords({ lat: r.latitude, lon: r.longitude });
       setResolved(true);
       toast.success(`Found: ${r.display_name?.split(",").slice(0, 2).join(",") ?? "location"}`);
+    },
+    onError: (e) => toast.error(apiErr(e, "Lookup failed")),
+  });
+  const findEmail = useMutation({
+    mutationFn: () => apiPost<ResolveResp>("/suppliers/resolve-location", { name: form.name, place: form.location }),
+    onSuccess: (r) => {
+      if (r.email) { set("email", r.email); toast.success(`Suggested: ${r.email}`); }
+      else toast.error("Couldn't find an email — type one (you can use your own for testing).");
     },
     onError: (e) => toast.error(apiErr(e, "Lookup failed")),
   });
@@ -84,7 +99,15 @@ export function SupplierEditModal({ supplier, presetName, onClose, onSaved }: {
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div><label className="label">Name <span className="text-danger">*</span></label><input className="input" value={form.name} onChange={(e) => { set("name", e.target.value); setResolved(false); }} /></div>
-            <div><label className="label">Email <span className="text-danger">*</span></label><input className={`input ${form.email && !isEmail(form.email) ? "!border-danger/60" : ""}`} type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="sales@supplier.com" /></div>
+            <div>
+              <label className="label">Email <span className="text-danger">*</span></label>
+              <div className="flex gap-2">
+                <input className={`input flex-1 ${form.email && !isEmail(form.email) ? "!border-danger/60" : ""}`} type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="type one, or auto-find →" />
+                <button type="button" onClick={() => findEmail.mutate()} disabled={findEmail.isPending || !form.name.trim()} className="btn-ghost shrink-0 !px-3 !py-2.5" title="Auto-find a contact email from the company">
+                  {findEmail.isPending ? <Spinner className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
             <div className="sm:col-span-2">
               <label className="label">Location <span className="text-danger">*</span></label>
               <div className="flex gap-2">

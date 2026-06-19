@@ -3,11 +3,12 @@
 //          straight into the email thread to read/answer (AI-assisted).
 // API:     GET /procurement/purchase-orders
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link } from "react-router-dom";
-import { MessagesSquare, Inbox, Send, ArrowRight, Building2, Clock } from "lucide-react";
-import { apiGet } from "@/lib/api";
-import { Card, SectionTitle, Loading, EmptyState, StatusBadge } from "@/components/ui";
+import { MessagesSquare, Inbox, Send, ArrowRight, Building2, Clock, MailSearch } from "lucide-react";
+import { toast } from "sonner";
+import { apiGet, apiPost, apiErr } from "@/lib/api";
+import { Card, SectionTitle, Loading, EmptyState, StatusBadge, Spinner } from "@/components/ui";
 import { formatCurrency, formatRelativeDate } from "@/lib/utils";
 
 interface PO { po_id: string; po_number: string; supplier_id: string; status: string; total_amount: number | null; currency: string; created_at: string }
@@ -17,6 +18,7 @@ const SENT_STATES = new Set(["sent", "replied", "confirmed"]);
 
 export function SupplierReplies() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const pos = useQuery({ queryKey: ["purchase-orders"], queryFn: () => apiGet<PO[]>("/procurement/purchase-orders"), refetchInterval: 10_000 });
   const list = Array.isArray(pos.data) ? pos.data : [];
 
@@ -24,10 +26,26 @@ export function SupplierReplies() {
   const awaiting = conversations.filter((p) => p.status === "sent");
   const replied = conversations.filter((p) => REPLY_STATES.has(p.status));
 
+  // Pull supplier replies from the operator mailbox on demand (same job the scheduler runs).
+  const poll = useMutation({
+    mutationFn: () => apiPost<{ enabled: number; fetched: number; processed: number }>("/procurement/inbound/poll", {}),
+    onSuccess: (r) => {
+      if (!r.enabled) toast.message("Inbound email isn't configured yet", { description: "Add IMAP credentials to Vault (mawrid/imap) to auto-detect replies. You can still log replies manually inside a thread." });
+      else if (r.processed > 0) { toast.success(`${r.processed} new repl${r.processed === 1 ? "y" : "ies"} detected & threaded`); qc.invalidateQueries({ queryKey: ["purchase-orders"] }); }
+      else toast.message("No new replies", { description: `Checked the mailbox — nothing new from your suppliers.` });
+    },
+    onError: (e) => toast.error(apiErr(e, "Couldn't check the mailbox")),
+  });
+
   return (
     <div className="space-y-6">
       <SectionTitle title="Supplier Replies" subtitle="Every order you've sent and the conversation it started — open a thread to read or answer."
-        right={<Link to="/purchase-orders" className="btn-ghost !py-2"><Send className="h-4 w-4" /> Purchase Orders</Link>} />
+        right={<div className="flex gap-2">
+          <button onClick={() => poll.mutate()} disabled={poll.isPending} className="btn-ghost !py-2" title="Check the mailbox for new supplier replies now">
+            {poll.isPending ? <Spinner className="h-4 w-4" /> : <MailSearch className="h-4 w-4" />} Check inbox
+          </button>
+          <Link to="/purchase-orders" className="btn-ghost !py-2"><Send className="h-4 w-4" /> Purchase Orders</Link>
+        </div>} />
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Stat label="Conversations" value={conversations.length} icon={<MessagesSquare className="h-5 w-5" />} />

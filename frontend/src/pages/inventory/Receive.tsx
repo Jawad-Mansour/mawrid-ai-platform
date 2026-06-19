@@ -24,15 +24,29 @@ export function Receive() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [notes, setNotes] = useState("");
   const [received, setReceived] = useState(false);
+  const draftKey = shipId ? `mawrid_receive_${shipId}` : "";
 
   const ships = useQuery({ queryKey: ["shipments"], queryFn: () => apiGet<Shipment[]>("/procurement/shipments") });
   const arrived = (ships.data ?? []).filter((s) => s.status === "arrived");
   const ship = (ships.data ?? []).find((s) => s.shipment_id === shipId);
   const po = useQuery({ queryKey: ["po-detail", ship?.po_id], queryFn: () => apiGet<PODetail>(`/procurement/purchase-orders/${ship!.po_id}`), enabled: !!ship?.po_id });
 
+  // Load the saved checklist draft (or seed from the PO). The draft is per-shipment.
   useEffect(() => {
-    if (po.data && rows === null) setRows(po.data.line_items.map((l) => ({ product_id: l.product_id, product_name: l.product_name, sku: l.sku, ordered: l.quantity, received: l.quantity, damaged: 0, note: "" })));
-  }, [po.data]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (rows !== null || !shipId) return;
+    if (draftKey) {
+      try {
+        const saved = JSON.parse(localStorage.getItem(draftKey) || "null") as { rows: Row[]; notes: string; received: boolean } | null;
+        if (saved?.rows?.length) { setRows(saved.rows); setNotes(saved.notes ?? ""); setReceived(!!saved.received); return; }
+      } catch { /* ignore */ }
+    }
+    if (po.data) setRows(po.data.line_items.map((l) => ({ product_id: l.product_id, product_name: l.product_name, sku: l.sku, ordered: l.quantity, received: l.quantity, damaged: 0, note: "" })));
+  }, [po.data, shipId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Persist every edit so the checklist is never lost.
+  useEffect(() => {
+    if (draftKey && rows) localStorage.setItem(draftKey, JSON.stringify({ rows, notes, received }));
+  }, [rows, notes, received, draftKey]);
 
   const r = rows ?? [];
   const allGood = r.every((x) => x.received >= x.ordered && x.damaged === 0);

@@ -208,3 +208,8 @@ body {
 .marquee-right { animation-name: mawrid-marquee-right; }
 .marquee-wrap:hover .marquee-track { animation-play-state: paused; }
 @media (prefers-reduced-motion: reduce) { .marquee-track { animation: none; } }
+
+/* Supplier-network hub — "flowing" data along the Lebanon→region arcs */
+@keyframes mawrid-flow { to { stroke-dashoffset: -14; } }
+.flow-line { animation: mawrid-flow 0.6s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .flow-line { animation: none; } }

@@ -23,6 +23,7 @@ from datetime import date
 import structlog
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.interval import IntervalTrigger
 
 logger = structlog.get_logger(__name__)
 _log = logging.getLogger(__name__)
@@ -211,10 +212,55 @@ async def _run_arrival_check() -> None:
             _log.error("scheduler_arrival_check_error", extra={"tenant_id": tenant_id, "error": str(exc)})
 
 
+async def _run_inbound_poll() -> None:
+    """Every few minutes, pull supplier replies from the operator mailbox (IMAP) and
+    thread + comprehend them. Graceful no-op when IMAP creds are absent in Vault."""
+    from app.infra.db.session import get_session_factory  # noqa: PLC0415
+    from app.infra.email.inbound import poll_and_ingest  # noqa: PLC0415
+
+    try:
+        result = await poll_and_ingest(get_session_factory())
+        if result.get("enabled"):
+            _log.info("scheduler_inbound_poll", extra=result)
+    except Exception as exc:  # noqa: BLE001
+        _log.error("scheduler_inbound_poll_error", extra={"error": str(exc)})
+
+
+async def _run_gmail_poll() -> None:
+    """Every few minutes, pull supplier replies from each tenant's CONNECTED Gmail (OAuth)
+    and thread + comprehend them. No-op when no tenant has connected Gmail."""
+    from app.infra.db.session import get_session_factory  # noqa: PLC0415
+    from app.infra.email.gmail import gmail_poll_and_ingest  # noqa: PLC0415
+
+    try:
+        result = await gmail_poll_and_ingest(get_session_factory())
+        if result.get("enabled"):
+            _log.info("scheduler_gmail_poll", extra=result)
+    except Exception as exc:  # noqa: BLE001
+        _log.error("scheduler_gmail_poll_error", extra={"error": str(exc)})
+
+
 def start_scheduler() -> None:
     """Start the APScheduler. Called from app lifespan startup."""
     global _scheduler
     _scheduler = _make_scheduler()
+
+    _scheduler.add_job(
+        _run_inbound_poll,
+        IntervalTrigger(minutes=2),
+        id="inbound_email_poll",
+        replace_existing=True,
+        max_instances=1,
+        misfire_grace_time=120,
+    )
+    _scheduler.add_job(
+        _run_gmail_poll,
+        IntervalTrigger(minutes=2),
+        id="gmail_email_poll",
+        replace_existing=True,
+        max_instances=1,
+        misfire_grace_time=120,
+    )
 
     _scheduler.add_job(
         _run_network_refresh,
@@ -259,7 +305,7 @@ def start_scheduler() -> None:
     )
 
     _scheduler.start()
-    logger.info("dunning_scheduler_started", jobs=4)
+    logger.info("scheduler_started", jobs=7)
 
 
 def stop_scheduler() -> None:

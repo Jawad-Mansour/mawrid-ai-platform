@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, MapPin, Globe, Mail, Tag, Building2, Factory, GitCompare, Check, UploadCloud, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { apiUpload, apiErr } from "@/lib/api";
+import { brandLogoSources } from "@/lib/utils";
 import { Spinner } from "@/components/ui";
 
 export interface DetailPin {
@@ -23,16 +24,18 @@ export function FactoryDetailModal({ pin, color, selected, onClose, onToggle, on
   const fileRef = useRef<HTMLInputElement>(null);
   const [logo, setLogo] = useState(pin.logo_url ?? "");
   const [uploading, setUploading] = useState(false);
-  const [imgOk, setImgOk] = useState(true);
+  const [idx, setIdx] = useState(0);
   const isSupplier = !pin.id.startsWith("ref_");
   const loc = [pin.city, pin.country].filter(Boolean).join(", ");
+  const sources = brandLogoSources(logo, pin.website);
+  const src = sources[idx];
 
   async function uploadLogo(file: File) {
     if (!file.type.startsWith("image/")) { toast.error("Choose an image"); return; }
     setUploading(true);
     try {
       const r = await apiUpload<{ logo_url?: string }>(`/suppliers/${pin.id}/logo`, file);
-      setLogo(r.logo_url ?? ""); setImgOk(true);
+      setLogo(r.logo_url ?? ""); setIdx(0);
       qc.invalidateQueries({ queryKey: ["factories"] });
       toast.success("Logo updated");
     } catch (e) { toast.error(apiErr(e, "Upload failed")); }
@@ -59,7 +62,7 @@ export function FactoryDetailModal({ pin, color, selected, onClose, onToggle, on
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadLogo(f); e.target.value = ""; }} />
             <motion.div initial={{ scale: 0.6 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 14 }}
               className="grid h-20 w-20 place-items-center overflow-hidden rounded-2xl bg-white" style={{ boxShadow: `0 0 26px ${color}66` }}>
-              {uploading ? <Spinner className="h-6 w-6" /> : logo && imgOk ? <img src={logo} alt="" className="h-full w-full object-contain p-2" onError={() => setImgOk(false)} /> : <Factory className="h-8 w-8 text-ink-faint" />}
+              {uploading ? <Spinner className="h-6 w-6" /> : src ? <img src={src} alt="" className="h-full w-full object-contain p-2" onError={() => setIdx((i) => i + 1)} /> : <Factory className="h-8 w-8 text-ink-faint" />}
             </motion.div>
             <div className="text-center">
               <div className="text-lg font-800 text-ink">{pin.name}</div>
@@ -68,8 +71,8 @@ export function FactoryDetailModal({ pin, color, selected, onClose, onToggle, on
                 <span className="capitalize">{pin.source === "curated" ? "Verified manufacturer" : pin.source === "discovered" ? "Discovered prospect" : "Your supplier"}</span>
               </div>
             </div>
-            {isSupplier && (!logo || !imgOk) && (
-              <button onClick={() => fileRef.current?.click()} className="chip border-gold/40 bg-gold/10 text-gold-soft"><UploadCloud className="h-3.5 w-3.5" /> Upload logo</button>
+            {isSupplier && (
+              <button onClick={() => fileRef.current?.click()} className="chip border-gold/40 bg-gold/10 text-gold-soft"><UploadCloud className="h-3.5 w-3.5" /> {src ? "Replace logo" : "Upload logo"}</button>
             )}
           </div>
 

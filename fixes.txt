@@ -1,0 +1,164 @@
+note 1 : 
+Adjust if not found ) 
+when I add a supplier , if I contact him and he specifies a minimum quantity , this should be detected , saved and filled in the specified field (image 1 ) and this should be used when the order is made 
+adjust it if not already 
+
+note 2 : (adjust it ) 
+we should be able to remove suppliers from the  prospects and our suppliers UI tab 
+
+note 3 : (adjust it ) 
+when asking for a catalogue in our suppliers tab , the message should stay appearing in the tab and in the hitl approvals tab 
+
+note 4 : (adjust it ) 
+i rejected the message i drafted from the hitl tab , and when i read the notification , found out that there should be read and unread notifications divided 
+
+note 5 (adjust it ) 
+ i dropped a file , went to another tab , the file i droped disappeared and it should persist 
+
+note 6 : 
+in the catalogue part , a huge improvement is needed  , make every possible thing that needs or can be made to improve the search process to be very accurate if i query anything , NLP maybe or anything 
+- also , when enriching , we should be 100% sure that everything is based on the code , no errors 
+
+
+in the second image , 
+the email the AI has written is of the form 
+
+Dear hoover,
+... 
+
+is it good like this ? 
+
+and we should ask for making deal about the arrival date of the shipment 
+
+note 7  : 
+mark all as read is taking time 
+
+note 8 : 
+the rows should move a bit faster 
+
+note 9 : 
+in the same section , in the rows when i want to visit the website , i am not able to 
+plus there should be a button to show on map 
+and a button to compare in the moving cards list on each card (supplier ) 
+
+note 10 : 
+when we hover out of a point on the map , the card should be faster to disappear 
+
+note 11 : 
+there is no data to compare for the suppliers , we are comparing blank data , this needs a fix 
+
+note 12 : 
+in the network map , we should be able to search for a specific supplier 
+
+note 13 : 
+a supplier should have a contact button also when hovering on the map 
+(so basically , the moving cards and the cards on hover , should have compare , contact and visit website together ) 
+
+note 14 : 
+when the agent searches for new suppliers , they  shouldnt be saved in prospects but they should be added to the moving cards , to the map exact location , and the agent that seached for the logos should run on them 
+
+the prospects save the suppliers that we are wanting to know them more and so on 
+if i didnt add a supplier manually , a prospect because from our suppliers when an order is made 
+
+note 15 :
+in the network map , the contact button in the rows is not working 
+when we press on it , a message should be drafted based on what i select in the popup that needs to appear , 
+this popup should contain the logo , name , details , ... 
+and select what we want , (general knowledge about the company , ask for catalogue , ... ) 
+then we draft a message , then this draft waits for approval and so on in the discover and outreach tab 
+
+note 16 (critical ) : 
+every single email from any source to any source should arrive to the specific target 
+example i am testing the functionnality on my own emails 
+mansourmohamadeljawad113@gmail.com   , mansourmohamadeljawad118@gmail.com   , mansourmohamadeljawad313@gmail.com , ... 
+any email should arrive and , when an email or a reply arrives from this supplier , it should be auto detected from my inbox , in outlook , gmail or anywhere 
+and everything should move smooth : 
+if a shipment arrival date arrived , it should be saved and used in the tracking part and added as a field for the PO history 
+if something in the lists need edit in the po part , then i should be able to know and ... 
+every single thing we already talked about 
+
+nice , the order i sent is arriving but to junk , it should be to inbox 
+i manually added it to the inbox for now 
+and I manually replied playing the role of the factory specifying a date as you see in one of the images 
+
+and as you see 
+it was not detected ,  i think it requires an automation , (you need to solve this critical issue ) 
+
+
+note 17 : 
+in the shipments & Arrivals tab , i added an arrival date manually it should auto fill from an email if we had a deal on a specific date  
+we should add the exact time (lebanese time ) 
+
+the buttons (pending shipment ... should be better , more creative ... ) 
+
+note 18 : 
+in recieved goods , i told as an example to test dunning , i put one as damaged 
+
+plus i couldnt download the report pdf 
+plus we need to adjust the message sent 
+
+note 19 : 
+when i sent and everything 
+when i filled the recieved checklist it doesnt save which is a problem , it should save , we can edit it but right now it doesnt save at all 
+
+note 20 : 
+how is the stock levels working ? we may need to improve UX and logic 
+
+note 21 : 
+the dunning engine is not related to the report if there is something broken
+and when we send , we always should keep track of any reply or email reply to what i sent , dispute , order or anything
+
+CRITICAL NOTES : 
+
+
+note 22 : 
+for the AI assistant , i think we dont need anymore the chat widget in it's current location ) (we will put it in a div in the main dashboard ) 
+we need to add chat history and anything needed inspired by a real chatbot 
+
+note 23 : 
+for the advisor : 
+you should find a model from hugging face maybe , you do what is needed but there should be a model that 
+answers business questions 
+helps managing , improving , adjusting business 
+help make a decision 
+and every thing that can help and improve the business 
+
+for the command center part : 
+there should be a file as dataset , covering every single thing detail , products and their description , convo history , activity , HITL approvals , dunning , EVERY SINGLE DETAIL 
+and i can ask about anything , any single thing and the answer should be perfect , asking , tracking maybe arrival of a shipment , maybeee , asking about new emails , maybeee about dunning on customers or suppliers 
+
+and so on 
+
+NB : 
+this commmand center chatbot's answer , can be taken and used for the advisor chatbot , that can suggest a specific step or decision or what to do or how to improve , based , on the answer of the command center chatbot 
+for example we may track all supplies , and he may suggest how to manage better ... 
+
+note 24 : 
+CRUICAL 
+the main dashboard : 
+1- the supplier network : 
+you have 2 options : 
+a globe (remove all locations ) and based on the theme , make the specified region in the specified color 
+all connected to lebanon by lines (this showcases that lebanon to anywhere in these regions ) 
+and this should be like if there is a network connection between them , the lines should be live like something is flowing 
+option 2 : 
+each region of the network map 
+shown one by one 
+and the coming soon ones is shown 
+like china is shown but , has a lock on it and is a bit obscure 
+
+the dashboard should also have : 
+
+should have a todo list , should have a calendar , the chatbot widget previously we told to remove it from  it's location and should have it's own section in main dashboard 
+
+in this dashboard , connects to the other sections 
+and anything that can be helpful like analytics , charts , anything 
+think of every single detail and adjust it 
+
+note : 
+enrich data if needed for the ratings and descriptions of the companies ... so we can have a better comparision as dummy data 
+
+
+final note : 
+add 3d animations effects and design in login signup + smooth with effects  and animations and so on 
+

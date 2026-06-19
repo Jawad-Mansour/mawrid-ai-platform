@@ -646,28 +646,50 @@ async def log_po_message(
     order_repo = OrderRepository(session, current_user.tenant_id)
     if await order_repo.get_po_by_id(po_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Purchase order not found.")
-    await order_repo.append_po_message(
-        po_id,
-        {
-            "direction": body.direction,
-            "sender": body.sender,
-            "body": body.body,
-            "at": datetime.now(UTC).isoformat(),
-        },
-    )
-    if body.direction == "inbound":
-        await order_repo.set_po_status(po_id, "replied")
-        po = await order_repo.get_po_by_id(po_id)
-        from app.infra.db.repos.notification_repo import record_event  # noqa: PLC0415
 
-        await record_event(
-            session, current_user.tenant_id, kind="supplier_reply",
-            title="Supplier replied",
-            body=f"A reply was logged on {po.po_number if po else 'a purchase order'}.",
-            link=f"/purchase-orders/{po_id}",
+    # An inbound reply runs the full comprehension pipeline (the same one the IMAP poller
+    # uses): it threads the message, extracts intent + arrival/payment dates, flags change
+    # requests, and auto-tracks a proposed arrival as a shipment.
+    if body.direction == "inbound":
+        from app.infra.email.inbound import ingest_supplier_reply  # noqa: PLC0415
+
+        await ingest_supplier_reply(session, current_user.tenant_id, po_id, body.sender, body.body)
+    else:
+        await order_repo.append_po_message(
+            po_id,
+            {
+                "direction": body.direction,
+                "sender": body.sender,
+                "body": body.body,
+                "at": datetime.now(UTC).isoformat(),
+            },
         )
     await session.commit()
     return {"po_id": po_id, "status": "logged"}
+
+
+@router.post(
+    "/inbound/poll",
+    summary="Check the operator mailbox now for supplier replies (IMAP) and ingest them",
+)
+async def poll_inbound(
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> dict[str, int]:
+    """On-demand trigger for the same jobs the scheduler runs every few minutes — checks
+    BOTH the connected Gmail (OAuth) and the IMAP mailbox. Returns combined counts."""
+    from app.infra.db.session import get_session_factory  # noqa: PLC0415
+    from app.infra.email.gmail import gmail_poll_and_ingest  # noqa: PLC0415
+    from app.infra.email.inbound import poll_and_ingest  # noqa: PLC0415
+
+    factory = get_session_factory()
+    imap = await poll_and_ingest(factory)
+    gmail = await gmail_poll_and_ingest(factory)
+    return {
+        "enabled": max(int(imap.get("enabled", 0)), int(gmail.get("enabled", 0))),
+        "fetched": int(imap.get("fetched", 0)),
+        "processed": int(imap.get("processed", 0)) + int(gmail.get("processed", 0)),
+    }
 
 
 class DraftReplyResponse(StrictModel):
@@ -739,9 +761,10 @@ async def send_po_reply(
             detail="Supplier has no email on file.",
         )
 
-    from app.infra.email.sender import send_email  # noqa: PLC0415
+    from app.infra.email.gmail import send_email_for_tenant  # noqa: PLC0415
 
-    await send_email(
+    await send_email_for_tenant(
+        session, current_user.tenant_id,
         to=sup.email,
         subject=body.subject or f"Re: Purchase Order {po.po_number}",
         body=body.body,
@@ -1140,7 +1163,7 @@ async def shipment_receipt_email(
     shipment_id: str, current_user: CurrentUser, session: SessionDep
 ) -> dict[str, str]:
     from app.infra.documents.receipt_pdf import generate_receipt_pdf  # noqa: PLC0415
-    from app.infra.email.sender import send_email  # noqa: PLC0415
+    from app.infra.email.gmail import send_email_for_tenant  # noqa: PLC0415
 
     shipment_repo = ShipmentRepository(session, current_user.tenant_id)
     shipment = await shipment_repo.get_by_id(shipment_id)
@@ -1159,8 +1182,8 @@ async def shipment_receipt_email(
            "We found some discrepancies/damage (detailed in the attached report) and may follow up with a formal claim.\n\n")
         + f"Please find the goods-received report attached.\n\nBest regards,\n{data.tenant_name}"
     )
-    await send_email(to=sup.email, subject=subject, body=body, attachment_bytes=pdf,
-                     attachment_filename=f"receipt-{data.po_number}.pdf", attachment_mime="application/pdf")
+    await send_email_for_tenant(session, current_user.tenant_id, to=sup.email, subject=subject, body=body, attachment_bytes=pdf,
+                                attachment_filename=f"receipt-{data.po_number}.pdf", attachment_mime="application/pdf")
     from app.infra.db.repos.notification_repo import record_event  # noqa: PLC0415
 
     await record_event(session, current_user.tenant_id, kind="receipt_sent",

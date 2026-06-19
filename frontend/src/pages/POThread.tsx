@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ArrowLeft, Send, Sparkles, Inbox, Building2, ClipboardList, MessageSquarePlus, Settings2, Trash2, CalendarCheck, CheckCircle2, Save } from "lucide-react";
+import { ArrowLeft, Send, Sparkles, Inbox, Building2, ClipboardList, MessageSquarePlus, Settings2, Trash2, CalendarCheck, CheckCircle2, Save, AlertTriangle, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { apiGet, apiPost, apiPatch, apiErr } from "@/lib/api";
 import { Card, SectionTitle, Loading, StatusBadge, Spinner } from "@/components/ui";
@@ -14,7 +14,8 @@ import { formatCurrency } from "@/lib/utils";
 
 interface OrderLine { product_id?: string; product_name?: string; sku?: string | null; quantity: number; unit_price: number; currency?: string }
 
-interface Msg { direction: string; sender: string; body: string; at: string }
+interface Extracted { intent: string; wants_changes: boolean; change_summary: string; arrival_date: string | null; promised_payment_date: string | null; summary: string }
+interface Msg { direction: string; sender: string; body: string; at: string; extracted?: Extracted }
 interface PODetail {
   po_id: string; po_number: string; supplier_id: string; supplier_name: string | null; supplier_email: string | null;
   status: string; total_amount: number | null; currency: string; po_text: string | null; line_items: any[];
@@ -123,6 +124,7 @@ export function POThread() {
                     <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${out ? "rounded-tr-sm bg-gold/15" : "rounded-tl-sm border border-line bg-bg-soft"}`}>
                       <div className="mb-1 flex items-center gap-2 text-[11px] text-ink-faint"><span className="font-700 text-ink-soft">{m.sender}</span> · {new Date(m.at).toLocaleString()}</div>
                       <div className="whitespace-pre-wrap leading-relaxed text-ink-soft">{m.body}</div>
+                      {!out && m.extracted && <ExtractedPanel x={m.extracted} poId={poId!} />}
                     </div>
                   </motion.div>
                 );
@@ -186,6 +188,33 @@ export function POThread() {
             {!d.supplier_email && <p className="mt-2 text-xs text-warn">⚠ Add a supplier email in Suppliers to send replies.</p>}
           </Card>
         </>
+      )}
+    </div>
+  );
+}
+
+// What the AI understood from a supplier's reply, plus the actions it triggers:
+// an "edit & resend" route when they want changes, and the auto-tracked arrival date.
+function ExtractedPanel({ x, poId }: { x: Extracted; poId: string }) {
+  const tone = x.intent === "reject" ? "border-danger/30 bg-danger/10 text-danger"
+    : x.intent === "request_change" ? "border-warn/30 bg-warn/10 text-warn"
+    : x.intent === "confirm" ? "border-emerald/30 bg-emerald/10 text-emerald-soft"
+    : "border-line bg-white/[0.04] text-ink-soft";
+  return (
+    <div className="mt-2 rounded-lg border border-grape/25 bg-grape/5 p-2">
+      <div className="flex items-center gap-1.5 text-[11px] font-700 text-grape-soft"><Sparkles className="h-3 w-3" /> What the AI understood</div>
+      {x.summary && <div className="mt-1 text-[12px] text-ink-soft">{x.summary}</div>}
+      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+        <span className={`chip capitalize ${tone}`}>{x.intent.replace(/_/g, " ")}</span>
+        {x.arrival_date && <span className="chip border-emerald/30 bg-emerald/10 text-emerald-soft"><CalendarCheck className="h-3 w-3" /> Arrival {x.arrival_date} · tracked</span>}
+        {x.promised_payment_date && <span className="chip border-grape/30 bg-grape/10 text-grape-soft">Pays by {x.promised_payment_date}</span>}
+      </div>
+      {x.wants_changes && (
+        <div className="mt-2 flex items-center gap-2 rounded-md border border-warn/30 bg-warn/10 p-1.5">
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-warn" />
+          <div className="flex-1 text-[11px] text-warn">{x.change_summary || "Supplier requested changes to the order."}</div>
+          <Link to={`/procurement/edit/${poId}`} className="btn-gold shrink-0 !px-2 !py-1 text-[11px]"><Pencil className="h-3 w-3" /> Edit &amp; resend</Link>
+        </div>
       )}
     </div>
   );
