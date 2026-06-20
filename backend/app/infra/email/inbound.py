@@ -184,10 +184,13 @@ def extract_po_number(subject: str) -> str | None:
 
 
 async def ingest_supplier_reply(
-    session: Any, tenant_id: str, po_id: str, sender: str, body: str
+    session: Any, tenant_id: str, po_id: str, sender: str, body: str,
+    attachments: list[dict[str, Any]] | None = None,
 ) -> Comprehension:
     """Log an inbound supplier email on a PO thread, comprehend it, and act on it.
-    Reused by both the IMAP poller and the manual 'log a reply' endpoint."""
+    Reused by both the IMAP poller and the manual 'log a reply' endpoint. `attachments`
+    (already saved to storage) are threaded onto the message so emailed sheets can be
+    downloaded or sent straight to enrichment."""
     from app.infra.db.repos.notification_repo import record_event  # noqa: PLC0415
     from app.infra.db.repos.order_repo import OrderRepository  # noqa: PLC0415
     from app.infra.db.repos.shipment_repo import ShipmentRepository  # noqa: PLC0415
@@ -212,6 +215,7 @@ async def ingest_supplier_reply(
             "body": body,
             "at": datetime.now(UTC).isoformat(),
             "extracted": c.as_dict(),
+            "attachments": attachments or [],
         },
     )
     await order_repo.set_po_status(po_id, "replied")
@@ -231,10 +235,13 @@ async def ingest_supplier_reply(
                 link="/suppliers",
             )
 
+    att_note = f" · attached {len(attachments)} file(s)" if attachments else ""
     await record_event(
         session, tenant_id, kind="supplier_reply",
-        title=f"Supplier replied · {po.po_number}",
-        body=c.summary or "A supplier reply was received.",
+        title=f"Supplier replied · {po.po_number}{att_note}",
+        body=(c.summary or "A supplier reply was received.") + (
+            " A sheet was attached — open the order to download it or send it to enrichment." if attachments else ""
+        ),
         link=f"/purchase-orders/{po_id}",
     )
 

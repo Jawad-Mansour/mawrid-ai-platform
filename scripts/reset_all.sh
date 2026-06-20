@@ -47,4 +47,5 @@ PSQL -tAc "select '  products='||count(*) from products where tenant_id='$TID';
            select '  purchase_orders='||count(*) from purchase_orders where tenant_id='$TID';
            select '  hitl_actions='||count(*) from hitl_actions where tenant_id='$TID';
            select '  invoices='||count(*) from invoices where tenant_id='$TID';"
-echo "-> Browser: clear localStorage keys 'mawrid-basket' and 'mawrid_enrich_active' (or just hard-refresh and empty the basket)."
+echo "-> Browser: run this in the console to clear cached UI state (chat history, staged sheets, basket):"
+echo "   ['mawrid_assistant_sessions','mawrid_upload_sheets','mawrid-basket','mawrid_enrich_active'].forEach(k=>localStorage.removeItem(k));location.reload();"

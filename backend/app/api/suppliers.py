@@ -164,10 +164,15 @@ async def _company_facts(name: str, place: str | None) -> dict[str, object]:
                 {"role": "system", "content": (
                     "You know real companies and brands. Given a company name (and an optional "
                     "location hint), return ONLY JSON "
-                    '{"city": str|null, "country": str|null, "website": str|null} with the '
-                    "company's REAL primary headquarters / main office city and country and its "
-                    "official website domain. Use only well-known real facts. If you are not "
-                    "confident the company is real and known, return all nulls. No prose."
+                    '{"hq": str|null, "city": str|null, "country": str|null, "website": str|null}.\n'
+                    "- hq: the company's REAL headquarters as a precise, geocodable string — "
+                    "include town/municipality + region/state + country (a full street address "
+                    'if you genuinely know it), e.g. "North Canton, Ohio, United States".\n'
+                    "- city, country: the same HQ city and country.\n"
+                    "- website: the official website domain.\n"
+                    "Use only well-known real facts about the COMPANY itself — the hint is just a "
+                    "disambiguator, never override the real HQ with it. If you are not confident "
+                    "the company is real and known, return all nulls. No prose."
                 )},
                 {"role": "user", "content": f"Company: {name}\nHint: {place or '-'}"},
             ],
@@ -196,18 +201,21 @@ async def resolve_location(
     coordinates + the country dial code, and return the official website + a best-effort contact
     email. Falls back to the rough place you typed for companies the model doesn't know. Never
     fabricates coordinates — returns found=false if nothing resolves."""
-    from app.infra.geo.geocode import geocode_detailed  # noqa: PLC0415
+    from app.infra.geo.geocode import email_domain, geocode_detailed  # noqa: PLC0415
 
     name = (body.name or body.query or "").strip()
     place = (body.place or "").strip() or None
 
     facts = await _company_facts(name, place) if name else {}
+    hq = str(facts.get("hq") or "").strip()
     city = str(facts.get("city") or "").strip()
     country = str(facts.get("country") or "").strip()
     website = str(facts.get("website") or "").strip() or None
 
-    # Try the company's REAL location first, then the typed place, then the bare name.
+    # Geocode the most PRECISE thing we have first: the real HQ string from the model, then
+    # its city+country, then the rough place you typed, then the bare name.
     candidates = [
+        hq,
         f"{city}, {country}".strip(", ") if (city or country) else "",
         place or "",
         name,
@@ -219,7 +227,7 @@ async def resolve_location(
             if d:
                 break
 
-    domain = (website or "").replace("https://", "").replace("http://", "").split("/")[0]
+    domain = email_domain(website)
     email_guess = f"info@{domain}" if domain else None
 
     if not d:

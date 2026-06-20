@@ -23,6 +23,14 @@ _cache: dict[str, tuple[float, float] | None] = {}
 _detail_cache: dict[str, dict[str, object] | None] = {}
 
 
+def email_domain(website: str | None) -> str:
+    """Registrable domain for building a public-contact email guess — strips the scheme,
+    any path, and a leading ``www.`` so ``https://www.hoover.com/x`` → ``hoover.com``
+    (we want ``info@hoover.com``, never ``info@www.hoover.com``)."""
+    dom = (website or "").replace("https://", "").replace("http://", "").split("/")[0].strip().lower()
+    return dom[4:] if dom.startswith("www.") else dom
+
+
 async def geocode(location: str | None) -> tuple[float, float] | None:
     """Return (lat, lon) for a place string, or None. Cached per process."""
     if not location or not location.strip():

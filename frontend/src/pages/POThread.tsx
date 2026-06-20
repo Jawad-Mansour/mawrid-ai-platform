@@ -10,12 +10,13 @@ import { ArrowLeft, Send, Sparkles, Inbox, Building2, ClipboardList, MessageSqua
 import { toast } from "sonner";
 import { apiGet, apiPost, apiPatch, apiErr } from "@/lib/api";
 import { Card, SectionTitle, Loading, StatusBadge, Spinner } from "@/components/ui";
+import { MessageAttachments, type MsgAttachment } from "@/components/MessageAttachments";
 import { formatCurrency } from "@/lib/utils";
 
 interface OrderLine { product_id?: string; product_name?: string; sku?: string | null; quantity: number; unit_price: number; currency?: string }
 
 interface Extracted { intent: string; wants_changes: boolean; change_summary: string; arrival_date: string | null; promised_payment_date: string | null; summary: string }
-interface Msg { direction: string; sender: string; body: string; at: string; extracted?: Extracted }
+interface Msg { direction: string; sender: string; body: string; at: string; extracted?: Extracted; attachments?: MsgAttachment[] }
 interface PODetail {
   po_id: string; po_number: string; supplier_id: string; supplier_name: string | null; supplier_email: string | null;
   status: string; total_amount: number | null; currency: string; po_text: string | null; line_items: any[];
@@ -124,6 +125,7 @@ export function POThread() {
                     <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${out ? "rounded-tr-sm bg-gold/15" : "rounded-tl-sm border border-line bg-bg-soft"}`}>
                       <div className="mb-1 flex items-center gap-2 text-[11px] text-ink-faint"><span className="font-700 text-ink-soft">{m.sender}</span> · {new Date(m.at).toLocaleString()}</div>
                       <div className="whitespace-pre-wrap leading-relaxed text-ink-soft">{m.body}</div>
+                      {!out && <MessageAttachments attachments={m.attachments} supplierId={d.supplier_id} supplierName={d.supplier_name} />}
                       {!out && m.extracted && <ExtractedPanel x={m.extracted} poId={poId!} />}
                     </div>
                   </motion.div>

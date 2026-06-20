@@ -60,6 +60,12 @@ export function Intelligence() {
   }
   function newChat() { const id = uid(); setSessions((ss) => [{ id, title: "New chat", msgs: [], at: Date.now() }, ...ss]); setActiveId(id); setShowHistory(false); }
   function deleteChat(id: string) { setSessions((ss) => ss.filter((s) => s.id !== id)); if (id === activeId) { const rest = sessions.filter((s) => s.id !== id); setActiveId(rest[0]?.id ?? ""); } }
+  function clearAllHistory() {
+    if (!confirm("Clear all chat history? This deletes every saved conversation.")) return;
+    const id = uid();
+    setSessions([{ id, title: "New chat", msgs: [], at: Date.now() }]);
+    setActiveId(id); setShowHistory(false);
+  }
 
   async function send(text: string, asRole: Role = role) {
     const t = text.trim();
@@ -106,6 +112,11 @@ export function Intelligence() {
                   <button onClick={() => deleteChat(s.id)} className="shrink-0 text-ink-faint opacity-0 transition-opacity hover:text-danger group-hover:opacity-100" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
                 </div>
               ))}
+              {sessions.some((s) => s.msgs.length > 0) && (
+                <button onClick={clearAllHistory} className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-xl border border-line px-3 py-2 text-xs text-ink-faint transition-colors hover:border-danger/50 hover:text-danger">
+                  <Trash2 className="h-3.5 w-3.5" /> Clear all history
+                </button>
+              )}
             </div>
           </>
         )}

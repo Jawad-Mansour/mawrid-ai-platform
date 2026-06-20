@@ -8,7 +8,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { RefreshCw, GitCompare, MapPin, Globe2, Lock, Building2, ExternalLink, Mail, Check, ArrowRight, Factory, Bot, Sparkles, Search, ImagePlus } from "lucide-react";
+import { RefreshCw, GitCompare, MapPin, Globe2, Lock, Building2, ExternalLink, Mail, Check, ArrowRight, Factory, Bot, Sparkles, Search, ImagePlus, Star, Maximize2 } from "lucide-react";
 import { toast } from "sonner";
 import { apiGet, apiPost, apiErr } from "@/lib/api";
 import { SectionTitle, Loading, Spinner, Card } from "@/components/ui";
@@ -19,7 +19,7 @@ import { useNetwork, colorForCategory } from "@/stores/network";
 import { brandLogoSources } from "@/lib/utils";
 
 interface Region { key: string; label: string; available: boolean; center: [number, number]; zoom: number; bounds?: [[number, number], [number, number]]; min_zoom?: number }
-interface Pin2 { id: string; source: string; name: string; category: string; latitude: number | null; longitude: number | null; city?: string | null; country?: string | null; website?: string | null; logo_url?: string | null; email?: string | null; condition?: string | null; offering?: string | null }
+interface Pin2 { id: string; source: string; name: string; category: string; latitude: number | null; longitude: number | null; city?: string | null; country?: string | null; website?: string | null; logo_url?: string | null; email?: string | null; condition?: string | null; offering?: string | null; rating?: number | null; lead_time_days?: number | null }
 interface FactoriesResp { region: string; pins: Pin2[]; categories: string[] }
 
 export function Network() {
@@ -187,7 +187,10 @@ function DragCarousel({ children, reverse }: { children: React.ReactNode; revers
   const offset = useRef(0);
   const halfW = useRef(0);
   const paused = useRef(false);
-  const drag = useRef({ active: false, startX: 0, startOffset: 0, moved: false });
+  // `down` = pointer is pressed; `active` = an actual drag started (moved past threshold).
+  // We only take pointer-capture once a drag actually begins — capturing on mere press would
+  // retarget the click to this track and swallow the card's Details/Compare/Website buttons.
+  const drag = useRef({ down: false, active: false, startX: 0, startOffset: 0, moved: false, pointerId: 0 });
 
   const reps = items.length ? Math.max(2, Math.ceil(6 / items.length)) : 0;
   const base = Array.from({ length: reps }, () => items).flat();
@@ -219,13 +222,22 @@ function DragCarousel({ children, reverse }: { children: React.ReactNode; revers
   return (
     <div className="overflow-hidden py-1"
       onMouseEnter={() => (paused.current = true)}
-      onMouseLeave={() => { paused.current = false; drag.current.active = false; }}>
+      onMouseLeave={() => { paused.current = false; drag.current.down = false; drag.current.active = false; }}>
       <div ref={trackRef}
         className="flex w-max cursor-grab gap-3 select-none active:cursor-grabbing"
-        onPointerDown={(e) => { drag.current = { active: true, startX: e.clientX, startOffset: offset.current, moved: false }; (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId); }}
-        onPointerMove={(e) => { if (!drag.current.active) return; const dx = e.clientX - drag.current.startX; if (Math.abs(dx) > 4) drag.current.moved = true; apply(drag.current.startOffset + dx); }}
-        onPointerUp={() => { drag.current.active = false; }}
-        onPointerCancel={() => { drag.current.active = false; }}
+        onPointerDown={(e) => { drag.current = { down: true, active: false, startX: e.clientX, startOffset: offset.current, moved: false, pointerId: e.pointerId }; }}
+        onPointerMove={(e) => {
+          if (!drag.current.down) return;
+          const dx = e.clientX - drag.current.startX;
+          if (!drag.current.active) {
+            if (Math.abs(dx) <= 4) return;           // not a drag yet — let clicks through
+            drag.current.active = true; drag.current.moved = true;
+            (e.currentTarget as HTMLElement).setPointerCapture?.(drag.current.pointerId);
+          }
+          apply(drag.current.startOffset + dx);
+        }}
+        onPointerUp={() => { drag.current.down = false; drag.current.active = false; }}
+        onPointerCancel={() => { drag.current.down = false; drag.current.active = false; }}
         onClickCapture={(e) => { if (drag.current.moved) { e.preventDefault(); e.stopPropagation(); drag.current.moved = false; } }}>
         {[...base, ...base].map((c, i) => <div key={i} className="shrink-0">{c}</div>)}
       </div>
@@ -256,18 +268,26 @@ function FactoryCard({ p, selected, color, onToggle, onOpen, onContact }: { p: P
           <div className="truncate text-sm font-700 text-ink">{p.name}</div>
           <div className="flex items-center gap-1 text-[11px] text-ink-faint">{p.source === "curated" ? <Building2 className="h-3 w-3" /> : <MapPin className="h-3 w-3" />}<span className="capitalize">{p.source === "curated" ? "Verified maker" : p.source}</span></div>
         </div>
-        <button onClick={(e) => { e.stopPropagation(); onToggle(); }} title="Select to compare"
-          className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg border ${selected ? "border-gold bg-gold text-bg" : "border-line text-ink-soft hover:border-gold/50"}`}>{selected ? <Check className="h-3.5 w-3.5" /> : <GitCompare className="h-3.5 w-3.5" />}</button>
+        {selected && <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md border border-gold bg-gold/15 text-gold-soft" title="Selected to compare"><Check className="h-3.5 w-3.5" /></span>}
       </div>
       <p className="mt-2 line-clamp-2 min-h-[2.2rem] text-xs text-ink-soft">{p.offering ?? "—"}</p>
       <div className="mt-1.5 space-y-0.5 text-[11px] text-ink-faint">
+        {p.rating != null && <div className="flex items-center gap-1 font-700 text-gold-soft"><Star className="h-3 w-3 fill-current" /> {p.rating.toFixed(1)}{p.lead_time_days ? <span className="font-400 text-ink-faint"> · {p.lead_time_days}d lead</span> : ""}</div>}
         {loc && <div className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {loc}</div>}
         {p.condition && <div className="capitalize">Sells: {p.condition}</div>}
       </div>
-      <div className="mt-2.5 flex items-center gap-1.5 border-t border-line pt-2.5">
-        {p.website && <a href={/^https?:\/\//.test(p.website) ? p.website : `https://${p.website}`} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="grid h-7 w-7 place-items-center rounded-lg border border-line text-ink-faint hover:text-ink" title="Visit website"><ExternalLink className="h-3.5 w-3.5" /></a>}
-        <button onClick={(e) => { e.stopPropagation(); onContact(); }} className="btn-gold flex-1 !py-1.5 text-xs"><Mail className="h-3.5 w-3.5" /> Contact <ArrowRight className="h-3 w-3" /></button>
+      {/* explicit, always-clickable actions: Details · Compare · Website · Contact */}
+      <div className="mt-2.5 grid grid-cols-3 gap-1.5 border-t border-line pt-2.5">
+        <button onClick={(e) => { e.stopPropagation(); onOpen(); }} title="See full details"
+          className="flex items-center justify-center gap-1 rounded-lg border border-line py-1.5 text-[11px] text-ink-soft transition-colors hover:border-gold/50 hover:text-ink"><Maximize2 className="h-3.5 w-3.5" /> Details</button>
+        <button onClick={(e) => { e.stopPropagation(); onToggle(); }} title={selected ? "Remove from compare" : "Add to compare"}
+          className={`flex items-center justify-center gap-1 rounded-lg border py-1.5 text-[11px] transition-colors ${selected ? "border-gold/60 bg-gold/15 text-gold-soft" : "border-line text-ink-soft hover:border-gold/50 hover:text-ink"}`}>{selected ? <Check className="h-3.5 w-3.5" /> : <GitCompare className="h-3.5 w-3.5" />} {selected ? "Added" : "Compare"}</button>
+        {p.website
+          ? <a href={/^https?:\/\//.test(p.website) ? p.website : `https://${p.website}`} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} title="Visit website"
+              className="flex items-center justify-center gap-1 rounded-lg border border-line py-1.5 text-[11px] text-ink-soft transition-colors hover:border-gold/50 hover:text-ink"><ExternalLink className="h-3.5 w-3.5" /> Website</a>
+          : <span className="flex items-center justify-center gap-1 rounded-lg border border-line py-1.5 text-[11px] text-ink-faint/40" title="No website on file"><ExternalLink className="h-3.5 w-3.5" /> Website</span>}
       </div>
+      <button onClick={(e) => { e.stopPropagation(); onContact(); }} className="btn-gold mt-1.5 w-full !py-1.5 text-xs"><Mail className="h-3.5 w-3.5" /> Contact <ArrowRight className="h-3 w-3" /></button>
     </div>
   );
 }

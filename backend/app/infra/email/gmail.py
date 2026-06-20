@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import base64
 import re
+import uuid
 from collections.abc import Callable
 from email.message import EmailMessage
 from email.utils import parseaddr
@@ -185,7 +186,7 @@ def _extract_body(payload: dict[str, Any]) -> str:
     return ""
 
 
-def _parse_gmail_message(msg: dict[str, Any]) -> dict[str, str]:
+def _parse_gmail_message(msg: dict[str, Any]) -> dict[str, Any]:
     payload = msg.get("payload", {}) or {}
     headers = {str(h.get("name", "")).lower(): str(h.get("value", "")) for h in payload.get("headers", [])}
     name, addr = parseaddr(headers.get("from", ""))
@@ -197,14 +198,40 @@ def _parse_gmail_message(msg: dict[str, Any]) -> dict[str, str]:
     }
 
 
-async def list_replies(access_token: str, addresses: list[str], newer_than_days: int = 3) -> list[dict[str, str]]:
+# Only pull spreadsheet / PDF / CSV attachments (the things a supplier sends as a catalog).
+_DOC_EXT = (".xlsx", ".xls", ".csv", ".pdf")
+_DOC_MIME = ("spreadsheet", "excel", "pdf", "csv", "officedocument")
+_MAX_ATTACH_BYTES = 20 * 1024 * 1024
+
+
+def _collect_attachment_meta(payload: dict[str, Any]) -> list[dict[str, str]]:
+    """Walk the MIME tree for document attachments (filename + Gmail attachmentId)."""
+    out: list[dict[str, str]] = []
+
+    def walk(p: dict[str, Any]) -> None:
+        fn = str(p.get("filename") or "")
+        body = p.get("body") or {}
+        att_id = body.get("attachmentId")
+        if fn and att_id:
+            mime = str(p.get("mimeType") or "application/octet-stream")
+            if fn.lower().endswith(_DOC_EXT) or any(k in mime.lower() for k in _DOC_MIME):
+                out.append({"filename": fn, "mime": mime, "att_id": str(att_id)})
+        for sub in p.get("parts", []) or []:
+            walk(sub)
+
+    walk(payload)
+    return out[:5]
+
+
+async def list_replies(access_token: str, addresses: list[str], newer_than_days: int = 3) -> list[dict[str, Any]]:
     """Unread messages FROM the given supplier addresses (then marked read). Non-destructive
-    to the rest of the inbox — only touches mail from known suppliers."""
+    to the rest of the inbox — only touches mail from known suppliers. Document attachments
+    (Excel/PDF/CSV) are downloaded and carried as base64 in each result's `attachments`."""
     if not addresses:
         return []
     from_clause = " OR ".join(f"from:{a}" for a in addresses[:50])
     q = f"is:unread newer_than:{newer_than_days}d ({from_clause})"
-    out: list[dict[str, str]] = []
+    out: list[dict[str, Any]] = []
     async with httpx.AsyncClient(timeout=30.0) as client:
         hdr = {"Authorization": f"Bearer {access_token}"}
         lr = await client.get(f"{GMAIL_API}/messages", headers=hdr, params={"q": q, "maxResults": "20"})
@@ -215,11 +242,55 @@ async def list_replies(access_token: str, addresses: list[str], newer_than_days:
             mr = await client.get(f"{GMAIL_API}/messages/{mid}", headers=hdr, params={"format": "full"})
             if mr.status_code != 200:  # noqa: PLR2004
                 continue
-            parsed = _parse_gmail_message(mr.json())
+            raw_msg = mr.json()
+            parsed = _parse_gmail_message(raw_msg)
             parsed["id"] = mid
+            # download document attachments → base64 (saved to storage by the poller)
+            attachments: list[dict[str, str]] = []
+            for meta in _collect_attachment_meta(raw_msg.get("payload", {}) or {}):
+                ar = await client.get(
+                    f"{GMAIL_API}/messages/{mid}/attachments/{meta['att_id']}", headers=hdr
+                )
+                if ar.status_code != 200:  # noqa: PLR2004
+                    continue
+                data_url = ar.json().get("data")
+                if not data_url:
+                    continue
+                try:
+                    blob = base64.urlsafe_b64decode(str(data_url) + "===")
+                except Exception:  # noqa: BLE001
+                    continue
+                if not blob or len(blob) > _MAX_ATTACH_BYTES:
+                    continue
+                attachments.append({
+                    "filename": meta["filename"], "mime": meta["mime"],
+                    "data_b64": base64.b64encode(blob).decode(),
+                })
+            parsed["attachments"] = attachments
             out.append(parsed)
             await client.post(f"{GMAIL_API}/messages/{mid}/modify", headers=hdr, json={"removeLabelIds": ["UNREAD"]})
     return out
+
+
+async def _store_attachments(tenant_id: str, message_id: str, attachments: list[dict[str, str]]) -> list[dict[str, Any]]:
+    """Save downloaded attachments to MinIO under the tenant bucket; return saved metadata
+    ({filename, key, mime, size}) to thread onto the conversation message."""
+    from app.infra.storage.minio import upload_document  # noqa: PLC0415
+
+    saved: list[dict[str, Any]] = []
+    for a in attachments:
+        try:
+            blob = base64.b64decode(a["data_b64"])
+        except Exception:  # noqa: BLE001
+            continue
+        safe = re.sub(r"[^A-Za-z0-9._-]", "_", a.get("filename") or "sheet")[:80] or "sheet"
+        key = f"inbound/{message_id or uuid.uuid4().hex}/{safe}"
+        try:
+            await upload_document(tenant_id, key, blob, a.get("mime") or "application/octet-stream")
+            saved.append({"filename": a.get("filename") or safe, "key": key, "mime": a.get("mime"), "size": len(blob)})
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("attachment_store_failed", key=key, error=str(exc))
+    return saved
 
 
 async def gmail_poll_and_ingest(session_factory: Callable[[], Any]) -> dict[str, int]:
@@ -250,6 +321,8 @@ async def gmail_poll_and_ingest(session_factory: Callable[[], Any]) -> dict[str,
         from datetime import UTC, datetime  # noqa: PLC0415
 
         for em in await list_replies(token, addresses):
+            # Save any emailed sheets to storage first (outside the txn — network I/O).
+            saved_atts = await _store_attachments(tenant_id, str(em.get("id") or ""), em.get("attachments") or [])
             async with session_factory() as session, session.begin():
                 po_id: str | None = None
                 po_num = extract_po_number(em["subject"])
@@ -264,12 +337,13 @@ async def gmail_poll_and_ingest(session_factory: Callable[[], Any]) -> dict[str,
                         if po:
                             po_id = po.po_id
                         else:
-                            sup.outreach_messages = [*(sup.outreach_messages or []), {"direction": "inbound", "sender": sup.name, "body": em["body"], "at": datetime.now(UTC).isoformat()}]
-                            await record_event(session, tenant_id, kind="supplier_reply", title=f"Reply from {sup.name}", body=(em["body"][:140] or em["subject"]), link=f"/suppliers/outreach?supplier={sup.supplier_id}")
+                            sup.outreach_messages = [*(sup.outreach_messages or []), {"direction": "inbound", "sender": sup.name, "body": em["body"], "at": datetime.now(UTC).isoformat(), "attachments": saved_atts}]
+                            note = f"Reply from {sup.name}" + (f" · sent {len(saved_atts)} file(s)" if saved_atts else "")
+                            await record_event(session, tenant_id, kind="supplier_reply", title=note, body=(em["body"][:140] or em["subject"]), link=f"/suppliers/outreach?supplier={sup.supplier_id}")
                             processed += 1
                             continue
                 if po_id:
-                    await ingest_supplier_reply(session, tenant_id, po_id, em["from_name"] or em["from_addr"], em["body"])
+                    await ingest_supplier_reply(session, tenant_id, po_id, em["from_name"] or em["from_addr"], em["body"], attachments=saved_atts)
                     processed += 1
 
     logger.info("gmail_poll_done", tenants=len(targets), processed=processed)

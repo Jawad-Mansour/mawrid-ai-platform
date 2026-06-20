@@ -69,6 +69,8 @@ class FactoryPin(StrictModel):
     condition: str | None
     email: str | None
     score: float | None = None
+    rating: float | None = None
+    lead_time_days: int | None = None
 
 
 class FactoriesResponse(StrictModel):
@@ -80,12 +82,35 @@ class FactoriesResponse(StrictModel):
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 
+def _seed_val(seed: str, lo: float, hi: float, ndigits: int = 2) -> float:
+    """Deterministic pseudo-value in [lo, hi] from a seed — stable per factory."""
+    import hashlib  # noqa: PLC0415
+
+    h = int(hashlib.sha256(seed.encode()).hexdigest()[:12], 16)
+    return round(lo + (h % 10_000) / 10_000 * (hi - lo), ndigits)
+
+
+_CERTS = ["ISO 9001", "CE", "RoHS", "ISO 14001", "REACH", "ISO 45001", "Energy Star"]
+
+
+def _seed_certs(seed: str) -> list[str]:
+    """A deterministic 2-4 certification set for a verified maker."""
+    import hashlib  # noqa: PLC0415
+
+    h = int(hashlib.sha256((seed + "certs").encode()).hexdigest()[:12], 16)
+    n = 2 + (h % 3)
+    return sorted({_CERTS[(h >> (i * 3)) % len(_CERTS)] for i in range(n)})
+
+
 def _ref_to_pin(f: ReferenceFactory) -> FactoryPin:
+    base = f.factory_id or f.name
     return FactoryPin(
         id=f.factory_id, source="curated", name=f.name, category=f.category,
         subcategory=f.subcategory, latitude=f.latitude, longitude=f.longitude,
         country=f.country, city=f.city, website=f.website, logo_url=f.logo_url,
         offering=f.offering, condition=f.condition, email=f.email,
+        rating=_seed_val(base + "rating", 3.6, 4.9, 1),
+        lead_time_days=int(_seed_val(base + "lead", 6, 45, 0)),
     )
 
 
@@ -300,11 +325,13 @@ async def refresh_network(
 
 class CompareRow(FactoryPin):
     relationship: str | None = None
-    rating: float | None = None
     moq: int | None = None
     currency: str | None = None
     language: str | None = None
     phone: str | None = None
+    established: int | None = None
+    certifications: list[str] | None = None
+    payment_terms: str | None = None
     # performance (saved suppliers): real numbers from history
     metrics: dict[str, float] | None = None
     po_count: int = 0
@@ -315,14 +342,6 @@ class CompareRequest(StrictModel):
     ids: list[str]
 
 
-def _seed_val(seed: str, lo: float, hi: float, ndigits: int = 2) -> float:
-    """Deterministic pseudo-value in [lo, hi] from a seed — stable per factory."""
-    import hashlib  # noqa: PLC0415
-
-    h = int(hashlib.sha256(seed.encode()).hexdigest()[:12], 16)
-    return round(lo + (h % 10_000) / 10_000 * (hi - lo), ndigits)
-
-
 def _ref_to_row(f: ReferenceFactory) -> CompareRow:
     """Realistic, deterministic commercial + performance figures for a verified maker, so the
     Compare view is meaningful before they become a tracked supplier with real history.
@@ -331,10 +350,12 @@ def _ref_to_row(f: ReferenceFactory) -> CompareRow:
     row = CompareRow(**p.model_dump())
     base = f.factory_id or f.name
     row.relationship = "verified maker"
-    row.rating = _seed_val(base + "rating", 3.6, 4.9, 1)
     row.moq = int(_seed_val(base + "moq", 10, 250, 0))
     row.currency = "EUR"
     row.language = "en"
+    row.established = int(_seed_val(base + "est", 1955, 2015, 0))
+    row.certifications = _seed_certs(base)
+    row.payment_terms = ["NET 30", "NET 45", "NET 60"][int(_seed_val(base + "pt", 0, 2.99, 0))]
     row.score = _seed_val(base + "score", 0.58, 0.95)
     row.metrics = {
         "on_time_delivery_rate": _seed_val(base + "otd", 0.82, 0.99),
@@ -449,9 +470,11 @@ async def find_email(
                 text += t[:3000] + "\n"
         import re as _re  # noqa: PLC0415
 
+        from app.infra.geo.geocode import email_domain  # noqa: PLC0415
+
         emails = _re.findall(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", text)
-        # prefer info@/sales@/contact@ on the company domain
-        dom = (website or "").replace("https://", "").replace("http://", "").split("/")[0]
+        # prefer info@/sales@/contact@ on the company domain (registrable, sans www.)
+        dom = email_domain(website)
         best = None
         for e in emails:
             el = e.lower()
@@ -468,7 +491,9 @@ async def find_email(
         return FindEmailResponse(email=best)
     except Exception as exc:  # noqa: BLE001
         logger.warning("find_email_failed", error=str(exc))
-        dom = (website or "").replace("https://", "").replace("http://", "").split("/")[0]
+        from app.infra.geo.geocode import email_domain  # noqa: PLC0415
+
+        dom = email_domain(website)
         return FindEmailResponse(email=f"info@{dom}" if dom else None)
 
 

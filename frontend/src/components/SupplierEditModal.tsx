@@ -107,6 +107,7 @@ export function SupplierEditModal({ supplier, presetName, onClose, onSaved }: {
                   {findEmail.isPending ? <Spinner className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
                 </button>
               </div>
+              <p className="mt-1 text-[10.5px] leading-snug text-ink-faint">✨ makes a best-effort guess (<span className="font-mono">info@domain</span>). A <b>verified</b> email needs a paid lookup service — type the real one manually if you have it.</p>
             </div>
             <div className="sm:col-span-2">
               <label className="label">Location <span className="text-danger">*</span></label>

@@ -18,6 +18,7 @@ export interface MapPin {
   country?: string | null;
   offering?: string | null;
   website?: string | null;
+  rating?: number | null;
   source: string;
 }
 
@@ -91,6 +92,7 @@ export function LeafletMap({
         `<div style="font-family:sans-serif;min-width:180px">
           <div style="font-weight:700;font-size:13px;margin-bottom:2px">${escapeHtml(p.name)}</div>
           <div style="font-size:11px;color:#555;text-transform:capitalize">${escapeHtml(p.category)}${loc ? " · " + escapeHtml(loc) : ""}</div>
+          ${p.rating != null ? `<div style="font-size:11px;color:#a86b3d;font-weight:700;margin-top:2px">★ ${p.rating.toFixed(1)} rating</div>` : ""}
           ${p.offering ? `<div style="font-size:11px;color:#333;margin-top:4px">${escapeHtml(p.offering)}</div>` : ""}
           <div style="font-size:10px;color:#888;margin:4px 0">${p.source === "curated" ? "Verified manufacturer" : p.source === "discovered" ? "Discovered" : "Your supplier"}</div>
           <div style="display:flex;gap:6px;margin-bottom:6px">

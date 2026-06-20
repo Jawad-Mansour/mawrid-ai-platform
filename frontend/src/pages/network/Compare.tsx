@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { GitCompare, X, Trash2, Mail, ExternalLink, MapPin, Factory, Star, AlertTriangle, ArrowLeft } from "lucide-react";
 import { apiPost } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { SectionTitle, Card, Loading, EmptyState } from "@/components/ui";
 import { useNetwork } from "@/stores/network";
 import type { MapPin as Pin } from "@/components/LeafletMap";
@@ -14,6 +15,7 @@ interface Row extends Pin {
   subcategory?: string | null; email?: string | null; relationship?: string | null;
   rating?: number | null; moq?: number | null; currency?: string | null; language?: string | null;
   phone?: string | null; metrics?: Record<string, number> | null; po_count?: number; total_spend?: number;
+  lead_time_days?: number | null; established?: number | null; certifications?: string[] | null; payment_terms?: string | null;
 }
 
 export function Compare() {
@@ -44,12 +46,14 @@ export function Compare() {
 
   const txt = (v: any, suffix = "") => (v != null && v !== "" ? `${v}${suffix}` : "—");
   const pct = (v?: number) => (v != null ? `${Math.round(v * 100)}%` : "—");
-  type RD = { label: string; render: (r: Row) => React.ReactNode } | { section: string };
+  type RD = { section: string } | { label: string; render: (r: Row) => React.ReactNode; value?: (r: Row) => number | null; best?: "high" | "low" };
   const rowDef: RD[] = [
     { section: "Profile" },
     { label: "Type", render: (r) => <span className="capitalize">{r.source === "curated" ? "Verified maker" : r.relationship === "prospect" ? "Prospect" : r.source === "discovered" ? "Discovered" : "Our supplier"}</span> },
     { label: "Category", render: (r) => <span className="capitalize">{r.category.replace("-", " ")}{r.subcategory ? ` · ${r.subcategory}` : ""}</span> },
     { label: "What they provide", render: (r) => <span className="text-ink-soft">{txt(r.offering)}</span> },
+    { label: "Established", render: (r) => <span>{txt(r.established)}</span> },
+    { label: "Certifications", render: (r) => r.certifications?.length ? <div className="flex flex-wrap gap-1">{r.certifications.map((c) => <span key={c} className="chip border-line bg-white/[0.03] text-[10px] text-ink-soft">{c}</span>)}</div> : <span className="text-ink-faint">—</span> },
     { label: "Sells (condition)", render: (r) => <span className="capitalize">{txt(r.condition)}</span> },
     { section: "Location" },
     { label: "City / Country", render: (r) => <span className="flex items-center gap-1 text-ink-soft"><MapPin className="h-3 w-3" /> {[r.city, r.country].filter(Boolean).join(", ") || "—"}</span> },
@@ -58,14 +62,17 @@ export function Compare() {
     { label: "Phone", render: (r) => <span className="text-ink-soft">{txt(r.phone)}</span> },
     { label: "Website", render: (r) => r.website ? <a href={r.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-grape-soft hover:underline"><ExternalLink className="h-3 w-3" /> visit</a> : "—" },
     { label: "Currency / Lang", render: (r) => <span>{txt(r.currency)}{r.language ? ` · ${r.language.toUpperCase()}` : ""}</span> },
-    { label: "MOQ", render: (r) => <span>{txt(r.moq, " units")}</span> },
-    { label: "Rating", render: (r) => r.rating != null ? <span className="flex items-center gap-1 text-gold-soft"><Star className="h-3 w-3 fill-current" /> {r.rating.toFixed(1)}</span> : <span className="text-ink-faint">—</span> },
+    { label: "Payment terms", render: (r) => <span>{txt(r.payment_terms)}</span> },
+    { label: "MOQ", render: (r) => <span>{txt(r.moq, " units")}</span>, value: (r) => r.moq ?? null, best: "low" },
+    { label: "Lead time", render: (r) => <span>{txt(r.lead_time_days, " days")}</span>, value: (r) => r.lead_time_days ?? null, best: "low" },
+    { label: "Rating", render: (r) => r.rating != null ? <span className="flex items-center gap-1 text-gold-soft"><Star className="h-3 w-3 fill-current" /> {r.rating.toFixed(1)}</span> : <span className="text-ink-faint">—</span>, value: (r) => r.rating ?? null, best: "high" },
     { section: "Performance" },
-    { label: "Score", render: (r) => r.score != null ? <span className="font-700 text-gold-soft">{r.score.toFixed(0)}/100</span> : <span className="text-ink-faint">—</span> },
-    { label: "On-time delivery", render: (r) => <span>{pct(r.metrics?.on_time_delivery_rate)}</span> },
-    { label: "Damage rate", render: (r) => <span>{pct(r.metrics?.damage_rate)}</span> },
-    { label: "Discrepancy rate", render: (r) => <span>{pct(r.metrics?.discrepancy_rate)}</span> },
-    { label: "Catalogue completeness", render: (r) => <span>{pct(r.metrics?.catalog_completeness)}</span> },
+    { label: "Score", render: (r) => r.score != null ? <span className="font-700">{(r.score * 100).toFixed(0)}/100</span> : <span className="text-ink-faint">—</span>, value: (r) => r.score ?? null, best: "high" },
+    { label: "On-time delivery", render: (r) => <span>{pct(r.metrics?.on_time_delivery_rate)}</span>, value: (r) => r.metrics?.on_time_delivery_rate ?? null, best: "high" },
+    { label: "Damage rate", render: (r) => <span>{pct(r.metrics?.damage_rate)}</span>, value: (r) => r.metrics?.damage_rate ?? null, best: "low" },
+    { label: "Response time", render: (r) => <span>{r.metrics?.response_time_hours != null ? `${r.metrics.response_time_hours}h` : "—"}</span>, value: (r) => r.metrics?.response_time_hours ?? null, best: "low" },
+    { label: "Discrepancy rate", render: (r) => <span>{pct(r.metrics?.discrepancy_rate)}</span>, value: (r) => r.metrics?.discrepancy_rate ?? null, best: "low" },
+    { label: "Catalogue completeness", render: (r) => <span>{pct(r.metrics?.catalog_completeness)}</span>, value: (r) => r.metrics?.catalog_completeness ?? null, best: "high" },
     { label: "Purchase orders", render: (r) => <span>{txt(r.po_count)}</span> },
     { label: "Total spend", render: (r) => <span>{r.total_spend ? `${r.currency ?? ""} ${r.total_spend.toLocaleString()}` : "—"}</span> },
   ];
@@ -97,18 +104,29 @@ export function Compare() {
               </tr>
             </thead>
             <tbody>
-              {rowDef.map((rd, i) => (
-                "section" in rd ? (
+              {rowDef.map((rd, i) => {
+                if ("section" in rd) return (
                   <tr key={`s${i}`} className="border-t border-line bg-white/[0.02]">
                     <td colSpan={rows.length + 1} className="px-2 py-1.5 text-[11px] font-700 uppercase tracking-wider text-gold-soft">{rd.section}</td>
                   </tr>
-                ) : (
+                );
+                // best-per-metric highlight (green) when the row defines value + best
+                let bestVal: number | null = null;
+                if (rd.best && rd.value && rows.length > 1) {
+                  const vals = rows.map((r) => rd.value!(r)).filter((v): v is number => v != null);
+                  if (vals.length) bestVal = rd.best === "high" ? Math.max(...vals) : Math.min(...vals);
+                }
+                return (
                   <tr key={rd.label} className="border-t border-line">
                     <td className="p-2 text-xs uppercase tracking-wider text-ink-faint">{rd.label}</td>
-                    {rows.map((r) => <td key={r.id} className="border-l border-line p-3 align-top text-ink">{rd.render(r)}</td>)}
+                    {rows.map((r) => {
+                      const v = rd.value ? rd.value(r) : null;
+                      const isBest = bestVal != null && v != null && v === bestVal;
+                      return <td key={r.id} className={cn("border-l border-line p-3 align-top", isBest ? "bg-emerald/[0.08] font-700 text-emerald-soft" : "text-ink")}>{rd.render(r)}</td>;
+                    })}
                   </tr>
-                )
-              ))}
+                );
+              })}
               <tr className="border-t border-line">
                 <td className="p-2"></td>
                 {rows.map((r) => (

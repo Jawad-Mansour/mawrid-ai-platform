@@ -5,7 +5,7 @@
 import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, MapPin, Globe, Mail, Tag, Building2, Factory, GitCompare, Check, UploadCloud, ArrowRight } from "lucide-react";
+import { X, MapPin, Globe, Mail, Tag, Building2, Factory, GitCompare, Check, UploadCloud, ArrowRight, Star, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { apiUpload, apiErr } from "@/lib/api";
 import { brandLogoSources } from "@/lib/utils";
@@ -15,6 +15,7 @@ export interface DetailPin {
   id: string; source: string; name: string; category: string; subcategory?: string | null;
   city?: string | null; country?: string | null; website?: string | null; logo_url?: string | null;
   email?: string | null; condition?: string | null; offering?: string | null;
+  rating?: number | null; lead_time_days?: number | null;
 }
 
 export function FactoryDetailModal({ pin, color, selected, onClose, onToggle, onContact }: {
@@ -44,6 +45,8 @@ export function FactoryDetailModal({ pin, color, selected, onClose, onToggle, on
 
   const rows: { label: string; value?: string | null; icon: typeof Tag }[] = [
     { label: "Category", value: [pin.category, pin.subcategory].filter(Boolean).join(" · "), icon: Tag },
+    { label: "Rating", value: pin.rating != null ? `★ ${pin.rating.toFixed(1)} / 5` : null, icon: Star },
+    { label: "Lead time", value: pin.lead_time_days != null ? `${pin.lead_time_days} days` : null, icon: Clock },
     { label: "Provides", value: pin.offering, icon: Factory },
     { label: "Location", value: loc, icon: MapPin },
     { label: "Sells (condition)", value: pin.condition, icon: Tag },

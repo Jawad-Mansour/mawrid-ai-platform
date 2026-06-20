@@ -195,6 +195,69 @@ class ReviewQueueItemResponse(StrictModel):
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 
+async def _ingest_document_bytes(
+    session: Any,
+    tenant_id: str,
+    file_bytes: bytes,
+    filename: str,
+    supplier_name: str | None = None,
+) -> tuple[str, str, str, int, bool]:
+    """Core document ingest shared by the upload endpoint and 'use the emailed sheet for
+    enrichment': hash → idempotent → detect type → store in MinIO → parse → persist. Returns
+    (document_id, status, filename, rows_extracted, already_existed). Raises HTTPException(422)
+    on an unsupported/garbled file."""
+    if not file_bytes:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Empty file.")
+    document_id = hashlib.sha256(file_bytes).hexdigest()
+    doc_repo = DocumentRepository(session, tenant_id)
+
+    existing = await doc_repo.get_by_id(document_id)
+    if existing is not None:
+        rc = existing.row_counts or {}
+        return (document_id, existing.status, existing.filename, int(rc.get("extracted", 0)), True)
+
+    try:
+        mime_type = detect_mime_type(file_bytes)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
+
+    doc = Document(
+        document_id=document_id,
+        tenant_id=tenant_id,
+        filename=filename,
+        mime_type=mime_type,
+        file_size_bytes=len(file_bytes),
+        status="processing",
+        supplier_name=(supplier_name.strip() if supplier_name else None),
+    )
+    await doc_repo.upsert(doc)
+
+    object_name = f"documents/{document_id}/{filename}"
+    try:
+        await upload_document(tenant_id, object_name, file_bytes, mime_type)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("minio_upload_failed", document_id=document_id, error=str(exc))
+
+    try:
+        parse_result = await parse_document(file_bytes, tenant_id)
+        rows_extracted = len(parse_result.rows)
+        await doc_repo.update_status(
+            document_id,
+            "completed",
+            row_counts={"extracted": rows_extracted, "pages": parse_result.page_count},
+            parsed_rows=parse_result.rows,
+        )
+    except Exception as exc:
+        logger.error("document_parse_failed", document_id=document_id, error=str(exc))
+        await doc_repo.update_status(document_id, "failed")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Document parsing failed: {exc}",
+        ) from exc
+
+    return (document_id, "completed", filename, rows_extracted, False)
+
+
 @router.post(
     "/documents/upload",
     response_model=DocumentUploadResponse,
@@ -223,77 +286,21 @@ async def upload_supplier_document(
     6. Persist document record with status=completed, row_counts, and parsed_rows
     """
     file_bytes = await file.read()
-
-    if not file_bytes:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Empty file uploaded.",
-        )
-
-    document_id = hashlib.sha256(file_bytes).hexdigest()
     tenant_id = current_user.tenant_id
-    doc_repo = DocumentRepository(session, tenant_id)
-
-    # Idempotency check
-    existing = await doc_repo.get_by_id(document_id)
-    if existing is not None:
-        logger.info("document_already_exists", document_id=document_id)
-        row_counts = existing.row_counts or {}
-        return DocumentUploadResponse(
-            document_id=document_id,
-            status=existing.status,
-            filename=existing.filename,
-            rows_extracted=int(row_counts.get("extracted", 0)),
-            already_existed=True,
-        )
-
-    # Validate format before storing
-    try:
-        mime_type = detect_mime_type(file_bytes)
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(exc),
-        ) from exc
-
     filename = file.filename or "upload"
 
-    # Persist document record as processing
-    doc = Document(
-        document_id=document_id,
-        tenant_id=tenant_id,
-        filename=filename,
-        mime_type=mime_type,
-        file_size_bytes=len(file_bytes),
-        status="processing",
-        supplier_name=(supplier_name.strip() if supplier_name else None),
+    document_id, doc_status, fname, rows_extracted, already_existed = await _ingest_document_bytes(
+        session, tenant_id, file_bytes, filename, supplier_name=supplier_name
     )
-    await doc_repo.upsert(doc)
-
-    # Store raw file in MinIO (fail silently — we have parsed_rows as backup)
-    object_name = f"documents/{document_id}/{filename}"
-    try:
-        await upload_document(tenant_id, object_name, file_bytes, mime_type)
-    except Exception as exc:
-        logger.warning("minio_upload_failed", document_id=document_id, error=str(exc))
-
-    # Parse document inline
-    try:
-        parse_result = await parse_document(file_bytes, tenant_id)
-        rows_extracted = len(parse_result.rows)
-        await doc_repo.update_status(
-            document_id,
-            "completed",
-            row_counts={"extracted": rows_extracted, "pages": parse_result.page_count},
-            parsed_rows=parse_result.rows,
+    if already_existed:
+        logger.info("document_already_exists", document_id=document_id)
+        return DocumentUploadResponse(
+            document_id=document_id,
+            status=doc_status,
+            filename=fname,
+            rows_extracted=rows_extracted,
+            already_existed=True,
         )
-    except Exception as exc:
-        logger.error("document_parse_failed", document_id=document_id, error=str(exc))
-        await doc_repo.update_status(document_id, "failed")
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Document parsing failed: {exc}",
-        ) from exc
 
     # Capture the supplier (name + location) provided at upload time.
     if supplier_name and supplier_name.strip():
@@ -342,6 +349,100 @@ async def upload_supplier_document(
         rows_extracted=rows_extracted,
         already_existed=False,
     )
+
+
+def _safe_key(key: str) -> str:
+    """Guard against path traversal — attachment keys are always relative to the tenant bucket."""
+    if not key or ".." in key or key.startswith("/"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid attachment key.")
+    return key
+
+
+@router.get(
+    "/attachment-url",
+    summary="Presigned download URL for a saved inbound email attachment (a supplier's sheet)",
+)
+async def attachment_download_url(key: str, current_user: CurrentUser) -> dict[str, str]:
+    """Return a short-lived URL to download an attachment a supplier emailed us. The object lives
+    in this tenant's bucket, so a caller can only ever reach their own files."""
+    url = await get_presigned_url(current_user.tenant_id, _safe_key(key))
+    return {"url": url}
+
+
+class AttachmentEnrichRequest(StrictModel):
+    key: str
+    filename: str | None = None
+    supplier_name: str | None = None
+
+
+@router.post(
+    "/attachment/enrich",
+    response_model=DocumentUploadResponse,
+    summary="Use an emailed sheet (saved attachment) as a catalog document, ready to enrich",
+)
+async def attachment_to_document(
+    body: AttachmentEnrichRequest,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> DocumentUploadResponse:
+    """Pull a supplier's emailed sheet out of storage and run it through the same parse/ingest
+    pipeline as a manual upload — so it appears in Upload History and can be enriched."""
+    from app.infra.storage.minio import download_bytes  # noqa: PLC0415
+
+    tenant_id = current_user.tenant_id
+    key = _safe_key(body.key)
+    try:
+        data = await download_bytes(tenant_id, key)
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attachment not found.") from exc
+
+    filename = body.filename or key.rsplit("/", 1)[-1] or "sheet.xlsx"
+    document_id, doc_status, fname, rows, already = await _ingest_document_bytes(
+        session, tenant_id, data, filename, supplier_name=body.supplier_name
+    )
+    await session.commit()
+    return DocumentUploadResponse(
+        document_id=document_id, status=doc_status, filename=fname,
+        rows_extracted=rows, already_existed=already,
+    )
+
+
+async def _link_supplier_to_document(
+    session: Any,
+    tenant_id: str,
+    doc: Document,
+    name: str | None,
+    email: str | None,
+    location: str | None,
+) -> str | None:
+    """Attach a supplier to a sheet: persist the name on the document and upsert the supplier
+    (marking it ACTIVE — a sheet we work with). Updates email/location when provided. Returns the
+    supplier name now on the document, or None. Shared by enrich + the 'set supplier' endpoint."""
+    from app.infra.db.repos.supplier_repo import SupplierRepository  # noqa: PLC0415
+
+    final_name = (name or doc.supplier_name or "").strip() or None
+    if not final_name:
+        return None
+    if name and name.strip() and name.strip() != (doc.supplier_name or ""):
+        doc.supplier_name = name.strip()
+    sup_repo = SupplierRepository(session, tenant_id)
+    existing = await sup_repo.find_by_name_exact(final_name)
+    if existing is None:
+        await sup_repo.create(
+            supplier_id=uuid.uuid4().hex,
+            name=final_name,
+            email=(email.strip() if email else None),
+            location=(location.strip() if location else None),
+            relationship="active",
+        )
+    else:
+        updates: dict[str, Any] = {"relationship": "active"}
+        if email and email.strip():
+            updates["email"] = email.strip()
+        if location and location.strip():
+            updates["location"] = location.strip()
+        await sup_repo.update(existing.supplier_id, **updates)
+    return final_name
 
 
 class EnrichRequest(StrictModel):
@@ -397,31 +498,9 @@ async def enrich_document(
     # Per-sheet supplier details provided at enrich time → persist to the doc + upsert
     # the supplier, and mark them ACTIVE (a sheet we enrich = a supplier we do business with).
     b = body or EnrichRequest()
-    name = (b.supplier_name or doc.supplier_name or "").strip() or None
-    if name:
-        from app.infra.db.repos.supplier_repo import SupplierRepository  # noqa: PLC0415
-
-        if b.supplier_name and b.supplier_name.strip() and b.supplier_name.strip() != (doc.supplier_name or ""):
-            doc.supplier_name = b.supplier_name.strip()
-        sup_repo = SupplierRepository(session, tenant_id)
-        existing_sup = await sup_repo.find_by_name_exact(name)
-        if existing_sup is None:
-            await sup_repo.create(
-                supplier_id=uuid.uuid4().hex,
-                name=name,
-                email=(b.supplier_email.strip() if b.supplier_email else None),
-                location=(b.supplier_location.strip() if b.supplier_location else None),
-                relationship="active",
-            )
-        else:
-            sup_updates: dict[str, Any] = {"relationship": "active"}
-            if b.supplier_email and b.supplier_email.strip():
-                sup_updates["email"] = b.supplier_email.strip()
-            if b.supplier_location and b.supplier_location.strip():
-                sup_updates["location"] = b.supplier_location.strip()
-            await sup_repo.update(existing_sup.supplier_id, **sup_updates)
-
-    supplier_for_doc = name
+    supplier_for_doc = await _link_supplier_to_document(
+        session, tenant_id, doc, b.supplier_name, b.supplier_email, b.supplier_location
+    )
 
     # Step 1: GPT-4o extraction — inline (one batch call, fast)
     extraction = await extract_rows(rows)
@@ -555,6 +634,80 @@ async def list_documents(
         )
         for d in docs
     ]
+
+
+class SetSupplierRequest(StrictModel):
+    supplier_name: str | None = None
+    supplier_email: str | None = None
+    supplier_location: str | None = None
+
+
+@router.patch(
+    "/documents/{document_id}/supplier",
+    response_model=DocumentHistoryItem,
+    summary="Attach / update the supplier (name · email · location) on an uploaded sheet",
+)
+async def set_document_supplier(
+    document_id: str,
+    body: SetSupplierRequest,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> DocumentHistoryItem:
+    """Link a supplier to a sheet without enriching — fixes 'add email' from Upload History.
+    Upserts the supplier (active) and persists its name on the document."""
+    tenant_id = current_user.tenant_id
+    doc_repo = DocumentRepository(session, tenant_id)
+    doc = await doc_repo.get_by_id(document_id)
+    if doc is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found.")
+    await _link_supplier_to_document(
+        session, tenant_id, doc, body.supplier_name, body.supplier_email, body.supplier_location
+    )
+    await session.commit()
+    await session.refresh(doc)
+    return DocumentHistoryItem(
+        document_id=doc.document_id,
+        filename=doc.filename,
+        status=doc.status,
+        supplier_name=doc.supplier_name,
+        rows_extracted=int((doc.row_counts or {}).get("extracted", 0)),
+        uploaded_at=doc.uploaded_at.isoformat(),
+    )
+
+
+@router.delete(
+    "/documents/{document_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Remove an uploaded sheet from history (catalogue products are kept)",
+)
+async def delete_document(
+    document_id: str,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> None:
+    """Remove a sheet from the upload history. This only deletes the sheet record (and its
+    leftover review-queue rows) — any products already enriched into your catalogue are KEPT."""
+    from sqlalchemy import delete as sa_delete
+
+    from app.infra.db.models.review_queue import ReviewQueueItem
+
+    tenant_id = current_user.tenant_id
+    doc_repo = DocumentRepository(session, tenant_id)
+    doc = await doc_repo.get_by_id(document_id)
+    if doc is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found.")
+
+    await session.execute(
+        sa_delete(ReviewQueueItem).where(
+            ReviewQueueItem.tenant_id == tenant_id, ReviewQueueItem.document_id == document_id
+        )
+    )
+    await session.execute(
+        sa_delete(Document).where(
+            Document.tenant_id == tenant_id, Document.document_id == document_id
+        )
+    )
+    await session.commit()
 
 
 @router.get(

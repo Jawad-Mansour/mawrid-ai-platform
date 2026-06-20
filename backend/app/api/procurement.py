@@ -1167,18 +1167,23 @@ async def shipment_receipt_pdf(
                     headers={"Content-Disposition": f'attachment; filename="receipt-{data.po_number}.pdf"'})
 
 
-@router.post("/shipments/{shipment_id}/receipt-email", summary="Email the goods-received report to the supplier")
+@router.post("/shipments/{shipment_id}/receipt-email", summary="Draft the goods-received report email for HITL review")
 async def shipment_receipt_email(
     shipment_id: str, current_user: CurrentUser, session: SessionDep
 ) -> dict[str, str]:
-    from app.infra.documents.receipt_pdf import generate_receipt_pdf  # noqa: PLC0415
-    from app.infra.email.gmail import send_email_for_tenant  # noqa: PLC0415
+    """Draft (not send) the goods-received report to the supplier. The editable email + the
+    report PDF are queued as a HITL action — the importer reviews/edits and approves before
+    anything is sent. Replies then thread onto the order's conversation."""
+    import base64 as _b64  # noqa: PLC0415
 
-    shipment_repo = ShipmentRepository(session, current_user.tenant_id)
+    from app.infra.documents.receipt_pdf import generate_receipt_pdf  # noqa: PLC0415
+
+    tenant_id = current_user.tenant_id
+    shipment_repo = ShipmentRepository(session, tenant_id)
     shipment = await shipment_repo.get_by_id(shipment_id)
     if shipment is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shipment not found.")
-    data, (sup, po) = await _build_receipt(session, current_user.tenant_id, shipment)
+    data, (sup, po) = await _build_receipt(session, tenant_id, shipment)
     if sup is None or not sup.email:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Supplier has no email on file.")
     pdf = generate_receipt_pdf(data)
@@ -1191,15 +1196,27 @@ async def shipment_receipt_email(
            "We found some discrepancies/damage (detailed in the attached report) and may follow up with a formal claim.\n\n")
         + f"Please find the goods-received report attached.\n\nBest regards,\n{data.tenant_name}"
     )
-    await send_email_for_tenant(session, current_user.tenant_id, to=sup.email, subject=subject, body=body, attachment_bytes=pdf,
-                                attachment_filename=f"receipt-{data.po_number}.pdf", attachment_mime="application/pdf")
-    from app.infra.db.repos.notification_repo import record_event  # noqa: PLC0415
-
-    await record_event(session, current_user.tenant_id, kind="receipt_sent",
-                       title="Goods-received report sent",
-                       body=f"Report for {data.po_number} emailed to {sup.name}.", link="/inventory/receive")
+    hitl_repo = HITLRepository(session, tenant_id)
+    action_id = uuid.uuid4().hex
+    await hitl_repo.create(
+        action_id=action_id,
+        action_type="goods_received_report",
+        payload={
+            "to": sup.email,
+            "subject": subject,
+            "body": body,
+            "attachment_b64": _b64.b64encode(pdf).decode(),
+            "attachment_filename": f"receipt-{data.po_number}.pdf",
+            "attachment_mime": "application/pdf",
+            "po_id": shipment.po_id,
+            "po_number": data.po_number,
+            "shipment_id": shipment_id,
+            "supplier_name": sup.name,
+            "outcome": "good" if good else "discrepancy",
+        },
+    )
     await session.commit()
-    return {"status": "sent", "outcome": "good" if good else "discrepancy"}
+    return {"status": "drafted", "action_id": action_id, "outcome": "good" if good else "discrepancy"}
 
 
 class LowStockItem(StrictModel):
@@ -1487,14 +1504,16 @@ async def file_supplier_dispute(
     if shipment is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shipment not found.")
 
-    # Resolve supplier from PO
+    # Resolve supplier + the human PO number from the PO
     supplier_name = "Supplier"
     supplier_email = ""
     supplier_language = "en"
+    po_number: str | None = None
     if shipment.po_id:
         po_list = await order_repo.list_purchase_orders()
         for po in po_list:
             if po.po_id == shipment.po_id:
+                po_number = po.po_number
                 sup = await supplier_repo.get_by_id(po.supplier_id)
                 if sup:
                     supplier_name = sup.name
@@ -1502,7 +1521,8 @@ async def file_supplier_dispute(
                     supplier_language = sup.language
                 break
 
-    po_ref = body.po_reference or (shipment.po_id or "N/A")
+    # Use the human PO number (PO-XXXXXX-XXXX) so the supplier's reply auto-threads back.
+    po_ref = body.po_reference or po_number or (shipment.po_id or "N/A")
 
     try:
         dispute_prompt = _load_prompt("dispute_letter")

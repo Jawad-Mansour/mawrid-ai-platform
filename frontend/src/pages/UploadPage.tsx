@@ -4,12 +4,12 @@
 // API:     POST /catalog/documents/upload · POST /catalog/documents/{id}/enrich ·
 //          GET /catalog/products · GET /suppliers
 import { useEffect, useRef, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { Link, useSearchParams } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { UploadCloud, FileSpreadsheet, Sparkles, ArrowRight, CheckCircle2, X, Trash2, Loader2, Plus, AlertTriangle, Pencil } from "lucide-react";
 import { toast } from "sonner";
-import { apiGet, apiPost, apiUpload, apiErr } from "@/lib/api";
+import { apiGet, apiPost, apiPatch, apiUpload, apiErr } from "@/lib/api";
 import { Card, SectionTitle } from "@/components/ui";
 import { EnrichLoader } from "@/components/EnrichLoader";
 import { SupplierEditModal } from "@/components/SupplierEditModal";
@@ -27,8 +27,11 @@ interface Sup { name: string; email: string; location: string }
 interface Sheet { id: string; rows: number; filename: string; enriched: boolean; sup: Sup }
 
 export function UploadPage() {
+  const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [params] = useSearchParams();
+  const location = useLocation();
+  const seededStage = useRef(false);
   const [dragOver, setDragOver] = useState(false);
   // Persist staged sheets so they survive navigating away and back.
   const [sheets, setSheets] = useState<Sheet[]>(() => {
@@ -89,6 +92,37 @@ export function UploadPage() {
     const s = suppliers.find((x) => x.supplier_id === supplierId);
     if (s) setSup(sheetId, { name: s.name, email: s.email ?? "", location: s.location ?? "" });
   }
+
+  // Persist a sheet's supplier to its DOCUMENT the moment its info is complete — so the supplier
+  // (name · email · location) shows up in Upload History and everywhere, without waiting for enrich.
+  const persistedSig = useRef<Record<string, string>>({});
+  const persistSup = useMutation({
+    mutationFn: ({ id, sup }: { id: string; sup: Sup }) =>
+      apiPatch(`/catalog/documents/${id}/supplier`, { supplier_name: sup.name, supplier_email: sup.email, supplier_location: sup.location }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["documents"] }); qc.invalidateQueries({ queryKey: ["suppliers"] }); },
+  });
+  useEffect(() => {
+    for (const s of sheets) {
+      if (s.enriched || !ready(s.sup)) continue;
+      const sig = `${s.sup.name}|${s.sup.email}|${s.sup.location}`;
+      if (persistedSig.current[s.id] === sig) continue;
+      persistedSig.current[s.id] = sig;
+      persistSup.mutate({ id: s.id, sup: s.sup });
+    }
+  }, [sheets]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Staged from "Use in enrichment" on an emailed sheet → add the already-parsed document to
+  // the list, prefilled with its supplier, so the user can enrich it straight away.
+  useEffect(() => {
+    const st = (location.state as { stageDoc?: { id: string; rows: number; filename: string }; supplierId?: string } | null) || {};
+    const sd = st.stageDoc;
+    if (!sd || seededStage.current || suppliersQ.isLoading) return;
+    seededStage.current = true;
+    const sup = st.supplierId ? suppliers.find((x) => x.supplier_id === st.supplierId) : undefined;
+    const supObj: Sup = sup ? { name: sup.name, email: sup.email ?? "", location: sup.location ?? "" } : { name: "", email: "", location: "" };
+    setSheets((s) => (s.some((x) => x.id === sd.id) ? s : [...s, { id: sd.id, rows: sd.rows, filename: sd.filename, enriched: false, sup: supObj }]));
+    toast.success(`${sd.filename} added — set the supplier and enrich`);
+  }, [location.state, suppliersQ.isLoading, suppliers]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // when a new supplier is created from the modal, attach it to the sheet
   useEffect(() => { suppliersQ.refetch(); }, [modal]); // eslint-disable-line react-hooks/exhaustive-deps

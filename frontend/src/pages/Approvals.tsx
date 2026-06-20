@@ -1,7 +1,7 @@
 // Feature: HITL Approval Center — approve / reject / edit (A / R / E shortcuts)
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, X, Pencil, Keyboard, ShieldCheck } from "lucide-react";
+import { Check, X, Pencil, Keyboard, ShieldCheck, History, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { apiGet, apiPost, apiPut, apiErr } from "@/lib/api";
 import { Card, SectionTitle, StatusBadge, Loading, EmptyState } from "@/components/ui";
@@ -16,6 +16,7 @@ function asList(d: unknown): HITLAction[] {
 const TYPE_LABELS: Record<string, string> = {
   purchase_order_send: "Purchase Orders",
   dispute_letter: "Disputes",
+  goods_received_report: "Goods-Received Reports",
   dunning_payables_advance: "Payables",
   dunning_disputes_on_demand: "Payment Disputes",
   dunning_receivables: "Receivables",
@@ -28,6 +29,7 @@ const labelFor = (t: string) => TYPE_LABELS[t] ?? t.replace(/_/g, " ").replace(/
 
 export function Approvals() {
   const qc = useQueryClient();
+  const [view, setView] = useState<"pending" | "history">("pending");
   const [tab, setTab] = useState("all");
   const [selected, setSelected] = useState(0);
   const [editing, setEditing] = useState<string | null>(null);
@@ -38,6 +40,16 @@ export function Approvals() {
     queryFn: () => apiGet<unknown>("/hitl/actions?status=pending"),
     refetchInterval: 12_000,
   });
+  const history = useQuery({
+    queryKey: ["hitl-history"],
+    queryFn: () => apiGet<unknown>("/hitl/actions?all_statuses=true"),
+    enabled: view === "history",
+    refetchInterval: 20_000,
+  });
+  const historyActions = useMemo(
+    () => asList(history.data).filter((a) => a.status !== "pending").sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))),
+    [history.data],
+  );
   const allActions = useMemo(() => asList(q.data).filter((a) => a.status === "pending"), [q.data]);
   // one tab per tracked action type (notification-center style), with counts
   const tabs = useMemo(() => {
@@ -93,11 +105,21 @@ export function Approvals() {
       <SectionTitle
         title="HITL Approval Center"
         subtitle="No external message, order, or payment leaves the system without your sign-off."
-        right={<span className="chip border-line bg-white/[0.02] text-ink-soft"><Keyboard className="h-3.5 w-3.5" /> A approve · R reject · E edit</span>}
+        right={
+          <div className="flex items-center gap-2">
+            <div className="flex gap-1 rounded-xl border border-line bg-white/[0.02] p-0.5">
+              <button onClick={() => setView("pending")} className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-600 transition-all ${view === "pending" ? "bg-gold/15 text-gold-soft" : "text-ink-soft hover:text-ink"}`}><ShieldCheck className="h-3.5 w-3.5" /> Pending{allActions.length > 0 && <span className="rounded-full bg-black/20 px-1.5 text-[10px]">{allActions.length}</span>}</button>
+              <button onClick={() => setView("history")} className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-600 transition-all ${view === "history" ? "bg-gold/15 text-gold-soft" : "text-ink-soft hover:text-ink"}`}><History className="h-3.5 w-3.5" /> History</button>
+            </div>
+            {view === "pending" && <span className="chip border-line bg-white/[0.02] text-ink-soft"><Keyboard className="h-3.5 w-3.5" /> A · R · E</span>}
+          </div>
+        }
       />
 
+      {view === "history" && <HistoryView actions={historyActions} loading={history.isLoading} />}
+
       {/* tracked-type tabs (notification-center style) */}
-      {allActions.length > 0 && (
+      {view === "pending" && allActions.length > 0 && (
         <div className="flex flex-wrap gap-2">
           <button onClick={() => { setTab("all"); setSelected(0); }}
             className={`chip ${tab === "all" ? "border-gold/50 bg-gold/15 text-gold-soft" : "border-line bg-white/[0.02] text-ink-soft hover:text-ink"}`}>
@@ -112,7 +134,7 @@ export function Approvals() {
         </div>
       )}
 
-      {actions.length === 0 ? (
+      {view === "pending" && (actions.length === 0 ? (
         <EmptyState icon={<ShieldCheck className="h-9 w-9" />} title="Queue is clear" hint="Every pending action has been actioned. New drafts will appear here." />
       ) : (
         <div className="grid gap-6 lg:grid-cols-5">
@@ -194,7 +216,32 @@ export function Approvals() {
             )}
           </div>
         </div>
-      )}
+      ))}
+    </div>
+  );
+}
+
+// Read-only log of past decisions (approved / rejected / expired) — the HITL history.
+function HistoryView({ actions, loading }: { actions: HITLAction[]; loading: boolean }) {
+  if (loading) return <Loading label="Loading history…" />;
+  if (actions.length === 0) return <EmptyState icon={<History className="h-9 w-9" />} title="No history yet" hint="Actions you approve or reject will be logged here." />;
+  return (
+    <div className="space-y-2">
+      {actions.map((a) => {
+        const target = a.payload?.to || a.payload?.supplier_name || a.payload?.subject || a.payload?.invoice_id || a.payload?.po_number || "";
+        return (
+          <Card key={a.action_id} className="flex items-center gap-3 !p-3.5">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="truncate text-sm font-700 text-ink">{labelFor(a.action_type)}</span>
+                <StatusBadge status={a.status} />
+              </div>
+              {target && <div className="mt-0.5 truncate text-xs text-ink-faint">{String(target)}</div>}
+            </div>
+            <span className="flex shrink-0 items-center gap-1 text-[11px] text-ink-faint"><Clock className="h-3 w-3" /> {a.created_at ? new Date(a.created_at).toLocaleString() : ""}</span>
+          </Card>
+        );
+      })}
     </div>
   );
 }

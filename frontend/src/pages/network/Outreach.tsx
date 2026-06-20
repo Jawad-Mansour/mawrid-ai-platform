@@ -10,6 +10,7 @@ import { Sparkles, Send, Inbox, ShieldCheck, ArrowLeft, UploadCloud, MessageSqua
 import { toast } from "sonner";
 import { apiGet, apiPost, apiErr } from "@/lib/api";
 import { SectionTitle, Card, Loading, Spinner } from "@/components/ui";
+import { MessageAttachments, type MsgAttachment } from "@/components/MessageAttachments";
 import { brandLogoSources } from "@/lib/utils";
 import { useNetwork } from "@/stores/network";
 
@@ -22,7 +23,7 @@ function CompanyLogo({ url, website, name }: { url?: string | null; website?: st
   return <img src={src} alt="" className="h-full w-full object-contain p-1.5" onError={() => setI((x) => x + 1)} />;
 }
 
-interface Msg { direction: string; sender: string; body: string; at: string }
+interface Msg { direction: string; sender: string; body: string; at: string; attachments?: MsgAttachment[] }
 interface ThreadData { supplier_id: string; name: string; email: string | null; messages: Msg[] }
 const INTENTS = [
   { key: "introduce", label: "Introduce us", hint: "Present our company & propose a partnership" },
@@ -180,6 +181,7 @@ function Thread({ supplierId, onEnrich, qc }: { supplierId: string; onEnrich: ()
                   <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${out ? "rounded-tr-sm bg-gold/15" : "rounded-tl-sm border border-line bg-bg-soft"}`}>
                     <div className="mb-1 text-[11px] text-ink-faint"><span className="font-700 text-ink-soft">{m.sender}</span> · {new Date(m.at).toLocaleString()}</div>
                     <div className="whitespace-pre-wrap leading-relaxed text-ink-soft">{m.body}</div>
+                    {!out && <MessageAttachments attachments={m.attachments} supplierId={supplierId} supplierName={d?.name} />}
                   </div>
                 </div>
               );

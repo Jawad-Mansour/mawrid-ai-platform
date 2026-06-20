@@ -35,100 +35,184 @@ router = APIRouter(prefix="/assistant", tags=["assistant"])
 _LANG = {"en": "English", "fr": "French", "ar": "Arabic"}
 
 
+def _money(val: Any, currency: str | None) -> str:
+    """Format a numeric amount with its currency, or '' if missing/invalid."""
+    if val is None:
+        return ""
+    with contextlib.suppress(TypeError, ValueError):
+        return f"{float(val):.2f} {currency or 'USD'}"
+    return ""
+
+
+def _specs(specs: dict[str, Any] | None) -> str:
+    """Flatten the specifications dict to 'key: value; key: value' — this is what lets the
+    assistant answer detail questions (dimensions, capacity, colour, weight, material …)."""
+    if not specs:
+        return ""
+    parts: list[str] = []
+    for k, v in specs.items():
+        if v is None or v == "":
+            continue
+        vs = ", ".join(str(x) for x in v) if isinstance(v, list | tuple) else str(v)
+        vs = vs.replace("\n", " ").strip()
+        if vs:
+            parts.append(f"{k}: {vs}")
+    return "; ".join(parts)
+
+
 async def _snapshot(session: Any, tenant_id: str) -> tuple[str, str]:
-    """Return (summary, detail). summary = a complete situational brief across catalog,
-    procurement, suppliers, inventory, shipments, dunning, HITL and recent activity;
-    detail = per-product + per-supplier + per-shipment lines so the command-center role
-    can answer ANY factual question (counts, dates, totals, who/what/when)."""
+    """Return (summary, detail). Rebuilt LIVE on every message, so anything that just changed
+    is reflected immediately. `detail` carries EVERY field of every product (full description +
+    all specs), supplier, purchase order, shipment/tracking, dunning/invoice, HITL action and
+    recent activity — so the command-center role can answer ANY factual question, in any detail."""
     prods = (
-        await session.execute(select(Product).where(Product.tenant_id == tenant_id).limit(300))
+        await session.execute(select(Product).where(Product.tenant_id == tenant_id).limit(400))
     ).scalars().all()
     cats: dict[str, int] = {}
     total_stock = 0
     low = 0
     published = 0
+    enriched = 0
     lines: list[str] = []
     for p in prods:
         specs = p.specifications or {}
         cat = str(specs.get("Type") or specs.get("Category") or specs.get("Brand") or "other")
         cats[cat] = cats.get(cat, 0) + 1
         total_stock += p.qty_in_stock
-        if p.qty_in_stock <= (p.reorder_threshold if p.reorder_threshold is not None else 5):
+        threshold = p.reorder_threshold if p.reorder_threshold is not None else 5
+        if p.qty_in_stock <= threshold:
             low += 1
         if p.storefront_status == "published":
             published += 1
-        price = ""
+        if p.enrichment_status == "enriched":
+            enriched += 1
+        last_price = ""
         hist = p.price_history or []
         if hist and isinstance(hist[-1], dict) and hist[-1].get("price") is not None:
-            with contextlib.suppress(TypeError, ValueError):
-                price = f" @ {float(hist[-1]['price'])} {p.currency or 'USD'}"
-        desc = (p.description or "").replace("\n", " ").strip()[:140]
-        lines.append(
-            f"- {p.product_name} [{p.sku or '—'}] · type {cat} · stock {p.qty_in_stock} "
-            f"(storefront {p.storefront_qty}, status {p.storefront_status}){price}"
-            f"{' — ' + desc if desc else ''}"
-        )
+            last_price = _money(hist[-1]["price"], p.currency)
+        retail = _money(p.retail_price, p.currency)
+        desc = (p.description or "").replace("\n", " ").strip()
+        if len(desc) > 700:
+            desc = desc[:700] + "…"
+        sup_txt = ", ".join(str(x) for x in (p.supplier_names or [])) if p.supplier_names else ""
+        seg = [
+            f"- {p.product_name} [sku {p.sku or '—'}{', barcode ' + p.barcode if p.barcode else ''}]",
+            f"type {cat}",
+            f"enrichment {p.enrichment_status}/{p.enrichment_confidence or '—'}",
+            f"stock {p.qty_in_stock} (published {p.storefront_qty}, reorder ≤ {threshold})",
+            f"inventory {p.inventory_status}",
+            f"storefront {p.storefront_status}",
+        ]
+        if retail:
+            seg.append(f"retail {retail}")
+        if last_price:
+            seg.append(f"supplier price {last_price}")
+        if sup_txt:
+            seg.append(f"supplier(s) {sup_txt}")
+        line = " · ".join(seg)
+        spec_txt = _specs(specs)
+        if spec_txt:
+            line += f"\n    specs → {spec_txt}"
+        if desc:
+            line += f"\n    description → {desc}"
+        lines.append(line)
 
-    sup_active = (await session.execute(select(func.count()).select_from(Supplier).where(Supplier.tenant_id == tenant_id, Supplier.relationship == "active"))).scalar_one()
-    sup_prospect = (await session.execute(select(func.count()).select_from(Supplier).where(Supplier.tenant_id == tenant_id, Supplier.relationship == "prospect"))).scalar_one()
-    po_stat = (await session.execute(select(func.count(), func.coalesce(func.sum(PurchaseOrder.total_amount), 0)).where(PurchaseOrder.tenant_id == tenant_id))).one()
-    po_pending = (await session.execute(select(func.count()).select_from(PurchaseOrder).where(PurchaseOrder.tenant_id == tenant_id, PurchaseOrder.status == "pending_hitl"))).scalar_one()
-    ship_intransit = (await session.execute(select(func.count()).select_from(Shipment).where(Shipment.tenant_id == tenant_id, Shipment.status != "arrived"))).scalar_one()
+    # Suppliers (fetch once → reuse for the detail block AND the id→name map below).
+    sup_all = (await session.execute(select(Supplier).where(Supplier.tenant_id == tenant_id).limit(200))).scalars().all()
+    sup_name = {s.supplier_id: s.name for s in sup_all}
+    sup_active = sum(1 for s in sup_all if (s.relationship or "active") == "active")
+    sup_prospect = sum(1 for s in sup_all if s.relationship == "prospect")
 
-    detail_blocks: list[str] = ["=== PRODUCTS ===\n" + "\n".join(lines[:300])]
+    pos = (await session.execute(select(PurchaseOrder).where(PurchaseOrder.tenant_id == tenant_id).limit(120))).scalars().all()
+    po_sup = {po.po_id: sup_name.get(po.supplier_id, po.supplier_id[:8]) for po in pos}
+    po_total = sum(float(po.total_amount or 0) for po in pos)
+    po_pending = sum(1 for po in pos if po.status == "pending_hitl")
+    ships = (await session.execute(select(Shipment).where(Shipment.tenant_id == tenant_id).limit(120))).scalars().all()
+    ship_intransit = sum(1 for sh in ships if sh.status != "arrived")
+
+    detail_blocks: list[str] = ["=== PRODUCTS (full detail) ===\n" + "\n".join(lines)]
     extras: list[str] = []
 
-    # Suppliers (names, relationship, MOQ, email) — for "which supplier / their MOQ" questions.
-    with contextlib.suppress(Exception):
-        sup_rows = (await session.execute(select(Supplier).where(Supplier.tenant_id == tenant_id).limit(80))).scalars().all()
-        if sup_rows:
-            detail_blocks.append("=== SUPPLIERS ===\n" + "\n".join(
-                f"- {s.name} ({s.relationship or 'active'})"
-                f"{' · MOQ ' + str(s.moq) if s.moq else ''}"
-                f"{' · ' + s.email if s.email else ''}"
-                f"{' · ' + s.location if s.location else ''}" for s in sup_rows
-            ))
+    if sup_all:
+        detail_blocks.append("=== SUPPLIERS ===\n" + "\n".join(
+            f"- {s.name} ({s.relationship or 'active'})"
+            f"{' · ' + s.category if s.category else ''}"
+            f"{' · MOQ ' + str(s.moq) if s.moq else ''}"
+            f"{' · rating ' + str(s.rating) if s.rating is not None else ''}"
+            f"{' · score ' + str(s.score) if s.score is not None else ''}"
+            f"{' · ' + s.email if s.email else ''}"
+            f"{' · ' + s.phone if s.phone else ''}"
+            f"{' · ' + s.location if s.location else ''}"
+            f"{' · ' + (s.currency or '') if s.currency else ''}"
+            f"{' · web ' + s.website if s.website else ''}"
+            f"{' · offers ' + s.offering if s.offering else ''}"
+            for s in sup_all
+        ))
 
-    # Shipments with ETA + status.
-    with contextlib.suppress(Exception):
-        ships = (await session.execute(select(Shipment).where(Shipment.tenant_id == tenant_id).limit(60))).scalars().all()
-        if ships:
-            detail_blocks.append("=== SHIPMENTS ===\n" + "\n".join(
-                f"- PO {sh.po_id[:10]} · status {sh.status}"
-                f"{' · ETA ' + str(sh.expected_arrival_date) if sh.expected_arrival_date else ''}" for sh in ships
-            ))
+    if pos:
+        detail_blocks.append("=== PURCHASE ORDERS ===\n" + "\n".join(
+            f"- {po.po_number} → {po_sup.get(po.po_id, po.supplier_id[:8])} · status {po.status}"
+            f"{' · total ' + _money(po.total_amount, po.currency) if po.total_amount is not None else ''}"
+            f"{' · delivery ' + str(po.requested_delivery_date) if po.requested_delivery_date else ''}"
+            f" · {len(po.line_items or [])} line(s)"
+            for po in pos
+        ))
+
+    if ships:
+        detail_blocks.append("=== SHIPMENTS & TRACKING ===\n" + "\n".join(
+            f"- {po_sup.get(sh.po_id, 'PO ' + sh.po_id[:10])} · status {sh.status}"
+            f"{' · carrier ' + sh.carrier if sh.carrier else ''}"
+            f"{' · tracking ' + sh.tracking_number if sh.tracking_number else ''}"
+            f"{' · ETA ' + str(sh.expected_arrival_date) if sh.expected_arrival_date else ''}"
+            f"{' (' + sh.expected_arrival_at.isoformat() + ')' if sh.expected_arrival_at else ''}"
+            f"{' · received ' + sh.received_at.isoformat() if sh.received_at else ''}"
+            for sh in ships
+        ))
 
     # HITL approvals awaiting the user.
     with contextlib.suppress(Exception):
         from app.infra.db.models.hitl import HITLAction  # noqa: PLC0415
 
-        hitl_rows = (await session.execute(select(HITLAction).where(HITLAction.tenant_id == tenant_id, HITLAction.status == "pending").limit(40))).scalars().all()
+        hitl_rows = (await session.execute(select(HITLAction).where(HITLAction.tenant_id == tenant_id, HITLAction.status == "pending").limit(60))).scalars().all()
         extras.append(f"HITL approvals pending: {len(hitl_rows)}" + (
             " (" + ", ".join(sorted({h.action_type.replace('_', ' ') for h in hitl_rows})) + ")" if hitl_rows else ""
         ))
+        if hitl_rows:
+            detail_blocks.append("=== PENDING APPROVALS (HITL) ===\n" + "\n".join(
+                f"- {h.action_type.replace('_', ' ')} · "
+                f"{str((h.payload or {}).get('subject') or (h.payload or {}).get('to') or (h.payload or {}).get('supplier_name') or '').strip()[:120]}"
+                for h in hitl_rows
+            ))
 
     # Dunning + invoices (receivables / payables).
     with contextlib.suppress(Exception):
         from app.infra.db.models.dunning import DunningSequence, Invoice  # noqa: PLC0415
 
         dun = (await session.execute(select(func.count()).select_from(DunningSequence).where(DunningSequence.tenant_id == tenant_id, DunningSequence.status == "active"))).scalar_one()
-        inv = (await session.execute(select(func.count(), func.coalesce(func.sum(Invoice.amount_due), 0)).where(Invoice.tenant_id == tenant_id, Invoice.status != "paid"))).one()
-        extras.append(f"Dunning sequences active: {int(dun)}. Unpaid invoices: {int(inv[0])} (total {float(inv[1] or 0):.2f}).")
+        inv_rows = (await session.execute(select(Invoice).where(Invoice.tenant_id == tenant_id).limit(120))).scalars().all()
+        unpaid = [i for i in inv_rows if i.status != "paid"]
+        extras.append(f"Dunning sequences active: {int(dun)}. Unpaid invoices: {len(unpaid)} (total {sum(float(i.amount_due or 0) for i in unpaid):.2f}).")
+        if inv_rows:
+            detail_blocks.append("=== INVOICES ===\n" + "\n".join(
+                f"- {i.invoice_id[:10]} · status {i.status}"
+                f"{' · due ' + _money(i.amount_due, i.currency) if i.amount_due is not None else ''}"
+                for i in inv_rows
+            ))
 
-    # Recent activity feed (last events).
+    # Recent activity feed (last events) — the running log of "what just happened".
     with contextlib.suppress(Exception):
         from app.infra.db.models.notification import Notification  # noqa: PLC0415
 
-        notes = (await session.execute(select(Notification).where(Notification.tenant_id == tenant_id).order_by(Notification.created_at.desc()).limit(12))).scalars().all()
+        notes = (await session.execute(select(Notification).where(Notification.tenant_id == tenant_id).order_by(Notification.created_at.desc()).limit(20))).scalars().all()
         if notes:
             detail_blocks.append("=== RECENT ACTIVITY ===\n" + "\n".join(f"- {n.title}: {n.body or ''}".strip() for n in notes))
 
     cat_txt = ", ".join(f"{k}: {v}" for k, v in sorted(cats.items(), key=lambda x: -x[1])[:14]) or "none"
     summary = (
-        f"Products: {len(prods)} (total units in stock {total_stock}; {low} low-stock; {published} published to storefront).\n"
+        f"Products: {len(prods)} ({enriched} enriched; total units in stock {total_stock}; {low} low-stock; {published} published to storefront).\n"
         f"Product categories/types: {cat_txt}.\n"
         f"Suppliers: {sup_active} active (we do business with), {sup_prospect} prospects.\n"
-        f"Purchase orders: {int(po_stat[0])} total, {po_pending} awaiting approval, total spend {float(po_stat[1] or 0):.2f}.\n"
+        f"Purchase orders: {len(pos)} total, {po_pending} awaiting approval, total spend {po_total:.2f}.\n"
         f"Shipments in transit: {ship_intransit}.\n"
         + "\n".join(extras)
     )
@@ -163,10 +247,14 @@ async def chat(
         system = (
             "You are the Command-Center assistant for an import/distribution business on the "
             "Mawrid platform. Answer the user's question using ONLY the live data below — be "
-            "factual and exact (counts, quantities, totals, dates, names). You can answer about "
-            "products, stock, suppliers (and their MOQ/email), purchase orders, shipments & ETAs, "
-            "HITL approvals, dunning/invoices and recent activity. If they ask 'how many X', count "
-            f"matching items. If the data doesn't contain it, say so plainly. Reply in {lang_name}.\n\n"
+            "factual and exact (counts, quantities, totals, dates, names). The data is the COMPLETE "
+            "current state: every product with its FULL description and ALL specifications "
+            "(dimensions, capacity, colour, weight, material, etc.), every supplier (relationship, "
+            "MOQ, email, phone, location, rating, website), every purchase order, every shipment "
+            "with carrier/tracking/ETA, pending approvals, invoices/dunning and recent activity. "
+            "For a specific product, read its 'specs →' and 'description →' lines. If they ask "
+            "'how many X', count matching items. Only say something is unavailable if it is truly "
+            f"absent from the data below. Reply in {lang_name}.\n\n"
             f"=== LIVE DATA SNAPSHOT ===\n{summary}\n\n{detail}"
         )
     else:

@@ -4,13 +4,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Lock, Globe2, MapPin } from "lucide-react";
+import { Lock, Globe2, MapPin, Star } from "lucide-react";
 import { apiGet } from "@/lib/api";
 import { LeafletMap } from "@/components/LeafletMap";
 import { colorForCategory } from "@/stores/network";
 
 interface Region { key: string; label: string; available: boolean; center: [number, number]; zoom: number; bounds?: [[number, number], [number, number]]; min_zoom?: number }
-interface Pin { id: string; source: string; name: string; category: string; latitude: number | null; longitude: number | null; city?: string | null; country?: string | null; website?: string | null; offering?: string | null }
+interface Pin { id: string; source: string; name: string; category: string; latitude: number | null; longitude: number | null; city?: string | null; country?: string | null; website?: string | null; offering?: string | null; rating?: number | null }
 interface FactoriesResp { pins: Pin[]; categories: string[] }
 
 const FALLBACK: Region[] = [
@@ -34,6 +34,10 @@ export function DashboardNetworkMap() {
   const categories = factories.data?.categories ?? [];
   const pins = europe ? (factories.data?.pins ?? []).filter((p) => p.latitude != null && p.longitude != null) : [];
   const colorFor = (c: string) => colorForCategory(c, categories);
+  const topRated = [...(factories.data?.pins ?? [])]
+    .filter((p) => p.rating != null)
+    .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+    .slice(0, 5);
 
   return (
     <div className="space-y-3">
@@ -70,6 +74,20 @@ export function DashboardNetworkMap() {
         <div className="flex items-center justify-between text-xs text-ink-faint">
           <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {pins.length} location(s) · hover a pin for website / contact</span>
           <span>{categories.length} categories</span>
+        </div>
+      )}
+
+      {europe && topRated.length > 0 && (
+        <div className="rounded-xl border border-line bg-white/[0.02] p-3">
+          <div className="mb-2 flex items-center gap-1.5 text-xs font-700 text-ink"><Star className="h-3.5 w-3.5 text-gold-soft" /> Top-rated makers</div>
+          <div className="grid gap-1.5 sm:grid-cols-2">
+            {topRated.map((p) => (
+              <button key={p.id} onClick={() => navigate("/suppliers/network")} className="flex items-center justify-between gap-2 rounded-lg px-2 py-1 text-left text-xs transition-colors hover:bg-white/[0.05]">
+                <span className="min-w-0 flex-1 truncate text-ink">{p.name}</span>
+                <span className="flex shrink-0 items-center gap-0.5 font-700 text-gold-soft"><Star className="h-3 w-3 fill-current" /> {p.rating?.toFixed(1)}</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>

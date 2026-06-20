@@ -66,15 +66,15 @@ export function Receive() {
   }
   const sendReceipt = useMutation({
     mutationFn: () => apiPost(`/procurement/shipments/${shipId}/receipt-email`, {}),
-    onSuccess: (d: any) => toast.success(d?.outcome === "good" ? "Thank-you receipt sent" : "Report sent (discrepancies noted)"),
-    onError: (e) => toast.error(apiErr(e, "Send failed")),
+    onSuccess: () => toast.success("Report drafted — review, edit & approve it in HITL Approvals"),
+    onError: (e) => toast.error(apiErr(e, "Could not draft the report")),
   });
   const fileDispute = useMutation({
     mutationFn: () => apiPost(`/procurement/shipments/${shipId}/dispute`, {
       damaged_items: r.filter((x) => x.damaged > 0 || x.received < x.ordered).map((x) => ({ product_id: x.product_id, product: x.product_name, damaged: x.damaged, short: x.ordered - x.received })),
       damage_description: r.filter((x) => x.damaged > 0 || x.received < x.ordered).map((x) => `${x.product_name}: ${x.damaged} damaged, ${Math.max(0, x.ordered - x.received)} short. ${x.note}`).join("; ") || "Discrepancies on arrival.",
     }),
-    onSuccess: () => toast.success("Dispute drafted — approve it in HITL to send"),
+    onSuccess: () => toast.success("Dispute drafted — review, edit & approve it in HITL Approvals"),
     onError: (e) => toast.error(apiErr(e, "Could not file dispute")),
   });
 
@@ -138,6 +138,7 @@ export function Receive() {
                 {!allGood && <button className="btn-danger" disabled={fileDispute.isPending} onClick={() => fileDispute.mutate()}>{fileDispute.isPending ? <Spinner className="h-4 w-4" /> : <FileWarning className="h-4 w-4" />} File dispute</button>}
               </div>
               {!po.data.supplier_email && <p className="text-xs text-warn">⚠ Add a supplier email to send the receipt.</p>}
+              <p className="text-[11px] text-ink-faint">The report &amp; dispute are <b>drafts</b> — review &amp; edit them in <a href="/approvals" className="text-gold-soft hover:underline">HITL Approvals</a>, then approve to send. The supplier's reply auto-threads into <a href={`/purchase-orders/${ship?.po_id ?? ""}`} className="text-gold-soft hover:underline">Supplier Replies</a>.</p>
             </motion.div>
           )}
         </Card>

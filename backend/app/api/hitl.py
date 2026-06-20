@@ -186,15 +186,45 @@ async def approve_hitl_action(
         )
         await session.commit()
 
-    if action.action_type in ("dunning_payables_advance", "dispute_letter") and result.status == "approved":
+    if action.action_type == "dunning_payables_advance" and result.status == "approved":
         from app.infra.db.repos.notification_repo import record_event  # noqa: PLC0415
 
-        kind = "Payment reminder" if action.action_type == "dunning_payables_advance" else "Dispute letter"
         await record_event(
             session, current_user.tenant_id, kind="dunning_sent",
-            title=f"{kind} sent",
+            title="Payment reminder sent",
             body=f"Sent to {action.payload.get('supplier_name', action.payload.get('to', 'supplier'))}.",
             link="/dunning",
+        )
+        await session.commit()
+
+    # A dispute letter or goods-received report was approved & sent → log it on the order's
+    # conversation so the thread is complete and any supplier reply auto-threads back here.
+    if action.action_type in ("dispute_letter", "goods_received_report") and result.status == "approved":
+        from datetime import UTC, datetime  # noqa: PLC0415
+
+        from app.infra.db.repos.notification_repo import record_event  # noqa: PLC0415
+
+        label = "Dispute letter" if action.action_type == "dispute_letter" else "Goods-received report"
+        po_id = action.payload.get("po_id")
+        if po_id:
+            from app.infra.db.repos.order_repo import OrderRepository  # noqa: PLC0415
+
+            order_repo = OrderRepository(session, current_user.tenant_id)
+            await order_repo.append_po_message(
+                str(po_id),
+                {
+                    "direction": "outbound",
+                    "sender": "You",
+                    "body": f"[{label}] " + str(action.payload.get("body", "")),
+                    "at": datetime.now(UTC).isoformat(),
+                },
+            )
+        await record_event(
+            session, current_user.tenant_id, kind="claim_sent",
+            title=f"{label} sent",
+            body=f"Sent to {action.payload.get('supplier_name', action.payload.get('to', 'the supplier'))}. "
+            "Replies appear in the order's thread (Supplier Replies).",
+            link=f"/purchase-orders/{po_id}" if po_id else "/inventory/receive",
         )
         await session.commit()
 
