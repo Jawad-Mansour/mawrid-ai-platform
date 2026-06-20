@@ -125,8 +125,57 @@ uv run alembic upgrade head
 ```
 
 The backend, frontend, and worker run as Docker services — there is no separate `uvicorn`/`npm`
-dev command outside Docker. See [SETUP.md](SETUP.md) and [docs/](docs/) for details, including the
-[Connect-Gmail / Google Cloud setup guide](docs/connect-gmail-setup.md).
+dev command outside Docker. See [SETUP.md](SETUP.md) and [docs/](docs/) for more.
+
+## Connect Gmail — Google Cloud setup
+
+This wires the **Connect Gmail** feature so Mawrid can, per user, **send** POs/outreach/dunning
+through their own Gmail (lands in the inbox, not Junk) and **read replies back** to auto-detect,
+thread and comprehend them. **No domain and no billing card are required** — Gmail API in *Testing*
+mode is free. It's also available in-app at **Settings → Google Cloud Setup**.
+
+**0. Turn on 2-Step Verification** (once, on your Google account) — *Google Account → Security → 2-Step Verification*.
+
+**1. Create a project (no billing).** Open <https://console.cloud.google.com/projectcreate> → name it `Mawrid`, Organization *No organization* → **Create**.
+> ⚠️ Ignore every "Start free / Try for free / $300 credits" banner — that's the paid trial and asks for a card. You don't need it.
+
+**2. Enable the Gmail API.** *APIs & Services → Library* → search **Gmail API** → **Enable**.
+
+**3. OAuth consent screen.** *APIs & Services → OAuth consent screen* → User type **External** → **Create**.
+- App name `Mawrid`, support email + developer contact = yours → **Save and continue**.
+- **Scopes → Add or remove scopes** → add these two, then **Update**:
+  ```
+  https://www.googleapis.com/auth/gmail.send
+  https://www.googleapis.com/auth/gmail.readonly
+  ```
+- **Test users → Add users** → add every Gmail you'll send/test with (only these can connect while in Testing).
+- Leave **Publishing status = Testing** — no Google review needed this way.
+
+**4. Create the OAuth client + add the redirect URI.** *APIs & Services → Credentials → Create Credentials → OAuth client ID* → Application type **Web application**, name `Mawrid Web`. Under **Authorized redirect URIs → Add URI**, paste exactly:
+```
+http://localhost:8000/auth/google/callback
+```
+> In production also add `https://YOUR_HOST/auth/google/callback`. The path must match exactly or Google rejects sign-in. Click **Create**.
+
+**5. Copy the Client ID & Client Secret** (re-openable any time under Credentials):
+```
+Client ID:     ...apps.googleusercontent.com
+Client Secret: GOCSPX-...
+```
+
+**6. Seed them into Vault** (gitignored, never committed):
+```
+secret/mawrid/google → { client_id, client_secret }
+```
+Per-user Gmail **refresh tokens** (created on "Connect Gmail") are stored per-tenant, never in git.
+
+**7. Connect.** In Mawrid → **Settings → Connect Gmail** → pick your account → allow. Emails now send **as you**, and replies are auto-detected, threaded, and comprehended (arrival date → tracking, MOQ, change requests, emailed sheets → enrichment).
+
+**Good to know**
+- In **Testing** mode, refresh tokens for an unverified app expire after **~7 days** — just click *Connect Gmail* again weekly (fine for a demo).
+- Only the **test users** you added can connect until the app is verified.
+- For a public launch, submit the app for **Google OAuth verification** (needs a privacy policy + verified domain) to make tokens permanent and allow any user.
+- **No-OAuth fallback:** create a Gmail **App password** (Account → Security → App passwords), seed `secret/mawrid/imap → { host, user, password }`, and the IMAP poller reads your inbox in ~2 minutes (your account only).
 
 ## Development & CI gates
 
@@ -150,16 +199,6 @@ All secrets come from **HashiCorp Vault** — the backend refuses to start if Va
 Nothing real is ever committed (`keys.txt`, `resources/`, history dumps are gitignored); `.env.example`
 documents variable names only. Auth is JWT **RS256** + **argon2id**; the Connect-Gmail flow uses OAuth
 (send + read scopes) and never stores a password.
-
-## Roadmap
-
-Everything above is **real and working today**. Next:
-
-1. **Wave 1** — consumer storefront + shopping chatbot (same catalog sells to the public)
-2. **Wave 2** — WhatsApp channel
-3. **Wave 3** — deeper ML: fraud · dynamic pricing · cash-flow forecasting
-4. **Wave 4** — production deployment (Caddy HTTPS + smoke tests)
-5. **Wave 5** — built-in marketing studio
 
 ## License & author
 
